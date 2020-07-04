@@ -1,7 +1,7 @@
 @Library("ci-jenkins") import com.swiftnav.ci.*
 
 def context = new Context(context: this)
-context.setRepo("cry4")
+context.setRepo("swiftnav-rs")
 
 pipeline {
   agent { node { label('docker.m') } }
@@ -32,13 +32,9 @@ pipeline {
       parallel {
         stage('Test') {
           agent { dockerfile { reuseNode true } }
-          environment {
-            AWS_REGION="us-west-2"
-            AWS_DEFAULT_REGION="us-west-2"
-          }
           steps {
             script {
-              sh("doit rust:test")
+              sh("cargo test")
             }
           }
         }
