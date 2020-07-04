@@ -23,6 +23,9 @@ fn make_gnss_time_bindings<T: std::fmt::Display>(c_lib_path: &T) -> bindgen::Bin
         .whitelist_function("gps_time_valid")
         .whitelist_function("add_secs")
         .whitelist_var("FLOAT_EQUALITY_EPS")
+        .whitelist_var("MINUTE_SECS")
+        .whitelist_var("HOUR_SECS")
+        .whitelist_var("DAY_SECS")
         .whitelist_var("WEEK_SECS")
         // Finish the builder and generate the bindings.
         .generate()

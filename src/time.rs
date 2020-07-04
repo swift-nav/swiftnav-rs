@@ -3,6 +3,11 @@ use std::fmt;
 use std::time::Duration;
 use crate::c_bindings::gnss_time as gnss_time_c;
 
+pub const MINUTE: Duration = Duration::from_secs(gnss_time_c::MINUTE_SECS as u64);
+pub const HOUR: Duration = Duration::from_secs(gnss_time_c::HOUR_SECS as u64);
+pub const DAY: Duration = Duration::from_secs(gnss_time_c::DAY_SECS as u64);
+pub const WEEK: Duration = Duration::from_secs(gnss_time_c::WEEK_SECS as u64);
+
 #[derive(Copy, Clone)]
 pub struct GpsTime(gnss_time_c::gps_time_t);
 
@@ -116,15 +121,14 @@ impl SubAssign<Duration> for GpsTime {
 
 #[cfg(test)]
 mod tests {
-    use super::GpsTime;
-    use super::Duration;
+    use super::*;
 
     #[test]
     fn validity() {
         assert!(GpsTime::new(0, 0.0).is_some());
         assert!(GpsTime::new(-1, -1.0).is_none());
         assert!(GpsTime::new(-1, -1.0).is_none());
-        assert!(GpsTime::new(12, gnss_time_c::WEEK_SECS as f64).is_none());
+        assert!(GpsTime::new(12, WEEK.as_secs_f64()).is_none());
         assert!(GpsTime::new(12, std::f64::NAN).is_none());
         assert!(GpsTime::new(12, std::f64::INFINITY).is_none());
     }
