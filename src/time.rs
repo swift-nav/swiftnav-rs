@@ -1,7 +1,7 @@
-use std::ops::{Add, AddAssign, Sub, SubAssign};
-use std::fmt;
-use std::time::Duration;
 use crate::c_bindings::gnss_time as gnss_time_c;
+use std::fmt;
+use std::ops::{Add, AddAssign, Sub, SubAssign};
+use std::time::Duration;
 
 pub const MINUTE: Duration = Duration::from_secs(gnss_time_c::MINUTE_SECS as u64);
 pub const HOUR: Duration = Duration::from_secs(gnss_time_c::HOUR_SECS as u64);
@@ -15,7 +15,7 @@ impl GpsTime {
     const JIFFY: f64 = gnss_time_c::FLOAT_EQUALITY_EPS;
 
     pub fn new_unchecked(wn: i16, tow: f64) -> GpsTime {
-        GpsTime(gnss_time_c::gps_time_t{wn, tow})
+        GpsTime(gnss_time_c::gps_time_t { wn, tow })
     }
 
     pub fn new(wn: i16, tow: f64) -> Option<GpsTime> {
@@ -41,11 +41,15 @@ impl GpsTime {
     }
 
     pub fn add_duration(&mut self, duration: &Duration) {
-        unsafe { gnss_time_c::add_secs(&mut self.0, duration.as_secs_f64()); }
+        unsafe {
+            gnss_time_c::add_secs(&mut self.0, duration.as_secs_f64());
+        }
     }
 
     pub fn subtract_duration(&mut self, duration: &Duration) {
-        unsafe { gnss_time_c::add_secs(&mut self.0, -duration.as_secs_f64()); }
+        unsafe {
+            gnss_time_c::add_secs(&mut self.0, -duration.as_secs_f64());
+        }
     }
 
     pub fn diff(&self, other: &Self) -> f64 {
@@ -56,8 +60,8 @@ impl GpsTime {
 impl fmt::Debug for GpsTime {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("GpsTime")
-            .field("WN", unsafe{&self.0.wn})
-            .field("TOW", unsafe{&self.0.tow})
+            .field("WN", unsafe { &self.0.wn })
+            .field("TOW", unsafe { &self.0.tow })
             .finish()
     }
 }
@@ -99,7 +103,7 @@ impl AddAssign<Duration> for GpsTime {
 
 impl Sub<GpsTime> for GpsTime {
     type Output = Duration;
-    fn sub(self, rhs: GpsTime) ->Duration {
+    fn sub(self, rhs: GpsTime) -> Duration {
         let diff_seconds = self.diff(&rhs).abs();
         Duration::from_secs_f64(diff_seconds)
     }

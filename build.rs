@@ -1,8 +1,8 @@
 extern crate bindgen;
 
+use cmake::Config;
 use std::env;
 use std::path::PathBuf;
-use cmake::Config;
 
 fn make_builder<T: std::fmt::Display>(c_lib_path: &T, header: &str) -> bindgen::Builder {
     let include_args = vec!["-isystem".to_string(), format!("{}/include/", c_lib_path)].into_iter();
@@ -62,8 +62,7 @@ fn make_signal_bindings<T: std::fmt::Display>(c_lib_path: &T) -> bindgen::Bindin
 }
 
 fn main() {
-    let dst = Config::new("third-party/libswiftnav/")
-        .build();
+    let dst = Config::new("third-party/libswiftnav/").build();
 
     // Tell cargo to tell rustc to link the system bzip2
     // shared library.

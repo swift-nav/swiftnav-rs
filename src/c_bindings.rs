@@ -16,6 +16,8 @@ pub(crate) mod signal {
     impl Copy for gnss_signal_t {}
 
     impl Clone for gnss_signal_t {
-        fn clone(&self) -> Self { *self }
+        fn clone(&self) -> Self {
+            *self
+        }
     }
 }
