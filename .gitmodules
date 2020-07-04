@@ -1,0 +1,3 @@
+[submodule "third-party/libswiftnav"]
+	path = third-party/libswiftnav
+	url = https://github.com/swift-nav/libswiftnav.git
