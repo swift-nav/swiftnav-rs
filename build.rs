@@ -33,13 +33,12 @@ fn main() {
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
-        .blacklist_type("u8")
-        .blacklist_type("u16")
-        .blacklist_type("u32")
-        .blacklist_type("u64")
         .whitelist_type("gps_time_t")
         .whitelist_function("gpsdifftime")
+        .whitelist_function("gps_time_valid")
+        .whitelist_function("add_secs")
         .whitelist_var("FLOAT_EQUALITY_EPS")
+        .whitelist_var("WEEK_SECS")
         // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.
