@@ -46,6 +46,14 @@ pipeline {
             }
           }
         }
+        stage('Lint') {
+          agent { dockerfile { reuseNode true } }
+          steps {
+            script {
+              sh("cargo clippy")
+            }
+          }
+        }
       }
     }
   }
