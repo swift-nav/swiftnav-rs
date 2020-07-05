@@ -8,7 +8,71 @@
 
 mod c_bindings;
 pub mod coords;
+pub mod ephemeris;
 pub mod ionosphere;
 pub mod signal;
 pub mod time;
 pub mod troposphere;
+
+#[derive(Copy, Clone, Debug, Default)]
+pub struct Vec3([f64; 3]);
+
+impl Vec3 {
+    pub fn new(x: f64, y: f64, z: f64) -> Vec3 {
+        Vec3([x, y, z])
+    }
+
+    pub fn from_array(a: &[f64; 3]) -> Vec3 {
+        Vec3(a.clone())
+    }
+
+    pub fn get_x(&self) -> f64 {
+        self.0[0]
+    }
+
+    pub fn get_y(&self) -> f64 {
+        self.0[1]
+    }
+
+    pub fn get_z(&self) -> f64 {
+        self.0[2]
+    }
+
+    pub fn set_x(&mut self, new_x: f64) {
+        self.0[0] = new_x;
+    }
+
+    pub fn set_y(&mut self, new_y: f64) {
+        self.0[1] = new_y;
+    }
+
+    pub fn set_z(&mut self, new_z: f64) {
+        self.0[2] = new_z;
+    }
+
+    pub fn as_mut_ptr(&mut self) -> *mut f64 {
+        self.0.as_mut_ptr()
+    }
+
+    pub fn as_ptr(&self) -> *const f64 {
+        self.0.as_ptr()
+    }
+}
+
+impl AsRef<[f64; 3]> for Vec3 {
+    fn as_ref(&self) -> &[f64; 3] {
+        &self.0
+    }
+}
+
+impl AsMut<[f64; 3]> for Vec3 {
+    fn as_mut(&mut self) -> &mut [f64; 3] {
+        &mut self.0
+    }
+}
+
+pub struct AzEl {
+    pub az: f64,
+    pub el: f64,
+}
+

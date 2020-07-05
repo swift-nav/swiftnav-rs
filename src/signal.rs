@@ -294,6 +294,10 @@ impl GnssSignal {
         GnssSignal(c_bindings::gnss_signal_t { sat, code })
     }
 
+    pub(crate) fn to_gnss_signal_t(&self) -> c_bindings::gnss_signal_t {
+        self.0
+    }
+
     /// Get the constellation of the signal
     pub fn to_constellation(&self) -> Constellation {
         Constellation::from_constellation_t(unsafe { c_bindings::sid_to_constellation(self.0) })
