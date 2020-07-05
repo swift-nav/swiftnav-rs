@@ -21,6 +21,7 @@ fn main() {
         // bindings for.
         .header(format!("{}/include/swiftnav/signal.h", dst.display()))
         .header(format!("{}/include/swiftnav/gnss_time.h", dst.display()))
+        .header(format!("{}/include/swiftnav/coord_system.h", dst.display()))
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
@@ -54,6 +55,11 @@ fn main() {
         .whitelist_function("sid_to_carr_freq")
         .whitelist_function("code_string_to_enum")
         .whitelist_function("code_to_string")
+        .whitelist_function("llhrad2deg")
+        .whitelist_function("llhdeg2rad")
+        .whitelist_function("wgsllh2ecef")
+        .whitelist_function("wgsecef2llh")
+        .whitelist_function("wgsecef2azel")
         // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.
