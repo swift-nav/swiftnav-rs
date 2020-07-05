@@ -1,15 +1,15 @@
 use crate::c_bindings;
 use std::marker::PhantomData;
 
-pub trait Angle { }
+pub trait Angle {}
 
 #[derive(Copy, Clone, Debug)]
-pub struct Degrees { }
-impl Angle for Degrees { }
+pub struct Degrees {}
+impl Angle for Degrees {}
 
 #[derive(Copy, Clone, Debug)]
-pub struct Radians { }
-impl Angle for Radians { }
+pub struct Radians {}
+impl Angle for Radians {}
 
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 pub struct LLH<T: Angle>([f64; 3], PhantomData<T>);
@@ -118,11 +118,12 @@ impl ECEF {
 
     pub fn get_azel_to(&self, point: &ECEF) -> AzimuthElevation {
         let mut azel = AzimuthElevation::new(0.0, 0.0);
-        unsafe { c_bindings::wgsecef2azel(point.as_ptr(), self.as_ptr(), &mut azel.az, &mut azel.el) };
+        unsafe {
+            c_bindings::wgsecef2azel(point.as_ptr(), self.as_ptr(), &mut azel.az, &mut azel.el)
+        };
         azel
     }
 }
-
 
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 pub struct AzimuthElevation {
@@ -132,7 +133,7 @@ pub struct AzimuthElevation {
 
 impl AzimuthElevation {
     pub fn new(az: f64, el: f64) -> AzimuthElevation {
-        AzimuthElevation{az, el}
+        AzimuthElevation { az, el }
     }
 }
 
@@ -166,15 +167,15 @@ mod tests {
     }
 
     const LLH_VALUES: [LLH<Radians>; 10] = [
-        LLH::<Radians>([0.0, 0.0, 0.0], PhantomData),          /* On the Equator and Prime Meridian. */
-        LLH::<Radians>([0.0, 180.0 * D2R, 0.0], PhantomData),  /* On the Equator. */
-        LLH::<Radians>([0.0, 90.0 * D2R, 0.0], PhantomData),   /* On the Equator. */
-        LLH::<Radians>([0.0, -90.0 * D2R, 0.0], PhantomData),  /* On the Equator. */
-        LLH::<Radians>([90.0 * D2R, 0.0, 0.0], PhantomData),   /* North pole. */
-        LLH::<Radians>([-90.0 * D2R, 0.0, 0.0], PhantomData),  /* South pole. */
-        LLH::<Radians>([90.0 * D2R, 0.0, 22.0], PhantomData),  /* 22m above the north pole. */
+        LLH::<Radians>([0.0, 0.0, 0.0], PhantomData), /* On the Equator and Prime Meridian. */
+        LLH::<Radians>([0.0, 180.0 * D2R, 0.0], PhantomData), /* On the Equator. */
+        LLH::<Radians>([0.0, 90.0 * D2R, 0.0], PhantomData), /* On the Equator. */
+        LLH::<Radians>([0.0, -90.0 * D2R, 0.0], PhantomData), /* On the Equator. */
+        LLH::<Radians>([90.0 * D2R, 0.0, 0.0], PhantomData), /* North pole. */
+        LLH::<Radians>([-90.0 * D2R, 0.0, 0.0], PhantomData), /* South pole. */
+        LLH::<Radians>([90.0 * D2R, 0.0, 22.0], PhantomData), /* 22m above the north pole. */
         LLH::<Radians>([-90.0 * D2R, 0.0, 22.0], PhantomData), /* 22m above the south pole. */
-        LLH::<Radians>([0.0, 0.0, 22.0], PhantomData),         /* 22m above the Equator and Prime Meridian. */
+        LLH::<Radians>([0.0, 0.0, 22.0], PhantomData), /* 22m above the Equator and Prime Meridian. */
         LLH::<Radians>([0.0, 180.0 * D2R, 22.0], PhantomData), /* 22m above the Equator. */
     ];
 
