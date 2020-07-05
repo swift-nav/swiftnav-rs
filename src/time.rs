@@ -1,21 +1,21 @@
-use crate::c_bindings::gnss_time as gnss_time_c;
+use crate::c_bindings;
 use std::fmt;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::time::Duration;
 
-pub const MINUTE: Duration = Duration::from_secs(gnss_time_c::MINUTE_SECS as u64);
-pub const HOUR: Duration = Duration::from_secs(gnss_time_c::HOUR_SECS as u64);
-pub const DAY: Duration = Duration::from_secs(gnss_time_c::DAY_SECS as u64);
-pub const WEEK: Duration = Duration::from_secs(gnss_time_c::WEEK_SECS as u64);
+pub const MINUTE: Duration = Duration::from_secs(c_bindings::MINUTE_SECS as u64);
+pub const HOUR: Duration = Duration::from_secs(c_bindings::HOUR_SECS as u64);
+pub const DAY: Duration = Duration::from_secs(c_bindings::DAY_SECS as u64);
+pub const WEEK: Duration = Duration::from_secs(c_bindings::WEEK_SECS as u64);
 
 #[derive(Copy, Clone)]
-pub struct GpsTime(gnss_time_c::gps_time_t);
+pub struct GpsTime(c_bindings::gps_time_t);
 
 impl GpsTime {
-    const JIFFY: f64 = gnss_time_c::FLOAT_EQUALITY_EPS;
+    const JIFFY: f64 = c_bindings::FLOAT_EQUALITY_EPS;
 
     pub fn new_unchecked(wn: i16, tow: f64) -> GpsTime {
-        GpsTime(gnss_time_c::gps_time_t { wn, tow })
+        GpsTime(c_bindings::gps_time_t { wn, tow })
     }
 
     pub fn new(wn: i16, tow: f64) -> Option<GpsTime> {
@@ -37,23 +37,23 @@ impl GpsTime {
     }
 
     pub fn is_valid(&self) -> bool {
-        unsafe { gnss_time_c::gps_time_valid(&self.0) }
+        unsafe { c_bindings::gps_time_valid(&self.0) }
     }
 
     pub fn add_duration(&mut self, duration: &Duration) {
         unsafe {
-            gnss_time_c::add_secs(&mut self.0, duration.as_secs_f64());
+            c_bindings::add_secs(&mut self.0, duration.as_secs_f64());
         }
     }
 
     pub fn subtract_duration(&mut self, duration: &Duration) {
         unsafe {
-            gnss_time_c::add_secs(&mut self.0, -duration.as_secs_f64());
+            c_bindings::add_secs(&mut self.0, -duration.as_secs_f64());
         }
     }
 
     pub fn diff(&self, other: &Self) -> f64 {
-        unsafe { gnss_time_c::gpsdifftime(&self.0, &other.0) }
+        unsafe { c_bindings::gpsdifftime(&self.0, &other.0) }
     }
 }
 
