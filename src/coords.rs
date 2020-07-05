@@ -3,11 +3,9 @@ use std::marker::PhantomData;
 
 pub trait Angle {}
 
-#[derive(Copy, Clone, Debug)]
 pub struct Degrees {}
 impl Angle for Degrees {}
 
-#[derive(Copy, Clone, Debug)]
 pub struct Radians {}
 impl Angle for Radians {}
 
@@ -64,6 +62,10 @@ impl LLH<Degrees> {
         unsafe { c_bindings::llhdeg2rad(self.as_ptr(), rad.as_mut_ptr()) };
         rad
     }
+
+    pub fn to_ecef(&self) -> ECEF {
+        self.to_radians().to_ecef()
+    }
 }
 
 impl<T: Angle> AsRef<[f64; 3]> for LLH<T> {
@@ -116,12 +118,24 @@ impl ECEF {
         llh
     }
 
-    pub fn get_azel_to(&self, point: &ECEF) -> AzimuthElevation {
+    pub fn get_azel_of(&self, point: &ECEF) -> AzimuthElevation {
         let mut azel = AzimuthElevation::new(0.0, 0.0);
         unsafe {
             c_bindings::wgsecef2azel(point.as_ptr(), self.as_ptr(), &mut azel.az, &mut azel.el)
         };
         azel
+    }
+}
+
+impl AsRef<[f64; 3]> for ECEF {
+    fn as_ref(&self) -> &[f64; 3] {
+        &self.0
+    }
+}
+
+impl AsMut<[f64; 3]> for ECEF {
+    fn as_mut(&mut self) -> &mut [f64; 3] {
+        &mut self.0
     }
 }
 
