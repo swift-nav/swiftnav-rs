@@ -1,3 +1,12 @@
+//! GNSS time handling
+//!
+//! GPS time counts the number of seconds since Midnight Jan 8th 1980 UTC. Leap
+//! seconds are not counted, so there is an offset between UTC and GPS time. GPS
+//! time is usually represented as a week number, counting the number of elapsed
+//! weeks since the start of GPS time, and a time of week counting the number of
+//! seconds since the beginning of the week. In GPS time the week begins at
+//! midnight on Sunday.
+
 use crate::c_bindings;
 use std::fmt;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
@@ -8,16 +17,17 @@ pub const HOUR: Duration = Duration::from_secs(c_bindings::HOUR_SECS as u64);
 pub const DAY: Duration = Duration::from_secs(c_bindings::DAY_SECS as u64);
 pub const WEEK: Duration = Duration::from_secs(c_bindings::WEEK_SECS as u64);
 
+/// Representation of GPS Time
 #[derive(Copy, Clone)]
 pub struct GpsTime(c_bindings::gps_time_t);
 
 impl GpsTime {
     const JIFFY: f64 = c_bindings::FLOAT_EQUALITY_EPS;
 
-    pub fn new_unchecked(wn: i16, tow: f64) -> GpsTime {
-        GpsTime(c_bindings::gps_time_t { wn, tow })
-    }
-
+    /// Makes a new GPS time object and checks the validity of the given values.
+    ///
+    /// Invalid values include negative week values, negative, non-finite, or to
+    /// large time of week values.
     pub fn new(wn: i16, tow: f64) -> Option<GpsTime> {
         let time = GpsTime::new_unchecked(wn, tow);
 
@@ -28,30 +38,42 @@ impl GpsTime {
         }
     }
 
+    /// Makes a new GPS time object without checking the validity of the given
+    /// values.
+    pub fn new_unchecked(wn: i16, tow: f64) -> GpsTime {
+        GpsTime(c_bindings::gps_time_t { wn, tow })
+    }
+
+    /// Gets the week number
     pub fn wn(&self) -> i16 {
         self.0.wn
     }
 
+    /// Gets the time of week
     pub fn tow(&self) -> f64 {
         self.0.tow
     }
 
+    /// Checks if the stored time is valid
     pub fn is_valid(&self) -> bool {
         unsafe { c_bindings::gps_time_valid(&self.0) }
     }
 
+    /// Adds a duration to the time
     pub fn add_duration(&mut self, duration: &Duration) {
         unsafe {
             c_bindings::add_secs(&mut self.0, duration.as_secs_f64());
         }
     }
 
+    /// Subtracts a duration from the time
     pub fn subtract_duration(&mut self, duration: &Duration) {
         unsafe {
             c_bindings::add_secs(&mut self.0, -duration.as_secs_f64());
         }
     }
 
+    /// Gets the difference between this and another time value in seconds
     pub fn diff(&self, other: &Self) -> f64 {
         unsafe { c_bindings::gpsdifftime(&self.0, &other.0) }
     }
