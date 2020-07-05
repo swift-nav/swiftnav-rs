@@ -19,12 +19,8 @@ fn main() {
         .clang_args(include_args)
         // The input header we would like to generate
         // bindings for.
-        .header(format!("{}/include/{}", dst.display(), "swiftnav/signal.h"))
-        .header(format!(
-            "{}/include/{}",
-            dst.display(),
-            "swiftnav/gnss_time.h"
-        ))
+        .header(format!("{}/include/swiftnav/signal.h", dst.display()))
+        .header(format!("{}/include/swiftnav/gnss_time.h", dst.display()))
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
