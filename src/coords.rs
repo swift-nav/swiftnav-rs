@@ -1,4 +1,4 @@
-//! Coordinate types and conversions
+//! Coordinates and conversions
 //!
 //! These four primary coordinates types are defined:
 //!  * [LLH](LLH) - Geodetic coordinates, Latitude Lontitude Height

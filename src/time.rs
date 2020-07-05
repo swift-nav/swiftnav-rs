@@ -1,4 +1,4 @@
-//! GNSS time handling
+//! Time handling
 //!
 //! GPS time counts the number of seconds since Midnight Jan 8th 1980 UTC. Leap
 //! seconds are not counted, so there is an offset between UTC and GPS time. GPS

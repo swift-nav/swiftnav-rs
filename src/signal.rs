@@ -1,8 +1,8 @@
-//! GNSS signal identifiers
+//! Signal identifiers
 //!
-//! Signals are specific to a satellite. A satellite is identified by it's
-//! assigned number and the constellation is belongs to. Each satellite can send
-//! out multiple signals.
+//! Signals are specific to a satellite and code combination. A satellite is
+//! identified by it's assigned number and the constellation it belongs to. Each
+//! satellite can send out multiple signals.
 
 use crate::c_bindings;
 use std::ffi;
