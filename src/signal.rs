@@ -1,248 +1,251 @@
-use crate::c_bindings::signal as signal_c;
+use crate::c_bindings;
 use std::ffi;
 use std::str::Utf8Error;
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
 #[repr(i32)]
 pub enum Constellation {
-    Gps = signal_c::constellation_e_CONSTELLATION_GPS,
-    Sbas = signal_c::constellation_e_CONSTELLATION_SBAS,
-    Glo = signal_c::constellation_e_CONSTELLATION_GLO,
-    Bds = signal_c::constellation_e_CONSTELLATION_BDS,
-    Qzs = signal_c::constellation_e_CONSTELLATION_QZS,
-    Gal = signal_c::constellation_e_CONSTELLATION_GAL,
+    Gps = c_bindings::constellation_e_CONSTELLATION_GPS,
+    Sbas = c_bindings::constellation_e_CONSTELLATION_SBAS,
+    Glo = c_bindings::constellation_e_CONSTELLATION_GLO,
+    Bds = c_bindings::constellation_e_CONSTELLATION_BDS,
+    Qzs = c_bindings::constellation_e_CONSTELLATION_QZS,
+    Gal = c_bindings::constellation_e_CONSTELLATION_GAL,
 }
 
 impl Constellation {
-    fn from_constellation_t(value: signal_c::constellation_t) -> Option<Constellation> {
+    fn from_constellation_t(value: c_bindings::constellation_t) -> Option<Constellation> {
         match value {
-            signal_c::constellation_e_CONSTELLATION_GPS => Some(Constellation::Gps),
-            signal_c::constellation_e_CONSTELLATION_SBAS => Some(Constellation::Sbas),
-            signal_c::constellation_e_CONSTELLATION_GLO => Some(Constellation::Glo),
-            signal_c::constellation_e_CONSTELLATION_BDS => Some(Constellation::Bds),
-            signal_c::constellation_e_CONSTELLATION_QZS => Some(Constellation::Qzs),
-            signal_c::constellation_e_CONSTELLATION_GAL => Some(Constellation::Gal),
-            signal_c::constellation_e_CONSTELLATION_INVALID
-            | signal_c::constellation_e_CONSTELLATION_COUNT
+            c_bindings::constellation_e_CONSTELLATION_GPS => Some(Constellation::Gps),
+            c_bindings::constellation_e_CONSTELLATION_SBAS => Some(Constellation::Sbas),
+            c_bindings::constellation_e_CONSTELLATION_GLO => Some(Constellation::Glo),
+            c_bindings::constellation_e_CONSTELLATION_BDS => Some(Constellation::Bds),
+            c_bindings::constellation_e_CONSTELLATION_QZS => Some(Constellation::Qzs),
+            c_bindings::constellation_e_CONSTELLATION_GAL => Some(Constellation::Gal),
+            c_bindings::constellation_e_CONSTELLATION_INVALID
+            | c_bindings::constellation_e_CONSTELLATION_COUNT
             | _ => None,
         }
     }
 
     pub fn sat_count(&self) -> u16 {
-        unsafe { signal_c::constellation_to_sat_count(*self as signal_c::constellation_t) }
+        unsafe { c_bindings::constellation_to_sat_count(*self as c_bindings::constellation_t) }
     }
 }
 
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
 #[repr(i32)]
 pub enum Code {
-    GpsL1ca = signal_c::code_e_CODE_GPS_L1CA, /* GPS L1CA: BPSK(1) */
-    GpsL2cm = signal_c::code_e_CODE_GPS_L2CM, /* GPS L2C: 2 x BPSK(0.5) */
-    SbasL1ca = signal_c::code_e_CODE_SBAS_L1CA, /* SBAS L1: BPSK(1) */
-    GloL1of = signal_c::code_e_CODE_GLO_L1OF, /* GLONASS L1OF: FDMA BPSK(0.5) */
-    GloL2of = signal_c::code_e_CODE_GLO_L2OF, /* GLONASS L2OF: FDMA BPSK(0.5) */
-    GpsL1p = signal_c::code_e_CODE_GPS_L1P,   /* GPS L1P(Y): encrypted BPSK(10) */
-    GpsL2p = signal_c::code_e_CODE_GPS_L2P,   /* GPS L2P(Y): encrypted BPSK(10) */
-    GpsL2cl = signal_c::code_e_CODE_GPS_L2CL,
-    GpsL2cx = signal_c::code_e_CODE_GPS_L2CX,
-    GpsL5i = signal_c::code_e_CODE_GPS_L5I, /* GPS L5: QPSK(10) at 1150*f0 */
-    GpsL5q = signal_c::code_e_CODE_GPS_L5Q,
-    GpsL5x = signal_c::code_e_CODE_GPS_L5X,
-    Bds2B1 = signal_c::code_e_CODE_BDS2_B1, /* BDS2 B1I: BPSK(2) at 1526*f0 */
-    Bds2B2 = signal_c::code_e_CODE_BDS2_B2, /* BDS2 B2I: BPSK(2) at 1180*f0 */
-    GalE1b = signal_c::code_e_CODE_GAL_E1B, /* Galileo E1: CASM CBOC(1,1) at 1540*f0 */
-    GalE1c = signal_c::code_e_CODE_GAL_E1C,
-    GalE1x = signal_c::code_e_CODE_GAL_E1X,
-    GalE6b = signal_c::code_e_CODE_GAL_E6B, /* Galileo E6: CASM BPSK(5) at 1250*f0 */
-    GalE6c = signal_c::code_e_CODE_GAL_E6C,
-    GalE6x = signal_c::code_e_CODE_GAL_E6X,
-    GalE7i = signal_c::code_e_CODE_GAL_E7I, /* Galileo E5b: QPSK(10) at 1180*f0 */
-    GalE7q = signal_c::code_e_CODE_GAL_E7Q,
-    GalE7x = signal_c::code_e_CODE_GAL_E7X,
-    GalE8i = signal_c::code_e_CODE_GAL_E8I, /* Galileo E5AltBOC(15,10) at 1165*f0 */
-    GalE8q = signal_c::code_e_CODE_GAL_E8Q,
-    GalE8x = signal_c::code_e_CODE_GAL_E8X,
-    GalE5i = signal_c::code_e_CODE_GAL_E5I, /* Galileo E5a: QPSK(10) at 1150*f0 */
-    GalE5q = signal_c::code_e_CODE_GAL_E5Q,
-    GalE5x = signal_c::code_e_CODE_GAL_E5X,
-    GloL1p = signal_c::code_e_CODE_GLO_L1P, /* GLONASS L1P: encrypted */
-    GloL2p = signal_c::code_e_CODE_GLO_L2P, /* GLONASS L2P: encrypted */
-    QzsL1ca = signal_c::code_e_CODE_QZS_L1CA, /* QZSS L1CA: BPSK(1) at 1540*f0 */
-    QzsL1ci = signal_c::code_e_CODE_QZS_L1CI, /* QZSS L1C: TM-BOC at 1540*f0 */
-    QzsL1cq = signal_c::code_e_CODE_QZS_L1CQ,
-    QzsL1cx = signal_c::code_e_CODE_QZS_L1CX,
-    QzsL2cm = signal_c::code_e_CODE_QZS_L2CM, /* QZSS L2C: 2 x BPSK(0.5) at 1200*f0 */
-    QzsL2cl = signal_c::code_e_CODE_QZS_L2CL,
-    QzsL2cx = signal_c::code_e_CODE_QZS_L2CX,
-    QzsL5i = signal_c::code_e_CODE_QZS_L5I, /* QZSS L5: QPSK(10) at 1150*f0 */
-    QzsL5q = signal_c::code_e_CODE_QZS_L5Q,
-    QzsL5x = signal_c::code_e_CODE_QZS_L5X,
-    SbasL5i = signal_c::code_e_CODE_SBAS_L5I, /* SBAS L5: ? at 1150*f0 */
-    SbasL5q = signal_c::code_e_CODE_SBAS_L5Q,
-    SbasL5x = signal_c::code_e_CODE_SBAS_L5X,
-    Bds3B1ci = signal_c::code_e_CODE_BDS3_B1CI, /* BDS3 B1C: TM-BOC at 1540*f0 */
-    Bds3B1cq = signal_c::code_e_CODE_BDS3_B1CQ,
-    Bds3B1cx = signal_c::code_e_CODE_BDS3_B1CX,
-    Bds3B5i = signal_c::code_e_CODE_BDS3_B5I, /* BDS3 B2a: QPSK(10) at 1150*f0 */
-    Bds3B5q = signal_c::code_e_CODE_BDS3_B5Q,
-    Bds3B5x = signal_c::code_e_CODE_BDS3_B5X,
-    Bds3B7i = signal_c::code_e_CODE_BDS3_B7I, /* BDS3 B2b: QPSK(10) at 1180*f0 */
-    Bds3B7q = signal_c::code_e_CODE_BDS3_B7Q,
-    Bds3B7x = signal_c::code_e_CODE_BDS3_B7X,
-    Bds3B3i = signal_c::code_e_CODE_BDS3_B3I, /* BDS3 B3I: QPSK(10) at 1240*f0 */
-    Bds3B3q = signal_c::code_e_CODE_BDS3_B3Q,
-    Bds3B3x = signal_c::code_e_CODE_BDS3_B3X,
-    GpsL1ci = signal_c::code_e_CODE_GPS_L1CI, /* GPS L1C: TM-BOC at 1540*f0 */
-    GpsL1cq = signal_c::code_e_CODE_GPS_L1CQ,
-    GpsL1cx = signal_c::code_e_CODE_GPS_L1CX,
-    AuxGps = signal_c::code_e_CODE_AUX_GPS, /* Auxiliary antenna signals */
-    AuxSbas = signal_c::code_e_CODE_AUX_SBAS,
-    AuxGal = signal_c::code_e_CODE_AUX_GAL,
-    AuxQzs = signal_c::code_e_CODE_AUX_QZS,
-    AuxBds = signal_c::code_e_CODE_AUX_BDS,
+    GpsL1ca = c_bindings::code_e_CODE_GPS_L1CA, /* GPS L1CA: BPSK(1) */
+    GpsL2cm = c_bindings::code_e_CODE_GPS_L2CM, /* GPS L2C: 2 x BPSK(0.5) */
+    SbasL1ca = c_bindings::code_e_CODE_SBAS_L1CA, /* SBAS L1: BPSK(1) */
+    GloL1of = c_bindings::code_e_CODE_GLO_L1OF, /* GLONASS L1OF: FDMA BPSK(0.5) */
+    GloL2of = c_bindings::code_e_CODE_GLO_L2OF, /* GLONASS L2OF: FDMA BPSK(0.5) */
+    GpsL1p = c_bindings::code_e_CODE_GPS_L1P,   /* GPS L1P(Y): encrypted BPSK(10) */
+    GpsL2p = c_bindings::code_e_CODE_GPS_L2P,   /* GPS L2P(Y): encrypted BPSK(10) */
+    GpsL2cl = c_bindings::code_e_CODE_GPS_L2CL,
+    GpsL2cx = c_bindings::code_e_CODE_GPS_L2CX,
+    GpsL5i = c_bindings::code_e_CODE_GPS_L5I, /* GPS L5: QPSK(10) at 1150*f0 */
+    GpsL5q = c_bindings::code_e_CODE_GPS_L5Q,
+    GpsL5x = c_bindings::code_e_CODE_GPS_L5X,
+    Bds2B1 = c_bindings::code_e_CODE_BDS2_B1, /* BDS2 B1I: BPSK(2) at 1526*f0 */
+    Bds2B2 = c_bindings::code_e_CODE_BDS2_B2, /* BDS2 B2I: BPSK(2) at 1180*f0 */
+    GalE1b = c_bindings::code_e_CODE_GAL_E1B, /* Galileo E1: CASM CBOC(1,1) at 1540*f0 */
+    GalE1c = c_bindings::code_e_CODE_GAL_E1C,
+    GalE1x = c_bindings::code_e_CODE_GAL_E1X,
+    GalE6b = c_bindings::code_e_CODE_GAL_E6B, /* Galileo E6: CASM BPSK(5) at 1250*f0 */
+    GalE6c = c_bindings::code_e_CODE_GAL_E6C,
+    GalE6x = c_bindings::code_e_CODE_GAL_E6X,
+    GalE7i = c_bindings::code_e_CODE_GAL_E7I, /* Galileo E5b: QPSK(10) at 1180*f0 */
+    GalE7q = c_bindings::code_e_CODE_GAL_E7Q,
+    GalE7x = c_bindings::code_e_CODE_GAL_E7X,
+    GalE8i = c_bindings::code_e_CODE_GAL_E8I, /* Galileo E5AltBOC(15,10) at 1165*f0 */
+    GalE8q = c_bindings::code_e_CODE_GAL_E8Q,
+    GalE8x = c_bindings::code_e_CODE_GAL_E8X,
+    GalE5i = c_bindings::code_e_CODE_GAL_E5I, /* Galileo E5a: QPSK(10) at 1150*f0 */
+    GalE5q = c_bindings::code_e_CODE_GAL_E5Q,
+    GalE5x = c_bindings::code_e_CODE_GAL_E5X,
+    GloL1p = c_bindings::code_e_CODE_GLO_L1P, /* GLONASS L1P: encrypted */
+    GloL2p = c_bindings::code_e_CODE_GLO_L2P, /* GLONASS L2P: encrypted */
+    QzsL1ca = c_bindings::code_e_CODE_QZS_L1CA, /* QZSS L1CA: BPSK(1) at 1540*f0 */
+    QzsL1ci = c_bindings::code_e_CODE_QZS_L1CI, /* QZSS L1C: TM-BOC at 1540*f0 */
+    QzsL1cq = c_bindings::code_e_CODE_QZS_L1CQ,
+    QzsL1cx = c_bindings::code_e_CODE_QZS_L1CX,
+    QzsL2cm = c_bindings::code_e_CODE_QZS_L2CM, /* QZSS L2C: 2 x BPSK(0.5) at 1200*f0 */
+    QzsL2cl = c_bindings::code_e_CODE_QZS_L2CL,
+    QzsL2cx = c_bindings::code_e_CODE_QZS_L2CX,
+    QzsL5i = c_bindings::code_e_CODE_QZS_L5I, /* QZSS L5: QPSK(10) at 1150*f0 */
+    QzsL5q = c_bindings::code_e_CODE_QZS_L5Q,
+    QzsL5x = c_bindings::code_e_CODE_QZS_L5X,
+    SbasL5i = c_bindings::code_e_CODE_SBAS_L5I, /* SBAS L5: ? at 1150*f0 */
+    SbasL5q = c_bindings::code_e_CODE_SBAS_L5Q,
+    SbasL5x = c_bindings::code_e_CODE_SBAS_L5X,
+    Bds3B1ci = c_bindings::code_e_CODE_BDS3_B1CI, /* BDS3 B1C: TM-BOC at 1540*f0 */
+    Bds3B1cq = c_bindings::code_e_CODE_BDS3_B1CQ,
+    Bds3B1cx = c_bindings::code_e_CODE_BDS3_B1CX,
+    Bds3B5i = c_bindings::code_e_CODE_BDS3_B5I, /* BDS3 B2a: QPSK(10) at 1150*f0 */
+    Bds3B5q = c_bindings::code_e_CODE_BDS3_B5Q,
+    Bds3B5x = c_bindings::code_e_CODE_BDS3_B5X,
+    Bds3B7i = c_bindings::code_e_CODE_BDS3_B7I, /* BDS3 B2b: QPSK(10) at 1180*f0 */
+    Bds3B7q = c_bindings::code_e_CODE_BDS3_B7Q,
+    Bds3B7x = c_bindings::code_e_CODE_BDS3_B7X,
+    Bds3B3i = c_bindings::code_e_CODE_BDS3_B3I, /* BDS3 B3I: QPSK(10) at 1240*f0 */
+    Bds3B3q = c_bindings::code_e_CODE_BDS3_B3Q,
+    Bds3B3x = c_bindings::code_e_CODE_BDS3_B3X,
+    GpsL1ci = c_bindings::code_e_CODE_GPS_L1CI, /* GPS L1C: TM-BOC at 1540*f0 */
+    GpsL1cq = c_bindings::code_e_CODE_GPS_L1CQ,
+    GpsL1cx = c_bindings::code_e_CODE_GPS_L1CX,
+    AuxGps = c_bindings::code_e_CODE_AUX_GPS, /* Auxiliary antenna signals */
+    AuxSbas = c_bindings::code_e_CODE_AUX_SBAS,
+    AuxGal = c_bindings::code_e_CODE_AUX_GAL,
+    AuxQzs = c_bindings::code_e_CODE_AUX_QZS,
+    AuxBds = c_bindings::code_e_CODE_AUX_BDS,
 }
 
 impl Code {
-    fn from_code_t(value: signal_c::code_t) -> Option<Code> {
+    fn from_code_t(value: c_bindings::code_t) -> Option<Code> {
         match value {
-            signal_c::code_e_CODE_GPS_L1CA => Some(Code::GpsL1ca),
-            signal_c::code_e_CODE_GPS_L2CM => Some(Code::GpsL2cm),
-            signal_c::code_e_CODE_SBAS_L1CA => Some(Code::SbasL1ca),
-            signal_c::code_e_CODE_GLO_L1OF => Some(Code::GloL1of),
-            signal_c::code_e_CODE_GLO_L2OF => Some(Code::GloL2of),
-            signal_c::code_e_CODE_GPS_L1P => Some(Code::GpsL1p),
-            signal_c::code_e_CODE_GPS_L2P => Some(Code::GpsL2p),
-            signal_c::code_e_CODE_GPS_L2CL => Some(Code::GpsL2cl),
-            signal_c::code_e_CODE_GPS_L2CX => Some(Code::GpsL2cx),
-            signal_c::code_e_CODE_GPS_L5I => Some(Code::GpsL5i),
-            signal_c::code_e_CODE_GPS_L5Q => Some(Code::GpsL5q),
-            signal_c::code_e_CODE_GPS_L5X => Some(Code::GpsL5x),
-            signal_c::code_e_CODE_BDS2_B1 => Some(Code::Bds2B1),
-            signal_c::code_e_CODE_BDS2_B2 => Some(Code::Bds2B2),
-            signal_c::code_e_CODE_GAL_E1B => Some(Code::GalE1b),
-            signal_c::code_e_CODE_GAL_E1C => Some(Code::GalE1c),
-            signal_c::code_e_CODE_GAL_E1X => Some(Code::GalE1x),
-            signal_c::code_e_CODE_GAL_E6B => Some(Code::GalE6b),
-            signal_c::code_e_CODE_GAL_E6C => Some(Code::GalE6c),
-            signal_c::code_e_CODE_GAL_E6X => Some(Code::GalE6x),
-            signal_c::code_e_CODE_GAL_E7I => Some(Code::GalE7i),
-            signal_c::code_e_CODE_GAL_E7Q => Some(Code::GalE7q),
-            signal_c::code_e_CODE_GAL_E7X => Some(Code::GalE7x),
-            signal_c::code_e_CODE_GAL_E8I => Some(Code::GalE8i),
-            signal_c::code_e_CODE_GAL_E8Q => Some(Code::GalE8q),
-            signal_c::code_e_CODE_GAL_E8X => Some(Code::GalE8x),
-            signal_c::code_e_CODE_GAL_E5I => Some(Code::GalE5i),
-            signal_c::code_e_CODE_GAL_E5Q => Some(Code::GalE5q),
-            signal_c::code_e_CODE_GAL_E5X => Some(Code::GalE5x),
-            signal_c::code_e_CODE_GLO_L1P => Some(Code::GloL1p),
-            signal_c::code_e_CODE_GLO_L2P => Some(Code::GloL2p),
-            signal_c::code_e_CODE_QZS_L1CA => Some(Code::QzsL1ca),
-            signal_c::code_e_CODE_QZS_L1CI => Some(Code::QzsL1ci),
-            signal_c::code_e_CODE_QZS_L1CQ => Some(Code::QzsL1cq),
-            signal_c::code_e_CODE_QZS_L1CX => Some(Code::QzsL1cx),
-            signal_c::code_e_CODE_QZS_L2CM => Some(Code::QzsL2cm),
-            signal_c::code_e_CODE_QZS_L2CL => Some(Code::QzsL2cl),
-            signal_c::code_e_CODE_QZS_L2CX => Some(Code::QzsL2cx),
-            signal_c::code_e_CODE_QZS_L5I => Some(Code::QzsL5i),
-            signal_c::code_e_CODE_QZS_L5Q => Some(Code::QzsL5q),
-            signal_c::code_e_CODE_QZS_L5X => Some(Code::QzsL5x),
-            signal_c::code_e_CODE_SBAS_L5I => Some(Code::SbasL5i),
-            signal_c::code_e_CODE_SBAS_L5Q => Some(Code::SbasL5q),
-            signal_c::code_e_CODE_SBAS_L5X => Some(Code::SbasL5x),
-            signal_c::code_e_CODE_BDS3_B1CI => Some(Code::Bds3B1ci),
-            signal_c::code_e_CODE_BDS3_B1CQ => Some(Code::Bds3B1cq),
-            signal_c::code_e_CODE_BDS3_B1CX => Some(Code::Bds3B1cx),
-            signal_c::code_e_CODE_BDS3_B5I => Some(Code::Bds3B5i),
-            signal_c::code_e_CODE_BDS3_B5Q => Some(Code::Bds3B5q),
-            signal_c::code_e_CODE_BDS3_B5X => Some(Code::Bds3B5x),
-            signal_c::code_e_CODE_BDS3_B7I => Some(Code::Bds3B7i),
-            signal_c::code_e_CODE_BDS3_B7Q => Some(Code::Bds3B7q),
-            signal_c::code_e_CODE_BDS3_B7X => Some(Code::Bds3B7x),
-            signal_c::code_e_CODE_BDS3_B3I => Some(Code::Bds3B3i),
-            signal_c::code_e_CODE_BDS3_B3Q => Some(Code::Bds3B3q),
-            signal_c::code_e_CODE_BDS3_B3X => Some(Code::Bds3B3x),
-            signal_c::code_e_CODE_GPS_L1CI => Some(Code::GpsL1ci),
-            signal_c::code_e_CODE_GPS_L1CQ => Some(Code::GpsL1cq),
-            signal_c::code_e_CODE_GPS_L1CX => Some(Code::GpsL1cx),
-            signal_c::code_e_CODE_AUX_GPS => Some(Code::AuxGps),
-            signal_c::code_e_CODE_AUX_SBAS => Some(Code::AuxSbas),
-            signal_c::code_e_CODE_AUX_GAL => Some(Code::AuxGal),
-            signal_c::code_e_CODE_AUX_QZS => Some(Code::AuxQzs),
-            signal_c::code_e_CODE_AUX_BDS => Some(Code::AuxBds),
-            signal_c::code_e_CODE_INVALID | signal_c::code_e_CODE_COUNT | _ => None,
+            c_bindings::code_e_CODE_GPS_L1CA => Some(Code::GpsL1ca),
+            c_bindings::code_e_CODE_GPS_L2CM => Some(Code::GpsL2cm),
+            c_bindings::code_e_CODE_SBAS_L1CA => Some(Code::SbasL1ca),
+            c_bindings::code_e_CODE_GLO_L1OF => Some(Code::GloL1of),
+            c_bindings::code_e_CODE_GLO_L2OF => Some(Code::GloL2of),
+            c_bindings::code_e_CODE_GPS_L1P => Some(Code::GpsL1p),
+            c_bindings::code_e_CODE_GPS_L2P => Some(Code::GpsL2p),
+            c_bindings::code_e_CODE_GPS_L2CL => Some(Code::GpsL2cl),
+            c_bindings::code_e_CODE_GPS_L2CX => Some(Code::GpsL2cx),
+            c_bindings::code_e_CODE_GPS_L5I => Some(Code::GpsL5i),
+            c_bindings::code_e_CODE_GPS_L5Q => Some(Code::GpsL5q),
+            c_bindings::code_e_CODE_GPS_L5X => Some(Code::GpsL5x),
+            c_bindings::code_e_CODE_BDS2_B1 => Some(Code::Bds2B1),
+            c_bindings::code_e_CODE_BDS2_B2 => Some(Code::Bds2B2),
+            c_bindings::code_e_CODE_GAL_E1B => Some(Code::GalE1b),
+            c_bindings::code_e_CODE_GAL_E1C => Some(Code::GalE1c),
+            c_bindings::code_e_CODE_GAL_E1X => Some(Code::GalE1x),
+            c_bindings::code_e_CODE_GAL_E6B => Some(Code::GalE6b),
+            c_bindings::code_e_CODE_GAL_E6C => Some(Code::GalE6c),
+            c_bindings::code_e_CODE_GAL_E6X => Some(Code::GalE6x),
+            c_bindings::code_e_CODE_GAL_E7I => Some(Code::GalE7i),
+            c_bindings::code_e_CODE_GAL_E7Q => Some(Code::GalE7q),
+            c_bindings::code_e_CODE_GAL_E7X => Some(Code::GalE7x),
+            c_bindings::code_e_CODE_GAL_E8I => Some(Code::GalE8i),
+            c_bindings::code_e_CODE_GAL_E8Q => Some(Code::GalE8q),
+            c_bindings::code_e_CODE_GAL_E8X => Some(Code::GalE8x),
+            c_bindings::code_e_CODE_GAL_E5I => Some(Code::GalE5i),
+            c_bindings::code_e_CODE_GAL_E5Q => Some(Code::GalE5q),
+            c_bindings::code_e_CODE_GAL_E5X => Some(Code::GalE5x),
+            c_bindings::code_e_CODE_GLO_L1P => Some(Code::GloL1p),
+            c_bindings::code_e_CODE_GLO_L2P => Some(Code::GloL2p),
+            c_bindings::code_e_CODE_QZS_L1CA => Some(Code::QzsL1ca),
+            c_bindings::code_e_CODE_QZS_L1CI => Some(Code::QzsL1ci),
+            c_bindings::code_e_CODE_QZS_L1CQ => Some(Code::QzsL1cq),
+            c_bindings::code_e_CODE_QZS_L1CX => Some(Code::QzsL1cx),
+            c_bindings::code_e_CODE_QZS_L2CM => Some(Code::QzsL2cm),
+            c_bindings::code_e_CODE_QZS_L2CL => Some(Code::QzsL2cl),
+            c_bindings::code_e_CODE_QZS_L2CX => Some(Code::QzsL2cx),
+            c_bindings::code_e_CODE_QZS_L5I => Some(Code::QzsL5i),
+            c_bindings::code_e_CODE_QZS_L5Q => Some(Code::QzsL5q),
+            c_bindings::code_e_CODE_QZS_L5X => Some(Code::QzsL5x),
+            c_bindings::code_e_CODE_SBAS_L5I => Some(Code::SbasL5i),
+            c_bindings::code_e_CODE_SBAS_L5Q => Some(Code::SbasL5q),
+            c_bindings::code_e_CODE_SBAS_L5X => Some(Code::SbasL5x),
+            c_bindings::code_e_CODE_BDS3_B1CI => Some(Code::Bds3B1ci),
+            c_bindings::code_e_CODE_BDS3_B1CQ => Some(Code::Bds3B1cq),
+            c_bindings::code_e_CODE_BDS3_B1CX => Some(Code::Bds3B1cx),
+            c_bindings::code_e_CODE_BDS3_B5I => Some(Code::Bds3B5i),
+            c_bindings::code_e_CODE_BDS3_B5Q => Some(Code::Bds3B5q),
+            c_bindings::code_e_CODE_BDS3_B5X => Some(Code::Bds3B5x),
+            c_bindings::code_e_CODE_BDS3_B7I => Some(Code::Bds3B7i),
+            c_bindings::code_e_CODE_BDS3_B7Q => Some(Code::Bds3B7q),
+            c_bindings::code_e_CODE_BDS3_B7X => Some(Code::Bds3B7x),
+            c_bindings::code_e_CODE_BDS3_B3I => Some(Code::Bds3B3i),
+            c_bindings::code_e_CODE_BDS3_B3Q => Some(Code::Bds3B3q),
+            c_bindings::code_e_CODE_BDS3_B3X => Some(Code::Bds3B3x),
+            c_bindings::code_e_CODE_GPS_L1CI => Some(Code::GpsL1ci),
+            c_bindings::code_e_CODE_GPS_L1CQ => Some(Code::GpsL1cq),
+            c_bindings::code_e_CODE_GPS_L1CX => Some(Code::GpsL1cx),
+            c_bindings::code_e_CODE_AUX_GPS => Some(Code::AuxGps),
+            c_bindings::code_e_CODE_AUX_SBAS => Some(Code::AuxSbas),
+            c_bindings::code_e_CODE_AUX_GAL => Some(Code::AuxGal),
+            c_bindings::code_e_CODE_AUX_QZS => Some(Code::AuxQzs),
+            c_bindings::code_e_CODE_AUX_BDS => Some(Code::AuxBds),
+            c_bindings::code_e_CODE_INVALID | c_bindings::code_e_CODE_COUNT | _ => None,
         }
     }
 
     pub fn from_str(s: &ffi::CStr) -> Option<Code> {
-        Self::from_code_t(unsafe { signal_c::code_string_to_enum(s.as_ptr()) })
+        Self::from_code_t(unsafe { c_bindings::code_string_to_enum(s.as_ptr()) })
     }
 
     pub fn to_string(&self) -> Result<String, Utf8Error> {
-        let c_str =
-            unsafe { ffi::CStr::from_ptr(signal_c::code_to_string(*self as signal_c::code_t)) };
+        let c_str = unsafe { ffi::CStr::from_ptr(c_bindings::code_to_string(self.to_code_t())) };
 
         Ok(c_str.to_str()?.to_owned())
     }
 
     pub fn to_constellation(&self) -> Constellation {
         Constellation::from_constellation_t(unsafe {
-            signal_c::code_to_constellation(*self as signal_c::code_t)
+            c_bindings::code_to_constellation(self.to_code_t())
         })
         .unwrap()
     }
 
-    pub fn signal_count(&self) -> u16 {
-        unsafe { signal_c::code_to_sig_count(*self as signal_c::code_t) }
+    pub(crate) fn to_code_t(&self) -> c_bindings::code_t {
+        *self as c_bindings::code_t
+    }
+
+    pub fn c_bindingsount(&self) -> u16 {
+        unsafe { c_bindings::code_to_sig_count(self.to_code_t()) }
     }
 
     pub fn chip_count(&self) -> u32 {
-        unsafe { signal_c::code_to_chip_count(*self as signal_c::code_t) }
+        unsafe { c_bindings::code_to_chip_count(self.to_code_t()) }
     }
 
     pub fn chip_rate(&self) -> f64 {
-        unsafe { signal_c::code_to_chip_rate(*self as signal_c::code_t) }
+        unsafe { c_bindings::code_to_chip_rate(self.to_code_t()) }
     }
 
     pub fn is_gps(&self) -> bool {
-        unsafe { signal_c::is_gps(*self as signal_c::code_t) }
+        unsafe { c_bindings::is_gps(self.to_code_t()) }
     }
 
     pub fn is_sbas(&self) -> bool {
-        unsafe { signal_c::is_sbas(*self as signal_c::code_t) }
+        unsafe { c_bindings::is_sbas(self.to_code_t()) }
     }
 
     pub fn is_glo(&self) -> bool {
-        unsafe { signal_c::is_glo(*self as signal_c::code_t) }
+        unsafe { c_bindings::is_glo(self.to_code_t()) }
     }
 
     pub fn is_bds2(&self) -> bool {
-        unsafe { signal_c::is_bds2(*self as signal_c::code_t) }
+        unsafe { c_bindings::is_bds2(self.to_code_t()) }
     }
 
     pub fn is_gal(&self) -> bool {
-        unsafe { signal_c::is_gal(*self as signal_c::code_t) }
+        unsafe { c_bindings::is_gal(self.to_code_t()) }
     }
 
     pub fn is_qzss(&self) -> bool {
-        unsafe { signal_c::is_qzss(*self as signal_c::code_t) }
+        unsafe { c_bindings::is_qzss(self.to_code_t()) }
     }
 }
 
-pub struct GnssSignal(signal_c::gnss_signal_t);
+pub struct GnssSignal(c_bindings::gnss_signal_t);
 
 impl GnssSignal {
     pub fn new(sat: u16, code: Code) -> GnssSignal {
-        let code = code as signal_c::code_t;
-        GnssSignal(signal_c::gnss_signal_t { sat, code })
+        let code = code as c_bindings::code_t;
+        GnssSignal(c_bindings::gnss_signal_t { sat, code })
     }
 
     pub fn to_constellation(&self) -> Constellation {
-        Constellation::from_constellation_t(unsafe { signal_c::sid_to_constellation(self.0) })
+        Constellation::from_constellation_t(unsafe { c_bindings::sid_to_constellation(self.0) })
             .unwrap()
     }
 
     pub fn carrier_frequency(&self) -> f64 {
-        unsafe { signal_c::sid_to_carr_freq(self.0) }
+        unsafe { c_bindings::sid_to_carr_freq(self.0) }
     }
 }
 

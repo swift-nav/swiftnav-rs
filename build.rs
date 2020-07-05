@@ -4,20 +4,33 @@ use cmake::Config;
 use std::env;
 use std::path::PathBuf;
 
-fn make_builder<T: std::fmt::Display>(c_lib_path: &T, header: &str) -> bindgen::Builder {
-    let include_args = vec!["-isystem".to_string(), format!("{}/include/", c_lib_path)].into_iter();
-    bindgen::Builder::default()
+fn main() {
+    let dst = Config::new("third-party/libswiftnav/").build();
+
+    println!("cargo:rustc-link-search=native={}/lib/", dst.display());
+    println!("cargo:rustc-link-lib=static=swiftnav");
+
+    let include_args = vec![
+        "-isystem".to_string(),
+        format!("{}/include/", dst.display()),
+    ]
+    .into_iter();
+    let bindings = bindgen::Builder::default()
         .clang_args(include_args)
         // The input header we would like to generate
         // bindings for.
-        .header(format!("{}/include/{}", c_lib_path, header))
+        .header(format!("{}/include/{}", dst.display(), "swiftnav/signal.h"))
+        .header(format!(
+            "{}/include/{}",
+            dst.display(),
+            "swiftnav/gnss_time.h"
+        ))
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
-}
-
-fn make_gnss_time_bindings<T: std::fmt::Display>(c_lib_path: &T) -> bindgen::Bindings {
-    make_builder(c_lib_path, "swiftnav/gnss_time.h")
+        .blacklist_type("u8")
+        .blacklist_type("u16")
+        .blacklist_type("u32")
         .whitelist_type("gps_time_t")
         .whitelist_function("gpsdifftime")
         .whitelist_function("gps_time_valid")
@@ -27,16 +40,6 @@ fn make_gnss_time_bindings<T: std::fmt::Display>(c_lib_path: &T) -> bindgen::Bin
         .whitelist_var("HOUR_SECS")
         .whitelist_var("DAY_SECS")
         .whitelist_var("WEEK_SECS")
-        // Finish the builder and generate the bindings.
-        .generate()
-        // Unwrap the Result and panic on failure.
-        .expect("Unable to generate bindings")
-}
-
-fn make_signal_bindings<T: std::fmt::Display>(c_lib_path: &T) -> bindgen::Bindings {
-    make_builder(c_lib_path, "swiftnav/signal.h")
-        .blacklist_type("u16")
-        .blacklist_type("u32")
         .whitelist_type("constellation_t")
         .whitelist_type("code_t")
         .whitelist_type("gnss_signal_t")
@@ -58,27 +61,11 @@ fn make_signal_bindings<T: std::fmt::Display>(c_lib_path: &T) -> bindgen::Bindin
         // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.
-        .expect("Unable to generate bindings")
-}
-
-fn main() {
-    let dst = Config::new("third-party/libswiftnav/").build();
-
-    // Tell cargo to tell rustc to link the system bzip2
-    // shared library.
-    //println!("cargo:rustc-link-lib=bz2");
-    println!("cargo:rustc-link-search=native={}/lib/", dst.display());
-    println!("cargo:rustc-link-lib=static=swiftnav");
-
-    let gnss_time_bindings = make_gnss_time_bindings(&dst.display());
-    let signal_bindings = make_signal_bindings(&dst.display());
+        .expect("Unable to generate bindings");
 
     // Write the bindings
     let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
-    gnss_time_bindings
-        .write_to_file(out_path.join("gnss_time_bindings.rs"))
-        .expect("Couldn't write bindings!");
-    signal_bindings
-        .write_to_file(out_path.join("signal_bindings.rs"))
+    bindings
+        .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
 }
