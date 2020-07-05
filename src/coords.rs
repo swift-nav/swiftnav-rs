@@ -1,13 +1,3 @@
-// void llhrad2deg(const double llh_rad[3], double llh_deg[3]);
-// void llhdeg2rad(const double llh_deg[3], double llh_rad[3]);
-// void wgsllh2ecef(const double llh[3], double ecef[3]);
-// void wgsecef2llh(const double ecef[3], double llh[3]);
-// void wgsecef2ned(const double ecef[3], const double ref_ecef[3], double ned[3]);
-// void wgsecef2ned_d(const double ecef[3], const double ref_ecef[3], double ned[3]);
-// void wgsned2ecef(const double ned[3], const double ref_ecef[3], double ecef[3]);
-// void wgsned2ecef_d(const double ned[3], const double ref_ecef[3], double ecef[3]);
-// void wgsecef2azel(const double ecef[3], const double ref_ecef[3], double* azimuth, double* elevation);
-
 use crate::c_bindings;
 use std::marker::PhantomData;
 
@@ -21,7 +11,7 @@ impl Angle for Degrees { }
 pub struct Radians { }
 impl Angle for Radians { }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 pub struct LLH<T: Angle>([f64; 3], PhantomData<T>);
 
 impl<T: Angle> LLH<T> {
@@ -88,7 +78,7 @@ impl<T: Angle> AsMut<[f64; 3]> for LLH<T> {
     }
 }
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 pub struct ECEF([f64; 3]);
 
 impl ECEF {
@@ -126,15 +116,15 @@ impl ECEF {
         llh
     }
 
-    pub fn to_azel(&self, ref_point: &ECEF) -> AzimuthElevation {
+    pub fn get_azel_to(&self, point: &ECEF) -> AzimuthElevation {
         let mut azel = AzimuthElevation::new(0.0, 0.0);
-        unsafe { c_bindings::wgsecef2azel(self.as_ptr(), ref_point.as_ptr(), &mut azel.az, &mut azel.el) };
+        unsafe { c_bindings::wgsecef2azel(point.as_ptr(), self.as_ptr(), &mut azel.az, &mut azel.el) };
         azel
     }
 }
 
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 pub struct AzimuthElevation {
     pub az: f64,
     pub el: f64,
