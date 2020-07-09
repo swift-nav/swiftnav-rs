@@ -1,14 +1,58 @@
+//! Coordinates and conversions
+//!
+//! These four primary coordinates types are defined:
+//!  * [LLH](LLH) - Geodetic coordinates, Latitude Lontitude Height
+//!  * [ECEF](ECEF) - Cartesian coordinates, Earth Centered, Earth Fixed
+//!  * NED - Relative direction coordinates, North East Down
+//!  * [AzEl](AzEl) - Relative direction coordinates, Azimith Elevation
+//!
+//! --------
+//! Conversion from geodetic coordinates latitude, longitude and height
+//! (ϕ, λ, h) into Cartesian coordinates (X, Y, Z) can be
+//! achieved with the following formulae:
+//!  * X = (N(ϕ) + h) * cos(ϕ) * cos(λ)
+//!  * Y = (N(ϕ) + h) * cos(ϕ) * sin(λ)
+//!  * Z = [(1-e^2) * N(ϕ) + h] * sin(ϕ)
+//!
+//! Where the 'radius of curvature', N(ϕ), is defined as:
+//!  * N(ϕ) = a / sqrt(1-e^2 / sin^2(ϕ))
+//!
+//! and `a` is the WGS84 semi-major axis and `e` is the WGS84
+//! eccentricity.
+//!
+//! --------
+//! Conversion from Cartesian to geodetic coordinates is a much harder problem
+//! than conversion from geodetic to Cartesian. There is no satisfactory closed
+//! form solution but many different iterative approaches exist.
+//!
+//! Here we implement a relatively new algorithm due to Fukushima (2006) that is
+//! very computationally efficient, not requiring any transcendental function
+//! calls during iteration and very few divisions. It also exhibits cubic
+//! convergence rates compared to the quadratic rate of convergence seen with
+//! the more common algortihms based on the Newton-Raphson method.
+//!
+//! References:
+//!   * "A comparison of methods used in rectangular to Geodetic Coordinates
+//!      Transformations", Burtch R. R. (2006), American Congress for Surveying
+//!      and Mapping Annual Conference. Orlando, Florida.
+//!   * "Transformation from Cartesian to Geodetic Coordinates Accelerated by
+//!      Halley’s Method", T. Fukushima (2006), Journal of Geodesy.
 use crate::c_bindings;
 use std::marker::PhantomData;
-
+/// Tag trait for denoting ways of representing angles
 pub trait Angle {}
 
+/// Tag type for denoting angles in units of degrees
 pub struct Degrees {}
 impl Angle for Degrees {}
 
+/// Tag type for denoting angles in units of radians
 pub struct Radians {}
 impl Angle for Radians {}
 
+/// WGS84 geodetic coordinates (Latitude, Longitude, Height).
+///
+/// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude (both in the given angular units) and height above the geoid in meters
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 pub struct LLH<T: Angle>([f64; 3], PhantomData<T>);
 
@@ -43,12 +87,17 @@ impl<T: Angle> LLH<T> {
 }
 
 impl LLH<Radians> {
+    /// Converts a LLH position from radians to degrees. The position doesn't change,
+    /// just the representation of the angular values.
     pub fn to_degrees(&self) -> LLH<Degrees> {
         let mut deg = LLH::<Degrees>::from_array(&[0.0; 3]);
         unsafe { c_bindings::llhrad2deg(self.as_ptr(), deg.as_mut_ptr()) };
         deg
     }
 
+    /// Converts from WGS84 geodetic coordinates (latitude, longitude and height)
+    /// into WGS84 Earth Centered, Earth Fixed Cartesian (ECEF) coordinates
+    /// (X, Y and Z).
     pub fn to_ecef(&self) -> ECEF {
         let mut ecef = ECEF::from_array(&[0.0; 3]);
         unsafe { c_bindings::wgsllh2ecef(self.as_ptr(), ecef.as_mut_ptr()) };
@@ -57,12 +106,17 @@ impl LLH<Radians> {
 }
 
 impl LLH<Degrees> {
+    /// Converts a LLH position from degrees to radians. The position doesn't change,
+    /// just the representation of the angular values.
     pub fn to_radians(&self) -> LLH<Radians> {
         let mut rad = LLH::<Radians>::from_array(&[0.0; 3]);
         unsafe { c_bindings::llhdeg2rad(self.as_ptr(), rad.as_mut_ptr()) };
         rad
     }
 
+    /// Converts from WGS84 geodetic coordinates (latitude, longitude and height)
+    /// into WGS84 Earth Centered, Earth Fixed Cartesian (ECEF) coordinates
+    /// (X, Y and Z).
     pub fn to_ecef(&self) -> ECEF {
         self.to_radians().to_ecef()
     }
@@ -80,6 +134,9 @@ impl<T: Angle> AsMut<[f64; 3]> for LLH<T> {
     }
 }
 
+/// WGS84 Earth Centered, Earth Fixed (ECEF) Cartesian coordinates (X, Y, Z).
+///
+/// Internally stored as an array of 3 [f64](std::f64) values: x, y, z all in meters
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 pub struct ECEF([f64; 3]);
 
@@ -112,12 +169,22 @@ impl ECEF {
         self.0[2]
     }
 
+    /// Converts from WGS84 Earth Centered, Earth Fixed (ECEF) Cartesian
+    /// coordinates (X, Y and Z) into WGS84 geodetic coordinates (latitude,
+    /// longitude and height).
     pub fn to_llh(&self) -> LLH<Radians> {
         let mut llh = LLH::<Radians>::from_array(&[0.0; 3]);
         unsafe { c_bindings::wgsecef2llh(self.as_ptr(), llh.as_mut_ptr()) };
         llh
     }
 
+    /// Determine the azimuth and elevation of a point in WGS84 Earth Centered,
+    /// Earth Fixed (ECEF) Cartesian coordinates from a reference point given in
+    /// WGS84 ECEF coordinates.
+    ///
+    /// First the vector between the points is converted into the local North, East,
+    /// Down frame of the reference point. Then we can directly calculate the
+    /// azimuth and elevation.
     pub fn get_azel_of(&self, point: &ECEF) -> AzimuthElevation {
         let mut azel = AzimuthElevation::new(0.0, 0.0);
         unsafe {
