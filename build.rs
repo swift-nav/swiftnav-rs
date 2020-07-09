@@ -25,6 +25,7 @@ fn main() {
         .header(format!("{}/include/swiftnav/coord_system.h", dst.display()))
         .header(format!("{}/include/swiftnav/ionosphere.h", dst.display()))
         .header(format!("{}/include/swiftnav/troposphere.h", dst.display()))
+        .header(format!("{}/include/swiftnav/ephemeris.h", dst.display()))
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
