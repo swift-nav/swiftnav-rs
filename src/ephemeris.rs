@@ -1,4 +1,9 @@
-use crate::{c_bindings, Vec3, signal::{Constellation, Code}, time::GpsTime, AzEl};
+use crate::{
+    c_bindings,
+    signal::{Code, Constellation},
+    time::GpsTime,
+    AzEl, Vec3,
+};
 use std::fmt::{Display, Formatter};
 
 #[derive(Copy, Clone, Debug)]
@@ -12,7 +17,7 @@ impl Display for Error {
     }
 }
 
-impl std::error::Error for Error { }
+impl std::error::Error for Error {}
 
 type Result<T> = std::result::Result<T, Error>;
 
@@ -107,12 +112,42 @@ impl EphemerisTerms {
         })
     }
 
-    pub fn new_xyz(pos: [f64; 3], vel: [f64; 3], acc: [f64; 3], a_gf0: f64, a_gf1: f64) -> EphemerisTerms {
-        EphemerisTerms::Xyz(c_bindings::ephemeris_xyz_t {pos, vel, acc, a_gf0, a_gf1})
+    pub fn new_xyz(
+        pos: [f64; 3],
+        vel: [f64; 3],
+        acc: [f64; 3],
+        a_gf0: f64,
+        a_gf1: f64,
+    ) -> EphemerisTerms {
+        EphemerisTerms::Xyz(c_bindings::ephemeris_xyz_t {
+            pos,
+            vel,
+            acc,
+            a_gf0,
+            a_gf1,
+        })
     }
 
-    pub fn new_glo(gamma: f64, tau: f64, d_tau: f64, pos: [f64; 3], vel: [f64; 3], acc: [f64; 3], fcn: u16, iod: u8) -> EphemerisTerms {
-        EphemerisTerms::Glo(c_bindings::ephemeris_glo_t{gamma, tau, d_tau, pos, vel, acc, fcn, iod})
+    pub fn new_glo(
+        gamma: f64,
+        tau: f64,
+        d_tau: f64,
+        pos: [f64; 3],
+        vel: [f64; 3],
+        acc: [f64; 3],
+        fcn: u16,
+        iod: u8,
+    ) -> EphemerisTerms {
+        EphemerisTerms::Glo(c_bindings::ephemeris_glo_t {
+            gamma,
+            tau,
+            d_tau,
+            pos,
+            vel,
+            acc,
+            fcn,
+            iod,
+        })
     }
 }
 
@@ -129,7 +164,7 @@ impl Ephemeris {
         source: u8,
         terms: EphemerisTerms,
     ) -> Ephemeris {
-        let mut e = Ephemeris(c_bindings::ephemeris_t {
+         Ephemeris(c_bindings::ephemeris_t {
             sid: sid.to_gnss_signal_t(),
             toe: toe.to_gnss_time_t(),
             ura,
@@ -137,29 +172,16 @@ impl Ephemeris {
             valid,
             health_bits,
             source,
-            __bindgen_anon_1: c_bindings::ephemeris_t__bindgen_ty_1 {
-                kepler: c_bindings::__BindgenUnionField::<c_bindings::ephemeris_kepler_t>::default(
-                ),
-                xyz: c_bindings::__BindgenUnionField::<c_bindings::ephemeris_xyz_t>::default(),
-                glo: c_bindings::__BindgenUnionField::<c_bindings::ephemeris_glo_t>::default(),
-                bindgen_union_field: [0; 21],
+            __bindgen_anon_1: match terms {
+                EphemerisTerms::Kepler(c_kepler) => c_bindings::ephemeris_t__bindgen_ty_1{ kepler: c_kepler },
+                EphemerisTerms::Xyz(c_xyz) => c_bindings::ephemeris_t__bindgen_ty_1{ xyz: c_xyz },
+                EphemerisTerms::Glo(c_glo) => c_bindings::ephemeris_t__bindgen_ty_1{ glo: c_glo },
             },
-        });
-        unsafe {
-            match terms {
-                EphemerisTerms::Kepler(c_kepler) => {
-                    *e.0.__bindgen_anon_1.kepler.as_mut() = c_kepler
-                }
-                EphemerisTerms::Xyz(c_xyz) => *e.0.__bindgen_anon_1.xyz.as_mut() = c_xyz,
-                EphemerisTerms::Glo(c_glo) => *e.0.__bindgen_anon_1.glo.as_mut() = c_glo,
-            };
-        }
-
-        e
+        })
     }
 
     pub fn calc_satellite_state(&self, t: &GpsTime) -> Result<SatelliteState> {
-        let mut sat = SatelliteState{
+        let mut sat = SatelliteState {
             pos: Vec3::default(),
             vel: Vec3::default(),
             acc: Vec3::default(),
@@ -170,15 +192,16 @@ impl Ephemeris {
         };
 
         let result = unsafe {
-            c_bindings::calc_sat_state(&self.0,
-                                       t.to_gnss_time_ptr(),
-                                       sat.pos.as_mut_ptr(),
-                                       sat.vel.as_mut_ptr(),
-                                       sat.acc.as_mut_ptr(),
-                                       &mut sat.clock_err,
-                                       &mut sat.clock_rate_err,
-                                       &mut sat.iodc,
-                                       &mut sat.iode,
+            c_bindings::calc_sat_state(
+                &self.0,
+                t.to_gnss_time_ptr(),
+                sat.pos.as_mut_ptr(),
+                sat.vel.as_mut_ptr(),
+                sat.acc.as_mut_ptr(),
+                &mut sat.clock_err,
+                &mut sat.clock_rate_err,
+                &mut sat.iodc,
+                &mut sat.iode,
             )
         };
 
@@ -190,15 +213,17 @@ impl Ephemeris {
     }
 
     pub fn calc_satellite_az_el(&self, t: &GpsTime, pos: &Vec3) -> Result<AzEl> {
-        let mut sat = AzEl{az: 0.0, el: 0.0};
+        let mut sat = AzEl { az: 0.0, el: 0.0 };
 
         let result = unsafe {
-            c_bindings::calc_sat_az_el(&self.0,
-                                       t.to_gnss_time_ptr(),
-                                       pos.as_ptr(),
-                                       &mut sat.az,
-                                       &mut sat.el,
-                                       true)
+            c_bindings::calc_sat_az_el(
+                &self.0,
+                t.to_gnss_time_ptr(),
+                pos.as_ptr(),
+                &mut sat.az,
+                &mut sat.el,
+                true,
+            )
         };
 
         if result == 0 {
@@ -208,12 +233,17 @@ impl Ephemeris {
         }
     }
 
-
     pub fn calc_satellite_doppler(&self, t: &GpsTime, pos: &Vec3, vel: &Vec3) -> Result<f64> {
         let mut doppler = 0.0;
 
         let result = unsafe {
-            c_bindings::calc_sat_doppler(&self.0, t.to_gnss_time_ptr(), pos.as_ptr(), vel.as_ptr(), &mut doppler)
+            c_bindings::calc_sat_doppler(
+                &self.0,
+                t.to_gnss_time_ptr(),
+                pos.as_ptr(),
+                vel.as_ptr(),
+                &mut doppler,
+            )
         };
 
         if result == 0 {
@@ -228,7 +258,9 @@ impl Ephemeris {
     }
 
     pub fn get_status_at_time(&self, t: &GpsTime) -> Status {
-        Status::from_ephemeris_status_t(unsafe { c_bindings::ephemeris_valid_detailed(&self.0, t.to_gnss_time_ptr()) })
+        Status::from_ephemeris_status_t(unsafe {
+            c_bindings::ephemeris_valid_detailed(&self.0, t.to_gnss_time_ptr())
+        })
     }
 
     pub fn is_valid_at_time(&self, t: &GpsTime) -> bool {
@@ -251,7 +283,7 @@ impl PartialEq for Ephemeris {
     }
 }
 
-impl Eq for Ephemeris { }
+impl Eq for Ephemeris {}
 
 pub struct SatelliteState {
     pub pos: Vec3,
