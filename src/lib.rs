@@ -75,4 +75,3 @@ pub struct AzEl {
     pub az: f64,
     pub el: f64,
 }
-

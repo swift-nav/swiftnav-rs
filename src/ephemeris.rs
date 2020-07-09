@@ -164,7 +164,7 @@ impl Ephemeris {
         source: u8,
         terms: EphemerisTerms,
     ) -> Ephemeris {
-         Ephemeris(c_bindings::ephemeris_t {
+        Ephemeris(c_bindings::ephemeris_t {
             sid: sid.to_gnss_signal_t(),
             toe: toe.to_gnss_time_t(),
             ura,
@@ -173,9 +173,11 @@ impl Ephemeris {
             health_bits,
             source,
             __bindgen_anon_1: match terms {
-                EphemerisTerms::Kepler(c_kepler) => c_bindings::ephemeris_t__bindgen_ty_1{ kepler: c_kepler },
-                EphemerisTerms::Xyz(c_xyz) => c_bindings::ephemeris_t__bindgen_ty_1{ xyz: c_xyz },
-                EphemerisTerms::Glo(c_glo) => c_bindings::ephemeris_t__bindgen_ty_1{ glo: c_glo },
+                EphemerisTerms::Kepler(c_kepler) => {
+                    c_bindings::ephemeris_t__bindgen_ty_1 { kepler: c_kepler }
+                }
+                EphemerisTerms::Xyz(c_xyz) => c_bindings::ephemeris_t__bindgen_ty_1 { xyz: c_xyz },
+                EphemerisTerms::Glo(c_glo) => c_bindings::ephemeris_t__bindgen_ty_1 { glo: c_glo },
             },
         })
     }
