@@ -7,19 +7,17 @@ use crate::{
 use std::fmt::{Display, Formatter};
 
 #[derive(Copy, Clone, Debug)]
-pub enum Error {
-    InvalidEphemeris,
-}
+pub struct InvalidEphemeris {}
 
-impl Display for Error {
+impl Display for InvalidEphemeris {
     fn fmt(&self, f: &mut Formatter) -> std::result::Result<(), std::fmt::Error> {
         write!(f, "Invalid Ephemeris")
     }
 }
 
-impl std::error::Error for Error {}
+impl std::error::Error for InvalidEphemeris {}
 
-type Result<T> = std::result::Result<T, Error>;
+type Result<T> = std::result::Result<T, InvalidEphemeris>;
 
 #[derive(Copy, Clone, Debug)]
 #[repr(u32)]
@@ -210,7 +208,7 @@ impl Ephemeris {
         if result == 0 {
             Ok(sat)
         } else {
-            Err(Error::InvalidEphemeris)
+            Err(InvalidEphemeris {})
         }
     }
 
@@ -231,7 +229,7 @@ impl Ephemeris {
         if result == 0 {
             Ok(sat)
         } else {
-            Err(Error::InvalidEphemeris)
+            Err(InvalidEphemeris {})
         }
     }
 
@@ -251,7 +249,7 @@ impl Ephemeris {
         if result == 0 {
             Ok(doppler)
         } else {
-            Err(Error::InvalidEphemeris)
+            Err(InvalidEphemeris {})
         }
     }
 
