@@ -1,10 +1,22 @@
+//! Ionosphere delay calculation
+//!
+//! Ionospheric delays are typically modeled with the Klobuchar model. The model
+//! parameters are broadcast by the GPS constellation. A function to decode the
+//! parameters from the raw subframe is provided.
+//!
+//! --------
+//! References:
+//!   * IS-GPS-200H, Section 20.3.3.5.2.5 and Figure 20-4
+
 use crate::{c_bindings, time::GpsTime};
 
+/// Represents an ionosphere model
 pub struct Ionosphere(c_bindings::ionosphere_t);
 
 impl Ionosphere {
+    /// Construct an ionosphere model from already decoded parameters
     pub fn new(
-        t: GpsTime,
+        toa: GpsTime,
         a0: f64,
         a1: f64,
         a2: f64,
@@ -31,10 +43,11 @@ impl Ionosphere {
     ///
     /// The method decodes ionosphere data from GPS LNAV subframe 4 words 3-5.
     ///
-    /// References:
-    /// -# IS-GPS-200H, Section 20.3.3.5.1.7
+    /// In inputs are the word values from Subframe 4 page 18.
     ///
-    /// \param[in]  words    Subframe 4 page 18.
+    /// --------
+    /// References:
+    /// * IS-GPS-200H, Section 20.3.3.5.1.7
     pub fn decode_parameters(words: &[u32; 10]) -> Option<Ionosphere> {
         let mut iono = Ionosphere(c_bindings::ionosphere_t {
             toa: GpsTime::unknown(),
@@ -58,9 +71,6 @@ impl Ionosphere {
     }
 
     /// Calculate ionospheric delay using Klobuchar model.
-    ///
-    /// References:
-    ///   -# IS-GPS-200H, Section 20.3.3.5.2.5 and Figure 20-4
     ///
     /// \param t_gps GPS time at which to calculate the ionospheric delay
     /// \param lat_u Latitude of the receiver [rad]
