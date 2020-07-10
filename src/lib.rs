@@ -8,5 +8,7 @@
 
 mod c_bindings;
 pub mod coords;
+pub mod ionosphere;
 pub mod signal;
 pub mod time;
+pub mod troposphere;

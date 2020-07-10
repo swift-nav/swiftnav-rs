@@ -44,6 +44,18 @@ impl GpsTime {
         GpsTime(c_bindings::gps_time_t { wn, tow })
     }
 
+    pub(crate) fn to_gps_time_t(self) -> c_bindings::gps_time_t {
+        self.0
+    }
+
+    pub(crate) fn c_ptr(&self) -> *const c_bindings::gps_time_t {
+        &self.0
+    }
+
+    pub(crate) fn unknown() -> c_bindings::gps_time_t {
+        c_bindings::gps_time_t { tow: -1.0, wn: -1 }
+    }
+
     /// Gets the week number
     pub fn wn(&self) -> i16 {
         self.0.wn
