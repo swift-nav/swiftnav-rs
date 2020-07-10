@@ -27,7 +27,7 @@ impl Ionosphere {
         b3: f64,
     ) -> Ionosphere {
         Ionosphere(c_bindings::ionosphere_t {
-            toa: t.to_gps_time_t(),
+            toa: toa.to_gps_time_t(),
             a0,
             a1,
             a2,
