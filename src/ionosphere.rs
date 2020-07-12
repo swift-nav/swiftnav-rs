@@ -6,7 +6,7 @@
 //!
 //! --------
 //! References:
-//!   * IS-GPS-200H, Section 20.3.3.5.2.5 and Figure 20-4
+//!  * IS-GPS-200H, Section 20.3.3.5.2.5 and Figure 20-4
 
 use crate::{c_bindings, time::GpsTime};
 
