@@ -48,7 +48,7 @@ impl Ionosphere {
     /// --------
     /// References:
     /// * IS-GPS-200H, Section 20.3.3.5.1.7
-    pub fn decode_parameters(words: &[u32; 10]) -> Option<Ionosphere> {
+    pub fn decode_parameters(words: &[u32; 8]) -> Option<Ionosphere> {
         let mut iono = Ionosphere(c_bindings::ionosphere_t {
             toa: GpsTime::unknown(),
             a0: 0.0,
