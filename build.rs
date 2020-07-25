@@ -22,6 +22,8 @@ fn main() {
         .header(format!("{}/include/swiftnav/signal.h", dst.display()))
         .header(format!("{}/include/swiftnav/gnss_time.h", dst.display()))
         .header(format!("{}/include/swiftnav/coord_system.h", dst.display()))
+        .header(format!("{}/include/swiftnav/ionosphere.h", dst.display()))
+        .header(format!("{}/include/swiftnav/troposphere.h", dst.display()))
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
@@ -60,6 +62,10 @@ fn main() {
         .whitelist_function("wgsllh2ecef")
         .whitelist_function("wgsecef2llh")
         .whitelist_function("wgsecef2azel")
+        .whitelist_type("ionosphere_t")
+        .whitelist_function("calc_ionosphere")
+        .whitelist_function("decode_iono_parameters")
+        .whitelist_function("calc_troposphere")
         // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.
