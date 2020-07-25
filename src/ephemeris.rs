@@ -104,7 +104,7 @@ impl EphemerisTerms {
             af0,
             af1,
             af2,
-            toc: toc.to_gnss_time_t(),
+            toc: toc.to_gps_time_t(),
             iodc,
             iode,
         })
@@ -164,7 +164,7 @@ impl Ephemeris {
     ) -> Ephemeris {
         Ephemeris(c_bindings::ephemeris_t {
             sid: sid.to_gnss_signal_t(),
-            toe: toe.to_gnss_time_t(),
+            toe: toe.to_gps_time_t(),
             ura,
             fit_interval,
             valid,
@@ -194,7 +194,7 @@ impl Ephemeris {
         let result = unsafe {
             c_bindings::calc_sat_state(
                 &self.0,
-                t.to_gnss_time_ptr(),
+                t.c_ptr(),
                 sat.pos.as_mut_ptr(),
                 sat.vel.as_mut_ptr(),
                 sat.acc.as_mut_ptr(),
@@ -218,7 +218,7 @@ impl Ephemeris {
         let result = unsafe {
             c_bindings::calc_sat_az_el(
                 &self.0,
-                t.to_gnss_time_ptr(),
+                t.c_ptr(),
                 pos.as_ptr(),
                 &mut sat.az,
                 &mut sat.el,
@@ -239,7 +239,7 @@ impl Ephemeris {
         let result = unsafe {
             c_bindings::calc_sat_doppler(
                 &self.0,
-                t.to_gnss_time_ptr(),
+                t.c_ptr(),
                 pos.as_ptr(),
                 vel.as_ptr(),
                 &mut doppler,
@@ -259,12 +259,12 @@ impl Ephemeris {
 
     pub fn get_status_at_time(&self, t: &GpsTime) -> Status {
         Status::from_ephemeris_status_t(unsafe {
-            c_bindings::ephemeris_valid_detailed(&self.0, t.to_gnss_time_ptr())
+            c_bindings::ephemeris_valid_detailed(&self.0, t.c_ptr())
         })
     }
 
     pub fn is_valid_at_time(&self, t: &GpsTime) -> bool {
-        let result = unsafe { c_bindings::ephemeris_valid(&self.0, t.to_gnss_time_ptr()) };
+        let result = unsafe { c_bindings::ephemeris_valid(&self.0, t.c_ptr()) };
         result == 0
     }
 
