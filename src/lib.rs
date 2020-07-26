@@ -70,8 +70,3 @@ impl AsMut<[f64; 3]> for Vec3 {
         &mut self.0
     }
 }
-
-pub struct AzEl {
-    pub az: f64,
-    pub el: f64,
-}

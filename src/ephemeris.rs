@@ -2,7 +2,8 @@ use crate::{
     c_bindings,
     signal::{Code, Constellation},
     time::GpsTime,
-    AzEl, Vec3,
+    Vec3,
+    coords::AzimuthElevation
 };
 use std::fmt::{Display, Formatter};
 
@@ -212,8 +213,8 @@ impl Ephemeris {
         }
     }
 
-    pub fn calc_satellite_az_el(&self, t: &GpsTime, pos: &Vec3) -> Result<AzEl> {
-        let mut sat = AzEl { az: 0.0, el: 0.0 };
+    pub fn calc_satellite_az_el(&self, t: &GpsTime, pos: &Vec3) -> Result<AzimuthElevation> {
+        let mut sat = AzimuthElevation::default();
 
         let result = unsafe {
             c_bindings::calc_sat_az_el(
