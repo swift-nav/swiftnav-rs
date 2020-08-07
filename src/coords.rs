@@ -65,12 +65,12 @@ impl<T: Angle> LLH<T> {
         LLH(*array, PhantomData)
     }
 
-    pub fn as_ptr(&self) -> *const f64 {
-        self.0.as_ptr()
+    pub fn as_ptr(&self) -> *const [f64; 3] {
+        &self.0
     }
 
-    pub fn as_mut_ptr(&mut self) -> *mut f64 {
-        self.0.as_mut_ptr()
+    pub fn as_mut_ptr(&mut self) -> *mut [f64; 3] {
+        &mut self.0
     }
 
     pub fn latitude(&self) -> f64 {
@@ -149,12 +149,12 @@ impl ECEF {
         ECEF(*array)
     }
 
-    pub fn as_ptr(&self) -> *const f64 {
-        self.0.as_ptr()
+    pub fn as_ptr(&self) -> *const [f64; 3] {
+        &self.0
     }
 
-    pub fn as_mut_ptr(&mut self) -> *mut f64 {
-        self.0.as_mut_ptr()
+    pub fn as_mut_ptr(&mut self) -> *mut [f64; 3] {
+        &mut self.0
     }
 
     pub fn x(&self) -> f64 {

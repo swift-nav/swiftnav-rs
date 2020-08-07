@@ -61,7 +61,7 @@ impl Ionosphere {
             b3: 0.0,
         });
 
-        let success = unsafe { c_bindings::decode_iono_parameters(words.as_ptr(), &mut iono.0) };
+        let success = unsafe { c_bindings::decode_iono_parameters(words, &mut iono.0) };
 
         if success {
             Some(iono)

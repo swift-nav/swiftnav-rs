@@ -16,6 +16,7 @@ fn main() {
     ]
     .into_iter();
     let bindings = bindgen::Builder::default()
+        .array_pointers_in_arguments(true)
         .clang_args(include_args)
         // The input header we would like to generate
         // bindings for.
