@@ -69,6 +69,7 @@ fn main() {
         .whitelist_function("decode_iono_parameters")
         .whitelist_function("calc_troposphere")
         .whitelist_type("ephemeris_t")
+        .whitelist_var("GAL_INAV_CONTENT_BYTE")
         .whitelist_function("calc_sat_state")
         .whitelist_function("calc_sat_az_el")
         .whitelist_function("calc_sat_doppler")
@@ -78,6 +79,9 @@ fn main() {
         .whitelist_function("ephemeris_equal")
         .whitelist_function("ephemeris_healthy")
         .whitelist_function("get_ephemeris_iod_or_iodcrc")
+        .whitelist_function("decode_ephemeris")
+        .whitelist_function("decode_bds_d1_ephemeris")
+        .whitelist_function("decode_gal_ephemeris")
         // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.

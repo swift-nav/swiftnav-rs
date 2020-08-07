@@ -50,12 +50,12 @@ impl Vec3 {
         self.0[2] = new_z;
     }
 
-    pub fn as_mut_ptr(&mut self) -> *mut f64 {
-        self.0.as_mut_ptr()
+    pub fn as_array_ref(&self) -> &[f64; 3] {
+        &self.0
     }
 
-    pub fn as_ptr(&self) -> *const f64 {
-        self.0.as_ptr()
+    pub fn as_mut_array_ref(&mut self) -> &mut [f64; 3] {
+        &mut self.0
     }
 }
 
