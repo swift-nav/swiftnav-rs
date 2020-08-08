@@ -1,7 +1,7 @@
 use crate::{
     c_bindings,
     coords::AzimuthElevation,
-    signal::{GnssSignal, Code, Constellation},
+    signal::{Code, Constellation, GnssSignal},
     time::GpsTime,
     Vec3,
 };
@@ -183,43 +183,6 @@ impl Ephemeris {
         })
     }
 
-    pub(crate) fn default() -> Ephemeris {
-        Ephemeris::new(
-            GnssSignal::new(0, Code::AuxGps),
-            GpsTime::new_unchecked(0, 0.),
-            0.,
-            0,
-            0,
-            0,
-            0,
-            EphemerisTerms::new_kepler(
-                Constellation::Gps,
-                [0., 0.],
-                0.,
-                0.,
-                0.,
-                0.,
-                0.,
-                0.,
-                0.,
-                0.,
-                0.,
-                0.,
-                0.,
-                0.,
-                0.,
-                0.,
-                0.,
-                0.,
-                0.,
-                0.,
-                GpsTime::new_unchecked(0, 0.),
-                0,
-                0,
-            ),
-        )
-    }
-
     fn decode_gps(frame_words: &[[u32; 8]; 3], tot_tow: f64) -> Ephemeris {
         let mut e = Ephemeris::default();
         unsafe {
@@ -355,6 +318,12 @@ impl PartialEq for Ephemeris {
 
 impl Eq for Ephemeris {}
 
+impl Default for Ephemeris {
+    fn default() -> Self {
+        unsafe { std::mem::zeroed::<Ephemeris>() }
+    }
+}
+
 pub struct SatelliteState {
     pub pos: Vec3,
     pub vel: Vec3,
@@ -446,8 +415,8 @@ mod tests {
             EphemerisTerms::new_kepler(
                 Constellation::Gal,
                 [0., 0.],                              // tgd
-                -54.0625,                              // crs
-                62.375,                                // crc
+                62.375,                              // crs
+                -54.0625,                                // crc
                 -2.3748725652694702e-06,               // cuc
                 1.2902542948722839e-05,                // cus
                 7.4505805969238281e-09,                // cic
