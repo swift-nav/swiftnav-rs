@@ -415,8 +415,8 @@ mod tests {
             EphemerisTerms::new_kepler(
                 Constellation::Gal,
                 [0., 0.],                              // tgd
-                62.375,                              // crs
-                -54.0625,                                // crc
+                62.375,                                // crs
+                -54.0625,                              // crc
                 -2.3748725652694702e-06,               // cuc
                 1.2902542948722839e-05,                // cus
                 7.4505805969238281e-09,                // cic
