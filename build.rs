@@ -69,7 +69,6 @@ fn main() {
         .whitelist_function("decode_iono_parameters")
         .whitelist_function("calc_troposphere")
         .whitelist_type("ephemeris_t")
-        .whitelist_var("GAL_INAV_CONTENT_BYTE")
         .whitelist_function("calc_sat_state")
         .whitelist_function("calc_sat_az_el")
         .whitelist_function("calc_sat_doppler")

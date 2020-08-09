@@ -7,7 +7,7 @@ use crate::{
 };
 use std::fmt::{Display, Formatter};
 
-pub const GAL_INAV_CONTENT_BYTE: usize = c_bindings::GAL_INAV_CONTENT_BYTE as usize;
+pub const GAL_INAV_CONTENT_BYTE: usize = ((128 + 8 - 1) / 8);
 
 #[derive(Copy, Clone, Debug)]
 pub struct InvalidEphemeris {}
