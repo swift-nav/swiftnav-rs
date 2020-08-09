@@ -9,5 +9,5 @@ edition = "2018"
 [dependencies]
 
 [build-dependencies]
-bindgen = "0.54.1"
+bindgen = { git="https://github.com/rust-lang/rust-bindgen.git", rev="87b2bc033f35234d292d41ee2ba165516345dd18" }
 cmake = "0.1"

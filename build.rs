@@ -25,6 +25,7 @@ fn main() {
         .header(format!("{}/include/swiftnav/coord_system.h", dst.display()))
         .header(format!("{}/include/swiftnav/ionosphere.h", dst.display()))
         .header(format!("{}/include/swiftnav/troposphere.h", dst.display()))
+        .header(format!("{}/include/swiftnav/ephemeris.h", dst.display()))
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
@@ -67,6 +68,19 @@ fn main() {
         .whitelist_function("calc_ionosphere")
         .whitelist_function("decode_iono_parameters")
         .whitelist_function("calc_troposphere")
+        .whitelist_type("ephemeris_t")
+        .whitelist_function("calc_sat_state")
+        .whitelist_function("calc_sat_az_el")
+        .whitelist_function("calc_sat_doppler")
+        .whitelist_function("get_ephemeris_status_t")
+        .whitelist_function("ephemeris_valid_detailed")
+        .whitelist_function("ephemeris_valid")
+        .whitelist_function("ephemeris_equal")
+        .whitelist_function("ephemeris_healthy")
+        .whitelist_function("get_ephemeris_iod_or_iodcrc")
+        .whitelist_function("decode_ephemeris")
+        .whitelist_function("decode_bds_d1_ephemeris")
+        .whitelist_function("decode_gal_ephemeris")
         // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.

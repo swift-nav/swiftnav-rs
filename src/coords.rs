@@ -122,6 +122,12 @@ impl LLH<Degrees> {
     }
 }
 
+impl<T: Angle> Default for LLH<T> {
+    fn default() -> Self {
+        Self::new(0., 0., 0.)
+    }
+}
+
 impl<T: Angle> AsRef<[f64; 3]> for LLH<T> {
     fn as_ref(&self) -> &[f64; 3] {
         &self.0
@@ -194,6 +200,12 @@ impl ECEF {
     }
 }
 
+impl Default for ECEF {
+    fn default() -> Self {
+        Self::new(0., 0., 0.)
+    }
+}
+
 impl AsRef<[f64; 3]> for ECEF {
     fn as_ref(&self) -> &[f64; 3] {
         &self.0
@@ -215,6 +227,12 @@ pub struct AzimuthElevation {
 impl AzimuthElevation {
     pub fn new(az: f64, el: f64) -> AzimuthElevation {
         AzimuthElevation { az, el }
+    }
+}
+
+impl Default for AzimuthElevation {
+    fn default() -> Self {
+        Self::new(0., 0.)
     }
 }
 
