@@ -24,6 +24,7 @@ pipeline {
       steps {
         gitPrep()
         script {
+          sh("rustup show")
           sh("cargo check")
         }
       }
