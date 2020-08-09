@@ -176,7 +176,10 @@ impl Ephemeris {
             source,
             __bindgen_anon_1: match terms {
                 EphemerisTerms::Kepler(c_kepler) => {
-                    assert!(matches!(sid.to_constellation(), Constellation::Gps | Constellation::Gal | Constellation::Bds));
+                    assert!(matches!(
+                        sid.to_constellation(),
+                        Constellation::Gps | Constellation::Gal | Constellation::Bds
+                    ));
                     c_bindings::ephemeris_t__bindgen_ty_1 { kepler: c_kepler }
                 }
                 EphemerisTerms::Xyz(c_xyz) => {
@@ -186,7 +189,7 @@ impl Ephemeris {
                 EphemerisTerms::Glo(c_glo) => {
                     assert_eq!(sid.to_constellation(), Constellation::Glo);
                     c_bindings::ephemeris_t__bindgen_ty_1 { glo: c_glo }
-                },
+                }
             },
         })
     }
