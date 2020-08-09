@@ -24,7 +24,7 @@ pipeline {
       steps {
         gitPrep()
         script {
-          sh("cargo build")
+          sh("cargo check")
         }
       }
     }
