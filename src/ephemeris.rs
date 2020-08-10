@@ -263,7 +263,6 @@ impl Ephemeris {
         &mut self.0
     }
 
-
     /// Calculate satellite position, velocity and clock offset from ephemeris.
     pub fn calc_satellite_state(&self, t: &GpsTime) -> Result<SatelliteState> {
         let mut sat = SatelliteState {
