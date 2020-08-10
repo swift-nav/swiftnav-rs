@@ -1,3 +1,13 @@
+//! Decoding and evaluation of satellite ephemeris
+//!
+//! GNSS satellites broadcast ephemeris, values used to calculate their position
+//! in space over a period of time. Libswiftnav is able to decode the raw
+//! ephemeris data and then evaluate the ephemeris.
+//!
+//! Broadcast ephemerides are only valid of a particular period of time, and the
+//! constellations will update the ephemerides regularly to make sure they are
+//! always valid when they need to be.
+
 use crate::{
     c_bindings,
     coords::AzimuthElevation,
@@ -7,9 +17,11 @@ use crate::{
 };
 use std::fmt::{Display, Formatter};
 
+/// Number of bytes in  the Galileo INAV message
 // TODO(jbangelo) bindgen doesn't catch this variable on linux for some reason
 pub const GAL_INAV_CONTENT_BYTE: usize = ((128 + 8 - 1) / 8);
 
+/// An error indicating that the ephemeris is invalid
 #[derive(Copy, Clone, Debug)]
 pub struct InvalidEphemeris {}
 
@@ -23,6 +35,7 @@ impl std::error::Error for InvalidEphemeris {}
 
 type Result<T> = std::result::Result<T, InvalidEphemeris>;
 
+/// Various statuses that an ephemeris can be in
 #[derive(Copy, Clone, Debug)]
 #[repr(u32)]
 pub enum Status {
@@ -50,13 +63,18 @@ impl Status {
     }
 }
 
+/// Orbital terms of an ephemeris
 pub enum EphemerisTerms {
+    /// GPS, BDS, GAL, and QZSS all broadcast their terms as keplarian elements
     Kepler(c_bindings::ephemeris_kepler_t),
+    /// SBAS systems broadcast their terms as simple XYZ terms
     Xyz(c_bindings::ephemeris_xyz_t),
+    /// GLONASS broadcast their terms in a unique format and timeframe
     Glo(c_bindings::ephemeris_glo_t),
 }
 
 impl EphemerisTerms {
+    /// Create new keplarian ephemeris terms from already decoded data
     pub fn new_kepler(
         constellation: Constellation,
         tgd: [f32; 2],
@@ -114,6 +132,7 @@ impl EphemerisTerms {
         })
     }
 
+    /// Create new XYZ ephemeris terms from already decoded data
     pub fn new_xyz(
         pos: [f64; 3],
         vel: [f64; 3],
@@ -130,6 +149,7 @@ impl EphemerisTerms {
         })
     }
 
+    /// Create new GLONASS ephemeris terms from already decoded data
     pub fn new_glo(
         gamma: f64,
         tau: f64,
@@ -153,9 +173,11 @@ impl EphemerisTerms {
     }
 }
 
+/// Representation of full ephemeris
 pub struct Ephemeris(c_bindings::ephemeris_t);
 
 impl Ephemeris {
+    /// Create new ephemeris from already decoded data
     pub fn new(
         sid: crate::signal::GnssSignal,
         toe: crate::time::GpsTime,
@@ -194,7 +216,19 @@ impl Ephemeris {
         })
     }
 
-    fn decode_gps(frame_words: &[[u32; 8]; 3], tot_tow: f64) -> Ephemeris {
+    /// Decode ephemeris from L1 C/A GPS navigation message frames.
+    ///
+    /// This function does not check for parity errors. You should check the
+    /// subframes for parity errors before calling this function.
+    ///
+    /// `frame_words` is an array containing words 3 through 10 of subframes 1,
+    /// 2 and 3. Word is in the 30 LSBs of the u32.
+    ///
+    /// `tot_tow` Is the time of transmission
+    ///
+    /// References:
+    ///   -# IS-GPS-200D, Section 20.3.2 and Figure 20-1
+    pub fn decode_gps(frame_words: &[[u32; 8]; 3], tot_tow: f64) -> Ephemeris {
         let mut e = Ephemeris::default();
         unsafe {
             c_bindings::decode_ephemeris(frame_words, e.mut_c_ptr(), tot_tow);
@@ -202,7 +236,9 @@ impl Ephemeris {
         e
     }
 
-    fn decode_bds(words: &[[u32; 10]; 3], sid: GnssSignal) -> Ephemeris {
+    /// Decodes Beidou D1 ephemeris.
+    /// `words` should contain subframes (FraID) 1,2,3.
+    pub fn decode_bds(words: &[[u32; 10]; 3], sid: GnssSignal) -> Ephemeris {
         let mut e = Ephemeris::default();
         unsafe {
             c_bindings::decode_bds_d1_ephemeris(words, sid.to_gnss_signal_t(), e.mut_c_ptr());
@@ -210,7 +246,10 @@ impl Ephemeris {
         e
     }
 
-    fn decode_gal(page: &[[u8; GAL_INAV_CONTENT_BYTE]; 5]) -> Ephemeris {
+    /// Decodes GAL ephemeris.
+    /// `page` should contain GAL pages 1-5. Page 5 is needed to extract Galileo
+    /// system time (GST) and make corrections to TOE and TOC if needed.
+    pub fn decode_gal(page: &[[u8; GAL_INAV_CONTENT_BYTE]; 5]) -> Ephemeris {
         let mut e = Ephemeris::default();
         unsafe {
             c_bindings::decode_gal_ephemeris(page, e.mut_c_ptr());
@@ -224,6 +263,7 @@ impl Ephemeris {
         &mut self.0
     }
 
+    /// Calculate satellite position, velocity and clock offset from ephemeris.
     pub fn calc_satellite_state(&self, t: &GpsTime) -> Result<SatelliteState> {
         let mut sat = SatelliteState {
             pos: Vec3::default(),
@@ -256,6 +296,8 @@ impl Ephemeris {
         }
     }
 
+    /// Calculate the azimuth and elevation of a satellite from a reference
+    /// position given the satellite ephemeris.
     pub fn calc_satellite_az_el(&self, t: &GpsTime, pos: &Vec3) -> Result<AzimuthElevation> {
         let mut sat = AzimuthElevation::default();
 
@@ -277,6 +319,8 @@ impl Ephemeris {
         }
     }
 
+    /// Calculate the Doppler shift of a satellite as observed at a reference
+    /// position given the satellite ephemeris.
     pub fn calc_satellite_doppler(&self, t: &GpsTime, pos: &Vec3, vel: &Vec3) -> Result<f64> {
         let mut doppler = 0.0;
 
@@ -297,25 +341,25 @@ impl Ephemeris {
         }
     }
 
+    /// Gets the status of an ephemeris - is the ephemeris invalid, unhealthy,
+    /// or has some other condition which makes it unusable?
     pub fn get_status(&self) -> Status {
         Status::from_ephemeris_status_t(unsafe { c_bindings::get_ephemeris_status_t(&self.0) })
     }
 
-    pub fn get_status_at_time(&self, t: &GpsTime) -> Status {
-        Status::from_ephemeris_status_t(unsafe {
-            c_bindings::ephemeris_valid_detailed(&self.0, t.c_ptr())
-        })
-    }
-
+    /// Is this ephemeris usable?
     pub fn is_valid_at_time(&self, t: &GpsTime) -> bool {
         let result = unsafe { c_bindings::ephemeris_valid(&self.0, t.c_ptr()) };
         result == 0
     }
 
+    /// Check if this this ephemeris is healthy
     pub fn is_healthy(&self, code: &Code) -> bool {
         unsafe { c_bindings::ephemeris_healthy(&self.0, code.to_code_t()) }
     }
 
+    /// Get the ephemeris iod. For BDS, returns a crc value uniquely identifying
+    /// the satellite ephemeris set; for all other constellations, returns the IODE
     pub fn get_iod_or_iodcrc(&self) -> u32 {
         unsafe { c_bindings::get_ephemeris_iod_or_iodcrc(&self.0) }
     }
@@ -335,13 +379,22 @@ impl Default for Ephemeris {
     }
 }
 
+/// Representation of a satellite state from evaluating its ephemeris at a
+/// certain time.
 pub struct SatelliteState {
+    /// Calculated satellite position, in meters
     pub pos: Vec3,
+    /// Calculated satellite velocity, in meters/second
     pub vel: Vec3,
+    /// Calculated satellite acceleration, meters/second/second
     pub acc: Vec3,
+    /// Calculated satellite clock error, in seconds
     pub clock_err: f64,
+    /// Calculated satellite clock error rate, in seconds/second
     pub clock_rate_err: f64,
+    /// Issue of data clock, unitless
     pub iodc: u16,
+    /// Issue of data ephemeris, unitless
     pub iode: u8,
 }
 
