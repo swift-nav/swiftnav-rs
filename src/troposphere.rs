@@ -1,13 +1,12 @@
 //! Troposphere delay calculation
 //!
-//! Tropospheric delays are typically modeled with the Klobuchar model. The model
-//! parameters are broadcast by the GPS constellation. A function to decode the
-//! parameters from the raw subframe is provided.
+//! Tropospheric delays are typically modeled with the UNM3m model. The model
+//! parameters are hardcoded into the library, unlike the ionosphere model.
 //!
-/// -----------
-/// References:
-///   * UNB Neutral Atmosphere Models: Development and Performance. R Leandro,
-///      M Santos, and R B Langley
+//! -----------
+//! References:
+//!   * UNB Neutral Atmosphere Models: Development and Performance. R Leandro,
+//!      M Santos, and R B Langley
 use crate::{c_bindings, time::GpsTime};
 
 ///  Calculate tropospheric delay using UNM3m model.
