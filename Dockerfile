@@ -1,4 +1,11 @@
-# Image is built and published from https://github.com/swift-nav/docker-recipes
-FROM 571934480752.dkr.ecr.us-west-2.amazonaws.com/swift-tools:2020-04-15-1
+FROM rust:1.44-slim-stretch
 
-RUN sudo apt-get update && sudo apt-get install -y cmake clang libclang-7-dev
+ARG DEBIAN_FRONTEND=noninterative
+
+RUN apt-get update \
+    && apt-get install -y openssh-client git cmake clang libclang-7-dev \
+    && rustup component add rustfmt \
+    && rustup component add clippy
+
+## Set-up Jenkins user
+RUN useradd -u 1001 -ms /bin/bash -G staff jenkins
