@@ -284,8 +284,6 @@ impl Ephemeris {
                 sat.acc.as_mut_array_ref(),
                 &mut sat.clock_err,
                 &mut sat.clock_rate_err,
-                &mut sat.iodc,
-                &mut sat.iode,
             )
         };
 
@@ -306,6 +304,7 @@ impl Ephemeris {
                 &self.0,
                 t.c_ptr(),
                 pos.as_array_ref(),
+                c_bindings::satellite_orbit_type_t_MEO,
                 &mut sat.az,
                 &mut sat.el,
                 true,
@@ -330,6 +329,7 @@ impl Ephemeris {
                 t.c_ptr(),
                 pos.as_array_ref(),
                 vel.as_array_ref(),
+                c_bindings::satellite_orbit_type_t_MEO,
                 &mut doppler,
             )
         };
@@ -356,12 +356,6 @@ impl Ephemeris {
     /// Check if this this ephemeris is healthy
     pub fn is_healthy(&self, code: &Code) -> bool {
         unsafe { c_bindings::ephemeris_healthy(&self.0, code.to_code_t()) }
-    }
-
-    /// Get the ephemeris iod. For BDS, returns a crc value uniquely identifying
-    /// the satellite ephemeris set; for all other constellations, returns the IODE
-    pub fn get_iod_or_iodcrc(&self) -> u32 {
-        unsafe { c_bindings::get_ephemeris_iod_or_iodcrc(&self.0) }
     }
 }
 
@@ -478,28 +472,28 @@ mod tests {
             0,                                     // source
             EphemerisTerms::new_kepler(
                 Constellation::Gal,
-                [0., 0.],                              // tgd
-                62.375,                                // crs
-                -54.0625,                              // crc
-                -2.3748725652694702e-06,               // cuc
-                1.2902542948722839e-05,                // cus
-                7.4505805969238281e-09,                // cic
-                4.6566128730773926e-08,                // cis
-                2.9647663515616992e-09,                // dn
-                1.1731263781996162,                    // m0
-                0.00021702353842556477,                // ecc
-                5440.6276874542236,                    // sqrta
-                0.7101536200630526,                    // omega0
-                -5.363080536688408e-09,                // omegadot
-                0.39999676368790066,                   // w
-                0.95957029480011957,                   // inc
-                4.3751822439020375e-10,                // inc_dot
-                0.0062288472545333198,                 // af0
-                -5.4427573559223666e-12,               // af1
-                0.,                                    // af2
-                GpsTime::new_unchecked(2090, 135000.), // toc
-                97,                                    // iode
-                97,                                    // iodc
+                [-5.5879354476928711e-09, -6.5192580223083496e-09], // tgd
+                62.375,                                             // crs
+                -54.0625,                                           // crc
+                -2.3748725652694702e-06,                            // cuc
+                1.2902542948722839e-05,                             // cus
+                7.4505805969238281e-09,                             // cic
+                4.6566128730773926e-08,                             // cis
+                2.9647663515616992e-09,                             // dn
+                1.1731263781996162,                                 // m0
+                0.00021702353842556477,                             // ecc
+                5440.6276874542236,                                 // sqrta
+                0.7101536200630526,                                 // omega0
+                -5.363080536688408e-09,                             // omegadot
+                0.39999676368790066,                                // w
+                0.95957029480011957,                                // inc
+                4.3751822439020375e-10,                             // inc_dot
+                0.0062288472545333198,                              // af0
+                -5.4427573559223666e-12,                            // af1
+                0.,                                                 // af2
+                GpsTime::new_unchecked(2090, 135000.),              // toc
+                97,                                                 // iode
+                97,                                                 // iodc
             ),
         );
 
