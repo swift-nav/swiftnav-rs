@@ -319,7 +319,7 @@ mod tests {
         assert_eq!(Constellation::Gps.sat_count(), 32);
         assert_eq!(Constellation::Sbas.sat_count(), 19);
         assert_eq!(Constellation::Glo.sat_count(), 28);
-        assert_eq!(Constellation::Bds.sat_count(), 37);
+        assert_eq!(Constellation::Bds.sat_count(), 64);
         assert_eq!(Constellation::Gal.sat_count(), 36);
         assert_eq!(Constellation::Qzs.sat_count(), 10);
     }
