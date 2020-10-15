@@ -1,6 +1,6 @@
 # swiftnav-rs
 
-An idiomatic Rust wrapper around the C library `libswiftnav`, which provides
+An idiomatic Rust wrapper around the C library [`libswiftnav`](https://github.com/swift-nav/libswiftnav), which provides
 general GNSS related functionality.
 
 ## License
