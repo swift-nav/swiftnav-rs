@@ -1,7 +1,7 @@
 use crate::c_bindings;
 
-pub fn compute_crc24q(buf: &[u8], length: u32, initial_value: u32) -> u32 {
-    unsafe { c_bindings::crc24q(buf.as_ptr(), length, initial_value) }
+pub fn compute_crc24q(buf: &[u8], initial_value: u32) -> u32 {
+    unsafe { c_bindings::crc24q(buf.as_ptr(), buf.len() as u32, initial_value) }
 }
 
 #[cfg(test)]
