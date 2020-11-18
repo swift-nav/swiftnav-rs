@@ -14,5 +14,5 @@ license = "LGPL-3.0"
 [dependencies]
 
 [build-dependencies]
-bindgen = { git="https://github.com/rust-lang/rust-bindgen.git", rev="87b2bc033f35234d292d41ee2ba165516345dd18" }
+bindgen = "0.55"
 cmake = "0.1"
