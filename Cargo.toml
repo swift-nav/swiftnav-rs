@@ -14,5 +14,5 @@ license = "LGPL-3.0"
 [dependencies]
 
 [build-dependencies]
-bindgen = "0.55"
+bindgen = "0.56"
 cmake = "0.1"
