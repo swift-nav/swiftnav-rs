@@ -16,6 +16,7 @@
 
 mod c_bindings;
 pub mod coords;
+pub mod edc;
 pub mod ephemeris;
 pub mod ionosphere;
 pub mod signal;

@@ -26,6 +26,7 @@ fn main() {
         .header(format!("{}/include/swiftnav/ionosphere.h", dst.display()))
         .header(format!("{}/include/swiftnav/troposphere.h", dst.display()))
         .header(format!("{}/include/swiftnav/ephemeris.h", dst.display()))
+        .header(format!("{}/include/swiftnav/edc.h", dst.display()))
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
@@ -80,6 +81,7 @@ fn main() {
         .whitelist_function("decode_ephemeris")
         .whitelist_function("decode_bds_d1_ephemeris")
         .whitelist_function("decode_gal_ephemeris")
+        .whitelist_function("crc24q")
         // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.
