@@ -11,14 +11,26 @@ mod tests {
     #[test]
     fn crc24q() {
         let crc = super::compute_crc24q(TEST_DATA, 0, 0);
-        assert!(crc == 0, "CRC of empty buffer with starting value 0 should be 0, not {}", crc);
+        assert!(
+            crc == 0,
+            "CRC of empty buffer with starting value 0 should be 0, not {}",
+            crc
+        );
 
         let crc = super::compute_crc24q(TEST_DATA, 0, 22);
-        assert!(crc == 22, "CRC of empty buffer with starting value 22 should be 22, not {}", crc);
+        assert!(
+            crc == 22,
+            "CRC of empty buffer with starting value 22 should be 22, not {}",
+            crc
+        );
 
         /* Test value taken from python crcmod package tests, see:
          * http://crcmod.sourceforge.net/crcmod.predefined.html */
         let crc = super::compute_crc24q(TEST_DATA, 9, 0xB704CE);
-        assert!(crc == 0x21CF02, "CRC of \"123456789\" with init value 0xB704CE should be {}, not 0x%06X", crc);
+        assert!(
+            crc == 0x21CF02,
+            "CRC of \"123456789\" with init value 0xB704CE should be {}, not 0x%06X",
+            crc
+        );
     }
 }
