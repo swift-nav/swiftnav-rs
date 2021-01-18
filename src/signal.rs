@@ -5,6 +5,7 @@
 //! satellite can send out multiple signals.
 
 use crate::c_bindings;
+use std::borrow::Cow;
 use std::ffi;
 use std::str::Utf8Error;
 
@@ -41,9 +42,22 @@ impl Constellation {
         }
     }
 
+    pub(crate) fn to_constellation_t(&self) -> c_bindings::constellation_t {
+        *self as c_bindings::constellation_t
+    }
+
     /// Gets the specified maximum number of active satellites for the constellation
     pub fn sat_count(&self) -> u16 {
         unsafe { c_bindings::constellation_to_sat_count(*self as c_bindings::constellation_t) }
+    }
+
+    pub fn to_str(&self) -> Cow<'static, str> {
+        let c_str = unsafe {
+            ffi::CStr::from_ptr(c_bindings::constellation_to_string(
+                self.to_constellation_t(),
+            ))
+        };
+        c_str.to_string_lossy()
     }
 }
 
@@ -150,7 +164,7 @@ pub enum Code {
 }
 
 impl Code {
-    fn from_code_t(value: c_bindings::code_t) -> Option<Code> {
+    pub(crate) fn from_code_t(value: c_bindings::code_t) -> Option<Code> {
         match value {
             c_bindings::code_e_CODE_GPS_L1CA => Some(Code::GpsL1ca),
             c_bindings::code_e_CODE_GPS_L2CM => Some(Code::GpsL2cm),
@@ -225,11 +239,9 @@ impl Code {
         Self::from_code_t(unsafe { c_bindings::code_string_to_enum(s.as_ptr()) })
     }
 
-    /// Makes a string representation of a `Code`
-    pub fn to_string(&self) -> Result<String, Utf8Error> {
+    pub fn to_str(&self) -> Cow<'static, str> {
         let c_str = unsafe { ffi::CStr::from_ptr(c_bindings::code_to_string(self.to_code_t())) };
-
-        Ok(c_str.to_str()?.to_owned())
+        c_str.to_string_lossy()
     }
 
     /// Gets  the corresponding `Constellation`
