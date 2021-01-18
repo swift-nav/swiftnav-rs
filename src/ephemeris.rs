@@ -19,7 +19,7 @@ use std::fmt::{Display, Formatter};
 
 /// Number of bytes in  the Galileo INAV message
 // TODO(jbangelo) bindgen doesn't catch this variable on linux for some reason
-pub const GAL_INAV_CONTENT_BYTE: usize = ((128 + 8 - 1) / 8);
+pub const GAL_INAV_CONTENT_BYTE: usize = (128 + 8 - 1) / 8;
 
 /// An error indicating that the ephemeris is invalid
 #[derive(Copy, Clone, Debug)]
@@ -45,6 +45,8 @@ pub enum Status {
     FitIntervalEqualsZero = c_bindings::ephemeris_status_t_EPH_FIT_INTERVAL_EQ_0,
     Unhealthy = c_bindings::ephemeris_status_t_EPH_UNHEALTHY,
     TooOld = c_bindings::ephemeris_status_t_EPH_TOO_OLD,
+    InvalidSid = c_bindings::ephemeris_status_t_EPH_INVALID_SID,
+    InvalidIod = c_bindings::ephemeris_status_t_EPH_INVALID_IOD,
     Valid = c_bindings::ephemeris_status_t_EPH_VALID,
 }
 

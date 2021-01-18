@@ -94,8 +94,8 @@ impl GpsTime {
 impl fmt::Debug for GpsTime {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("GpsTime")
-            .field("WN", unsafe { &self.0.wn })
-            .field("TOW", unsafe { &self.0.tow })
+            .field("WN", &self.0.wn)
+            .field("TOW", &self.0.tow)
             .finish()
     }
 }
@@ -103,7 +103,7 @@ impl fmt::Debug for GpsTime {
 impl PartialEq for GpsTime {
     fn eq(&self, other: &Self) -> bool {
         let diff_seconds = self.diff(other).abs();
-        return diff_seconds < Self::JIFFY;
+        diff_seconds < Self::JIFFY
     }
 }
 
