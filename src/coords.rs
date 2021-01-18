@@ -38,31 +38,20 @@
 //!   * "Transformation from Cartesian to Geodetic Coordinates Accelerated by
 //!      Halley’s Method", T. Fukushima (2006), Journal of Geodesy.
 use crate::c_bindings;
-use std::marker::PhantomData;
-/// Tag trait for denoting ways of representing angles
-pub trait Angle {}
 
-/// Tag type for denoting angles in units of degrees
-pub struct Degrees {}
-impl Angle for Degrees {}
-
-/// Tag type for denoting angles in units of radians
-pub struct Radians {}
-impl Angle for Radians {}
-
-/// WGS84 geodetic coordinates (Latitude, Longitude, Height).
+/// WGS84 geodetic coordinates (Latitude, Longitude, Height)
 ///
 /// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude (both in the given angular units) and height above the geoid in meters
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
-pub struct LLH<T: Angle>([f64; 3], PhantomData<T>);
+pub struct LLHDegrees([f64; 3]);
 
-impl<T: Angle> LLH<T> {
-    pub fn new(lat: f64, lon: f64, height: f64) -> LLH<T> {
-        LLH([lat, lon, height], PhantomData)
+impl LLHDegrees {
+    pub fn new(lat: f64, lon: f64, height: f64) -> LLHDegrees {
+        LLHDegrees([lat, lon, height])
     }
 
-    pub fn from_array(array: &[f64; 3]) -> LLH<T> {
-        LLH(*array, PhantomData)
+    pub fn from_array(array: &[f64; 3]) -> LLHDegrees {
+        LLHDegrees(*array)
     }
 
     pub fn as_ptr(&self) -> *const [f64; 3] {
@@ -92,32 +81,11 @@ impl<T: Angle> LLH<T> {
     pub fn height(&self) -> f64 {
         self.0[2]
     }
-}
 
-impl LLH<Radians> {
-    /// Converts a LLH position from radians to degrees. The position doesn't change,
-    /// just the representation of the angular values.
-    pub fn to_degrees(&self) -> LLH<Degrees> {
-        let mut deg = LLH::<Degrees>::from_array(&[0.0; 3]);
-        unsafe { c_bindings::llhrad2deg(self.as_ptr(), deg.as_mut_ptr()) };
-        deg
-    }
-
-    /// Converts from WGS84 geodetic coordinates (latitude, longitude and height)
-    /// into WGS84 Earth Centered, Earth Fixed Cartesian (ECEF) coordinates
-    /// (X, Y and Z).
-    pub fn to_ecef(&self) -> ECEF {
-        let mut ecef = ECEF::from_array(&[0.0; 3]);
-        unsafe { c_bindings::wgsllh2ecef(self.as_ptr(), ecef.as_mut_ptr()) };
-        ecef
-    }
-}
-
-impl LLH<Degrees> {
     /// Converts a LLH position from degrees to radians. The position doesn't change,
     /// just the representation of the angular values.
-    pub fn to_radians(&self) -> LLH<Radians> {
-        let mut rad = LLH::<Radians>::from_array(&[0.0; 3]);
+    pub fn to_radians(&self) -> LLHRadians {
+        let mut rad = LLHRadians::default();
         unsafe { c_bindings::llhdeg2rad(self.as_ptr(), rad.as_mut_ptr()) };
         rad
     }
@@ -130,21 +98,124 @@ impl LLH<Degrees> {
     }
 }
 
-impl<T: Angle> Default for LLH<T> {
-    fn default() -> Self {
-        Self::new(0., 0., 0.)
+impl Default for LLHDegrees {
+    fn default() -> LLHDegrees {
+        LLHDegrees::new(0., 0., 0.)
     }
 }
 
-impl<T: Angle> AsRef<[f64; 3]> for LLH<T> {
+impl AsRef<[f64; 3]> for LLHDegrees {
     fn as_ref(&self) -> &[f64; 3] {
         &self.0
     }
 }
 
-impl<T: Angle> AsMut<[f64; 3]> for LLH<T> {
+impl AsMut<[f64; 3]> for LLHDegrees {
     fn as_mut(&mut self) -> &mut [f64; 3] {
         &mut self.0
+    }
+}
+
+impl From<LLHDegrees> for LLHRadians {
+    fn from(deg: LLHDegrees) -> LLHRadians {
+        deg.to_radians()
+    }
+}
+
+impl From<ECEF> for LLHRadians {
+    fn from(ecef: ECEF) -> LLHRadians {
+        ecef.to_llh()
+    }
+}
+
+/// WGS84 geodetic coordinates (Latitude, Longitude, Height).
+///
+/// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude (both in the given angular units) and height above the geoid in meters
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+pub struct LLHRadians([f64; 3]);
+
+impl LLHRadians {
+    pub fn new(lat: f64, lon: f64, height: f64) -> LLHRadians {
+        LLHRadians([lat, lon, height])
+    }
+
+    pub fn from_array(array: &[f64; 3]) -> LLHRadians {
+        LLHRadians(*array)
+    }
+
+    pub fn as_ptr(&self) -> *const [f64; 3] {
+        &self.0
+    }
+
+    pub fn as_mut_ptr(&mut self) -> *mut [f64; 3] {
+        &mut self.0
+    }
+
+    pub fn as_array_ref(&self) -> &[f64; 3] {
+        &self.0
+    }
+
+    pub fn as_mut_array_ref(&mut self) -> &mut [f64; 3] {
+        &mut self.0
+    }
+
+    pub fn latitude(&self) -> f64 {
+        self.0[0]
+    }
+
+    pub fn longitude(&self) -> f64 {
+        self.0[1]
+    }
+
+    pub fn height(&self) -> f64 {
+        self.0[2]
+    }
+
+    /// Converts a LLH position from radians to degrees. The position doesn't change,
+    /// just the representation of the angular values.
+    pub fn to_degrees(&self) -> LLHDegrees {
+        let mut deg = LLHDegrees::default();
+        unsafe { c_bindings::llhrad2deg(self.as_ptr(), deg.as_mut_ptr()) };
+        deg
+    }
+
+    /// Converts from WGS84 geodetic coordinates (latitude, longitude and height)
+    /// into WGS84 Earth Centered, Earth Fixed Cartesian (ECEF) coordinates
+    /// (X, Y and Z).
+    pub fn to_ecef(&self) -> ECEF {
+        let mut ecef = ECEF::default();
+        unsafe { c_bindings::wgsllh2ecef(self.as_ptr(), ecef.as_mut_ptr()) };
+        ecef
+    }
+}
+
+impl Default for LLHRadians {
+    fn default() -> LLHRadians {
+        LLHRadians::new(0., 0., 0.)
+    }
+}
+
+impl AsRef<[f64; 3]> for LLHRadians {
+    fn as_ref(&self) -> &[f64; 3] {
+        &self.0
+    }
+}
+
+impl AsMut<[f64; 3]> for LLHRadians {
+    fn as_mut(&mut self) -> &mut [f64; 3] {
+        &mut self.0
+    }
+}
+
+impl From<LLHRadians> for LLHDegrees {
+    fn from(rad: LLHRadians) -> LLHDegrees {
+        rad.to_degrees()
+    }
+}
+
+impl From<ECEF> for LLHDegrees {
+    fn from(ecef: ECEF) -> LLHDegrees {
+        ecef.to_llh().to_degrees()
     }
 }
 
@@ -194,8 +265,8 @@ impl ECEF {
     /// Converts from WGS84 Earth Centered, Earth Fixed (ECEF) Cartesian
     /// coordinates (X, Y and Z) into WGS84 geodetic coordinates (latitude,
     /// longitude and height).
-    pub fn to_llh(&self) -> LLH<Radians> {
-        let mut llh = LLH::<Radians>::from_array(&[0.0; 3]);
+    pub fn to_llh(&self) -> LLHRadians {
+        let mut llh = LLHRadians::from_array(&[0.0; 3]);
         unsafe { c_bindings::wgsecef2llh(self.as_ptr(), llh.as_mut_ptr()) };
         llh
     }
@@ -266,14 +337,14 @@ mod tests {
 
     #[test]
     fn llhrad2deg() {
-        let zeros = LLH::<Radians>::from_array(&[0.0; 3]);
+        let zeros = LLHRadians::from_array(&[0.0; 3]);
 
         let deg = zeros.to_degrees();
         assert_eq!(0.0, deg.latitude());
         assert_eq!(0.0, deg.longitude());
         assert_eq!(0.0, deg.height());
 
-        let swift_home = LLH::<Degrees>::from_array(&[37.779804, -122.391751, 60.0]);
+        let swift_home = LLHDegrees::from_array(&[37.779804, -122.391751, 60.0]);
         let rads = swift_home.to_radians();
 
         assert!((rads.latitude() - 0.659381970558).abs() < MAX_ANGLE_ERROR_RAD);
@@ -281,17 +352,17 @@ mod tests {
         assert!(rads.height() == swift_home.height());
     }
 
-    const LLH_VALUES: [LLH<Radians>; 10] = [
-        LLH::<Radians>([0.0, 0.0, 0.0], PhantomData), /* On the Equator and Prime Meridian. */
-        LLH::<Radians>([0.0, 180.0 * D2R, 0.0], PhantomData), /* On the Equator. */
-        LLH::<Radians>([0.0, 90.0 * D2R, 0.0], PhantomData), /* On the Equator. */
-        LLH::<Radians>([0.0, -90.0 * D2R, 0.0], PhantomData), /* On the Equator. */
-        LLH::<Radians>([90.0 * D2R, 0.0, 0.0], PhantomData), /* North pole. */
-        LLH::<Radians>([-90.0 * D2R, 0.0, 0.0], PhantomData), /* South pole. */
-        LLH::<Radians>([90.0 * D2R, 0.0, 22.0], PhantomData), /* 22m above the north pole. */
-        LLH::<Radians>([-90.0 * D2R, 0.0, 22.0], PhantomData), /* 22m above the south pole. */
-        LLH::<Radians>([0.0, 0.0, 22.0], PhantomData), /* 22m above the Equator and Prime Meridian. */
-        LLH::<Radians>([0.0, 180.0 * D2R, 22.0], PhantomData), /* 22m above the Equator. */
+    const LLH_VALUES: [LLHRadians; 10] = [
+        LLHRadians([0.0, 0.0, 0.0]), /* On the Equator and Prime Meridian. */
+        LLHRadians([0.0, 180.0 * D2R, 0.0]), /* On the Equator. */
+        LLHRadians([0.0, 90.0 * D2R, 0.0]), /* On the Equator. */
+        LLHRadians([0.0, -90.0 * D2R, 0.0]), /* On the Equator. */
+        LLHRadians([90.0 * D2R, 0.0, 0.0]), /* North pole. */
+        LLHRadians([-90.0 * D2R, 0.0, 0.0]), /* South pole. */
+        LLHRadians([90.0 * D2R, 0.0, 22.0]), /* 22m above the north pole. */
+        LLHRadians([-90.0 * D2R, 0.0, 22.0]), /* 22m above the south pole. */
+        LLHRadians([0.0, 0.0, 22.0]), /* 22m above the Equator and Prime Meridian. */
+        LLHRadians([0.0, 180.0 * D2R, 22.0]), /* 22m above the Equator. */
     ];
 
     /* Semi-major axis. */
