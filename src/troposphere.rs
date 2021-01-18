@@ -28,7 +28,7 @@ mod tests {
 
     #[test]
     fn calc_troposphere() {
-        const d_tol: f64 = 1e-4;
+        const D_TOL: f64 = 1e-4;
 
         /* some tests against "true" values computed with UNB3M.f */
         /* http://www2.unb.ca/gge/Personnel/Santos/UNB_pack.pdf */
@@ -46,7 +46,7 @@ mod tests {
         let d_tropo = calc_delay(&t, lat, h, el);
 
         assert!(
-            (d_tropo - d_true).abs() < d_tol,
+            (d_tropo - d_true).abs() < D_TOL,
             "Distance didn't match hardcoded correct values {:.5}. Saw: {:.5}",
             d_true,
             d_tropo
@@ -64,7 +64,7 @@ mod tests {
         let d_tropo = calc_delay(&t, lat, h, el);
 
         assert!(
-            (d_tropo - d_true).abs() < d_tol,
+            (d_tropo - d_true).abs() < D_TOL,
             "Distance didn't match hardcoded correct values {:.5}. Saw: {:.5}",
             d_true,
             d_tropo
@@ -82,7 +82,7 @@ mod tests {
         let d_tropo = calc_delay(&t, lat, h, el);
 
         assert!(
-            (d_tropo - d_true).abs() < d_tol,
+            (d_tropo - d_true).abs() < D_TOL,
             "Distance didn't match hardcoded correct values {:.5}. Saw: {:.5}",
             d_true,
             d_tropo

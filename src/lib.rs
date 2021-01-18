@@ -32,7 +32,7 @@ impl Vec3 {
     }
 
     pub fn from_array(a: &[f64; 3]) -> Vec3 {
-        Vec3(a.clone())
+        Vec3(*a)
     }
 
     pub fn get_x(&self) -> f64 {
