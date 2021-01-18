@@ -10,10 +10,9 @@
 
 use crate::{
     c_bindings,
-    coords::AzimuthElevation,
+    coords::{AzimuthElevation, ECEF},
     signal::{Code, Constellation, GnssSignal},
     time::GpsTime,
-    Vec3,
 };
 use std::fmt::{Display, Formatter};
 
@@ -268,9 +267,9 @@ impl Ephemeris {
     /// Calculate satellite position, velocity and clock offset from ephemeris.
     pub fn calc_satellite_state(&self, t: &GpsTime) -> Result<SatelliteState> {
         let mut sat = SatelliteState {
-            pos: Vec3::default(),
-            vel: Vec3::default(),
-            acc: Vec3::default(),
+            pos: ECEF::default(),
+            vel: ECEF::default(),
+            acc: ECEF::default(),
             clock_err: 0.0,
             clock_rate_err: 0.0,
             iodc: 0,
@@ -298,7 +297,7 @@ impl Ephemeris {
 
     /// Calculate the azimuth and elevation of a satellite from a reference
     /// position given the satellite ephemeris.
-    pub fn calc_satellite_az_el(&self, t: &GpsTime, pos: &Vec3) -> Result<AzimuthElevation> {
+    pub fn calc_satellite_az_el(&self, t: &GpsTime, pos: &ECEF) -> Result<AzimuthElevation> {
         let mut sat = AzimuthElevation::default();
 
         let result = unsafe {
@@ -322,7 +321,7 @@ impl Ephemeris {
 
     /// Calculate the Doppler shift of a satellite as observed at a reference
     /// position given the satellite ephemeris.
-    pub fn calc_satellite_doppler(&self, t: &GpsTime, pos: &Vec3, vel: &Vec3) -> Result<f64> {
+    pub fn calc_satellite_doppler(&self, t: &GpsTime, pos: &ECEF, vel: &ECEF) -> Result<f64> {
         let mut doppler = 0.0;
 
         let result = unsafe {
@@ -379,11 +378,11 @@ impl Default for Ephemeris {
 /// certain time.
 pub struct SatelliteState {
     /// Calculated satellite position, in meters
-    pub pos: Vec3,
+    pub pos: ECEF,
     /// Calculated satellite velocity, in meters/second
-    pub vel: Vec3,
+    pub vel: ECEF,
     /// Calculated satellite acceleration, meters/second/second
-    pub acc: Vec3,
+    pub acc: ECEF,
     /// Calculated satellite clock error, in seconds
     pub clock_err: f64,
     /// Calculated satellite clock error rate, in seconds/second
