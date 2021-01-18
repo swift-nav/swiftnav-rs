@@ -73,6 +73,14 @@ impl<T: Angle> LLH<T> {
         &mut self.0
     }
 
+    pub fn as_array_ref(&self) -> &[f64; 3] {
+        &self.0
+    }
+
+    pub fn as_mut_array_ref(&mut self) -> &mut [f64; 3] {
+        &mut self.0
+    }
+
     pub fn latitude(&self) -> f64 {
         self.0[0]
     }
@@ -160,6 +168,14 @@ impl ECEF {
     }
 
     pub fn as_mut_ptr(&mut self) -> *mut [f64; 3] {
+        &mut self.0
+    }
+
+    pub fn as_array_ref(&self) -> &[f64; 3] {
+        &self.0
+    }
+
+    pub fn as_mut_array_ref(&mut self) -> &mut [f64; 3] {
         &mut self.0
     }
 
