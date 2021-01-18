@@ -54,6 +54,7 @@ fn main() {
         .whitelist_function("sid_to_constellation")
         .whitelist_function("code_to_constellation")
         .whitelist_function("constellation_to_sat_count")
+        .whitelist_function("constellation_to_string")
         .whitelist_function("code_to_sig_count")
         .whitelist_function("code_to_chip_count")
         .whitelist_function("code_to_chip_rate")
