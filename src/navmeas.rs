@@ -6,6 +6,7 @@ const NAV_MEAS_FLAG_MEAS_DOPPLER_VALID: u16 = 1 << 2;
 const NAV_MEAS_FLAG_CN0_VALID: u16 = 1 << 5;
 
 #[derive(Clone)]
+#[repr(transparent)]
 pub struct NavigationMeasurement(c_bindings::navigation_measurement_t);
 
 impl NavigationMeasurement {

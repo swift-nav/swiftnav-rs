@@ -21,5 +21,6 @@ pub mod ephemeris;
 pub mod ionosphere;
 pub mod navmeas;
 pub mod signal;
+pub mod solver;
 pub mod time;
 pub mod troposphere;

@@ -28,6 +28,10 @@ fn main() {
         .header(format!("{}/include/swiftnav/ephemeris.h", dst.display()))
         .header(format!("{}/include/swiftnav/edc.h", dst.display()))
         .header(format!("{}/include/swiftnav/nav_meas.h", dst.display()))
+        .header(format!(
+            "{}/include/swiftnav/single_epoch_solver.h",
+            dst.display()
+        ))
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
@@ -90,6 +94,12 @@ fn main() {
         .whitelist_var("NAV_MEAS_FLAG_CODE_VALID")
         .whitelist_var("NAV_MEAS_FLAG_MEAS_DOPPLER_VALID")
         .whitelist_var("NAV_MEAS_FLAG_CN0_VALID")
+        .whitelist_function("sid_set_init")
+        .whitelist_function("sid_set_get_sat_count")
+        .whitelist_function("sid_set_get_sig_count")
+        .whitelist_function("sid_set_contains")
+        .whitelist_function("calc_PVT")
+        .whitelist_var("pvt_err_msg")
         // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.
