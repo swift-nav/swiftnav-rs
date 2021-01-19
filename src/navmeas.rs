@@ -71,3 +71,12 @@ impl Default for NavigationMeasurement {
         unsafe { std::mem::zeroed::<NavigationMeasurement>() }
     }
 }
+
+pub fn encode_lock_time(nav_meas_lock_time: Duration) -> u8 {
+    unsafe { c_bindings::encode_lock_time(nav_meas_lock_time.as_secs_f64()) }
+}
+
+pub fn decode_lock_time(sbp_lock_time: u8) -> Duration {
+    let value = unsafe { c_bindings::decode_lock_time(sbp_lock_time) };
+    Duration::from_secs_f64(value)
+}

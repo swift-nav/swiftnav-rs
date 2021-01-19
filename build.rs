@@ -91,6 +91,8 @@ fn main() {
         .whitelist_type("measurement_std_t")
         .whitelist_function("nav_meas_flags_valid")
         .whitelist_function("pseudorange_valid")
+        .whitelist_function("encode_lock_time")
+        .whitelist_function("decode_lock_time")
         .whitelist_var("NAV_MEAS_FLAG_CODE_VALID")
         .whitelist_var("NAV_MEAS_FLAG_MEAS_DOPPLER_VALID")
         .whitelist_var("NAV_MEAS_FLAG_CN0_VALID")
