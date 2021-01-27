@@ -1,5 +1,5 @@
 use crate::c_bindings;
-use crate::coords::{LLHRadians, ECEF};
+use crate::coords::{LLHRadians, ECEF, NED};
 use crate::navmeas::NavigationMeasurement;
 use crate::signal::GnssSignal;
 use crate::time::GpsTime;
@@ -27,9 +27,9 @@ impl GnssSolution {
         ECEF::from_array(&self.0.pos_ecef)
     }
 
-    // pub fn vel_ned(&self) -> ECEF {
-    //     ECEF::from_array(&self.0.vel_ned)
-    // }
+    pub fn vel_ned(&self) -> NED {
+        NED::from_array(&self.0.vel_ned)
+    }
 
     pub fn vel_ecef(&self) -> ECEF {
         ECEF::from_array(&self.0.vel_ecef)
