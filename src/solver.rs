@@ -19,28 +19,52 @@ impl GnssSolution {
         self.0.velocity_valid == 1
     }
 
-    pub fn pos_llh(&self) -> LLHRadians {
-        LLHRadians::from_array(&self.0.pos_llh)
+    pub fn pos_llh(&self) -> Option<LLHRadians> {
+        if self.pos_valid() {
+            Some(LLHRadians::from_array(&self.0.pos_llh))
+        } else {
+            None
+        }
     }
 
-    pub fn pos_ecef(&self) -> ECEF {
-        ECEF::from_array(&self.0.pos_ecef)
+    pub fn pos_ecef(&self) -> Option<ECEF> {
+        if self.pos_valid() {
+            Some(ECEF::from_array(&self.0.pos_ecef))
+        } else {
+            None
+        }
     }
 
-    pub fn vel_ned(&self) -> NED {
-        NED::from_array(&self.0.vel_ned)
+    pub fn vel_ned(&self) -> Option<NED> {
+        if self.vel_valid() {
+            Some(NED::from_array(&self.0.vel_ned))
+        } else {
+            None
+        }
     }
 
-    pub fn vel_ecef(&self) -> ECEF {
-        ECEF::from_array(&self.0.vel_ecef)
+    pub fn vel_ecef(&self) -> Option<ECEF> {
+        if self.vel_valid() {
+            Some(ECEF::from_array(&self.0.vel_ecef))
+        } else {
+            None
+        }
     }
 
-    pub fn err_cov(&self) -> &[f64; 7] {
-        &self.0.err_cov
+    pub fn err_cov(&self) -> Option<&[f64; 7]> {
+        if self.pos_valid() {
+            Some(&self.0.err_cov)
+        } else {
+            None
+        }
     }
 
-    pub fn vel_cov(&self) -> &[f64; 7] {
-        &self.0.vel_cov
+    pub fn vel_cov(&self) -> Option<&[f64; 7]> {
+        if self.vel_valid() {
+            Some(&self.0.vel_cov)
+        } else {
+            None
+        }
     }
 
     pub fn clock_offset(&self) -> f64 {
