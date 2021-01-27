@@ -84,7 +84,7 @@ impl GnssSolution {
     }
 
     pub fn time(&self) -> GpsTime {
-        GpsTime::new_unchecked(self.0.time.wn, self.0.time.tow)
+        GpsTime::new(self.0.time.wn, self.0.time.tow).unwrap()
     }
 
     pub fn sats_used(&self) -> u8 {
