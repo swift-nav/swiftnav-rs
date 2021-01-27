@@ -24,7 +24,7 @@ pub struct NavigationMeasurement(c_bindings::navigation_measurement_t);
 impl NavigationMeasurement {
     /// Makes a navigation measurement with all fields invalidated
     pub fn new() -> Self {
-        Self::default()
+        unsafe { std::mem::zeroed::<NavigationMeasurement>() }
     }
 
     /// Sets the pseudorange measurement value and marks it as valid
@@ -102,7 +102,7 @@ impl NavigationMeasurement {
 
 impl Default for NavigationMeasurement {
     fn default() -> Self {
-        unsafe { std::mem::zeroed::<NavigationMeasurement>() }
+        Self::new()
     }
 }
 

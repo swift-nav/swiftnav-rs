@@ -18,6 +18,10 @@ use std::fmt;
 pub struct GnssSolution(c_bindings::gnss_solution);
 
 impl GnssSolution {
+    fn new() -> GnssSolution {
+        unsafe { std::mem::zeroed::<GnssSolution>() }
+    }
+
     /// Checks to see if the position solution is valid
     pub fn pos_valid(&self) -> bool {
         self.0.valid == 1
@@ -126,12 +130,6 @@ impl GnssSolution {
     }
 }
 
-impl Default for GnssSolution {
-    fn default() -> GnssSolution {
-        unsafe { std::mem::zeroed::<GnssSolution>() }
-    }
-}
-
 /// Dilution of precision (DOP) of a solution
 ///
 /// DOP is a measurement of how the satellite geometry impacts the precision of
@@ -140,31 +138,33 @@ impl Default for GnssSolution {
 pub struct Dops(c_bindings::dops_t);
 
 impl Dops {
+    fn new() -> Dops {
+        unsafe { std::mem::zeroed::<Dops>() }
+    }
+
     /// Gets the position (3D) dilution of precision
     pub fn pdop(&self) -> f64 {
         self.0.pdop
     }
+
     /// Gets the geometric dilution of precision
     pub fn gdop(&self) -> f64 {
         self.0.gdop
     }
+
     /// Gets the time dilution of precision
     pub fn tdop(&self) -> f64 {
         self.0.tdop
     }
+
     /// Gets the horizontal dilution of precision
     pub fn hdop(&self) -> f64 {
         self.0.hdop
     }
+
     /// Gets the vertical dilution of precision
     pub fn vdop(&self) -> f64 {
         self.0.vdop
-    }
-}
-
-impl Default for Dops {
-    fn default() -> Dops {
-        unsafe { std::mem::zeroed::<Dops>() }
     }
 }
 
@@ -187,6 +187,20 @@ pub struct PvtSettings {
 }
 
 impl PvtSettings {
+    /// Creates a default, least common denominator, set of settings
+    ///
+    /// Note: The default settings consist of
+    ///  * Processing all constellations and signals
+    ///  * Disabling RAIM
+    ///  * Disabling velocity calculation
+    pub fn new() -> PvtSettings {
+        PvtSettings {
+            strategy: ProcessingStrategy::AllConstellations,
+            disable_raim: true,
+            disable_velocity: true,
+        }
+    }
+
     /// Sets the processing strategy to use
     pub fn set_strategy(self, strategy: ProcessingStrategy) -> PvtSettings {
         PvtSettings {
@@ -243,11 +257,7 @@ impl PvtSettings {
 
 impl Default for PvtSettings {
     fn default() -> PvtSettings {
-        PvtSettings {
-            strategy: ProcessingStrategy::AllConstellations,
-            disable_raim: false,
-            disable_velocity: false,
-        }
+        PvtSettings::new()
     }
 }
 
@@ -278,6 +288,12 @@ impl SidSet {
     /// Checks to see if a signal is present within the set
     pub fn contains(&self, sid: GnssSignal) -> bool {
         unsafe { c_bindings::sid_set_contains(&self.0, sid.to_gnss_signal_t()) }
+    }
+}
+
+impl Default for SidSet {
+    fn default() -> SidSet {
+        SidSet::new()
     }
 }
 
@@ -339,8 +355,8 @@ pub fn calc_pvt(
 ) -> Result<(GnssSolution, Dops, SidSet), PvtError> {
     assert!(measurements.len() <= std::u8::MAX as usize);
 
-    let mut solution = GnssSolution::default();
-    let mut dops = Dops::default();
+    let mut solution = GnssSolution::new();
+    let mut dops = Dops::new();
     let mut sidset = SidSet::new();
 
     let result = unsafe {
