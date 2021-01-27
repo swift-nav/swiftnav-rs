@@ -170,12 +170,22 @@ impl Dops {
 
 /// Different strategies of how to choose which measurements to use in a solution
 #[derive(Copy, Clone, Debug)]
-#[repr(u32)]
 pub enum ProcessingStrategy {
-    GpsOnly = c_bindings::processing_strategy_t_GPS_ONLY,
-    AllConstellations = c_bindings::processing_strategy_t_ALL_CONSTELLATIONS,
-    GpsL1caWhenPossible = c_bindings::processing_strategy_t_GPS_L1CA_WHEN_POSSIBLE,
-    L1Only = c_bindings::processing_strategy_t_L1_ONLY,
+    GpsOnly,
+    AllConstellations,
+    GpsL1caWhenPossible,
+    L1Only,
+}
+
+impl ProcessingStrategy {
+    pub(crate) fn to_processing_strategy_t(&self) -> c_bindings::processing_strategy_t {
+        match *self {
+            ProcessingStrategy::GpsOnly => c_bindings::processing_strategy_t_GPS_ONLY,
+            ProcessingStrategy::AllConstellations => c_bindings::processing_strategy_t_ALL_CONSTELLATIONS,
+            ProcessingStrategy::GpsL1caWhenPossible => c_bindings::processing_strategy_t_GPS_L1CA_WHEN_POSSIBLE,
+            ProcessingStrategy::L1Only => c_bindings::processing_strategy_t_L1_ONLY,
+        }
+    }
 }
 
 /// Holds the settings to customize how the GNSS solution is calculated
@@ -299,7 +309,6 @@ impl Default for SidSet {
 
 /// Causes of a failed PVT solution
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(usize)]
 pub enum PvtError {
     /// The PDOP of the solution was unacceptably high
     HighPdop = 0,
@@ -350,7 +359,6 @@ impl std::error::Error for PvtError {}
 
 /// Indicates action taken while successfully calculating a solution
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-#[repr(usize)]
 pub enum PvtStatus {
     /// Solution OK and RAIM check passed
     RaimPassed,
@@ -392,7 +400,7 @@ pub fn calc_pvt(
             tor.c_ptr(),
             settings.disable_raim,
             settings.disable_velocity,
-            settings.strategy as u32,
+            settings.strategy.to_processing_strategy_t(),
             &mut solution.0,
             &mut dops.0,
             &mut sidset.0,

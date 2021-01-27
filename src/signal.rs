@@ -11,20 +11,19 @@ use std::str::Utf8Error;
 
 /// GNSS satellite constellations
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
-#[repr(i32)]
 pub enum Constellation {
     /// GPS
-    Gps = c_bindings::constellation_e_CONSTELLATION_GPS,
+    Gps,
     /// SBAS - Space based  augmentation systems
-    Sbas = c_bindings::constellation_e_CONSTELLATION_SBAS,
+    Sbas,
     /// GLONASS
-    Glo = c_bindings::constellation_e_CONSTELLATION_GLO,
+    Glo,
     /// Beidou
-    Bds = c_bindings::constellation_e_CONSTELLATION_BDS,
+    Bds,
     /// QZSS
-    Qzs = c_bindings::constellation_e_CONSTELLATION_QZS,
+    Qzs,
     /// Galileo
-    Gal = c_bindings::constellation_e_CONSTELLATION_GAL,
+    Gal,
 }
 
 impl Constellation {
@@ -43,7 +42,14 @@ impl Constellation {
     }
 
     pub(crate) fn to_constellation_t(&self) -> c_bindings::constellation_t {
-        *self as c_bindings::constellation_t
+        match *self {
+            Constellation::Gps => c_bindings::constellation_e_CONSTELLATION_GPS,
+            Constellation::Sbas => c_bindings::constellation_e_CONSTELLATION_SBAS,
+            Constellation::Glo => c_bindings::constellation_e_CONSTELLATION_GLO,
+            Constellation::Bds => c_bindings::constellation_e_CONSTELLATION_BDS,
+            Constellation::Qzs => c_bindings::constellation_e_CONSTELLATION_QZS,
+            Constellation::Gal => c_bindings::constellation_e_CONSTELLATION_GAL,
+        }
     }
 
     /// Gets the specified maximum number of active satellites for the constellation
@@ -63,104 +69,103 @@ impl Constellation {
 
 /// Code identifiers
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
-#[repr(i32)]
 pub enum Code {
     /// GPS L1CA: BPSK(1)
-    GpsL1ca = c_bindings::code_e_CODE_GPS_L1CA,
+    GpsL1ca,
     /// GPS L2C: 2 x BPSK(0.5)
-    GpsL2cm = c_bindings::code_e_CODE_GPS_L2CM,
+    GpsL2cm,
     /// SBAS L1: BPSK(1)
-    SbasL1ca = c_bindings::code_e_CODE_SBAS_L1CA,
+    SbasL1ca,
     /// GLONASS L1OF: FDMA BPSK(0.5)
-    GloL1of = c_bindings::code_e_CODE_GLO_L1OF,
+    GloL1of,
     /// GLONASS L2OF: FDMA BPSK(0.5)
-    GloL2of = c_bindings::code_e_CODE_GLO_L2OF,
+    GloL2of,
     /// GPS L1P(Y): encrypted BPSK(10)
-    GpsL1p = c_bindings::code_e_CODE_GPS_L1P,
+    GpsL1p,
     /// GPS L2P(Y): encrypted BPSK(10)
-    GpsL2p = c_bindings::code_e_CODE_GPS_L2P,
-    GpsL2cl = c_bindings::code_e_CODE_GPS_L2CL,
-    GpsL2cx = c_bindings::code_e_CODE_GPS_L2CX,
+    GpsL2p,
+    GpsL2cl,
+    GpsL2cx,
     /// GPS L5: QPSK(10) at 1150*f0
-    GpsL5i = c_bindings::code_e_CODE_GPS_L5I,
-    GpsL5q = c_bindings::code_e_CODE_GPS_L5Q,
-    GpsL5x = c_bindings::code_e_CODE_GPS_L5X,
+    GpsL5i,
+    GpsL5q,
+    GpsL5x,
     /// BDS2 B1I: BPSK(2) at 1526*f0
-    Bds2B1 = c_bindings::code_e_CODE_BDS2_B1,
+    Bds2B1,
     /// BDS2 B2I: BPSK(2) at 1180*f0
-    Bds2B2 = c_bindings::code_e_CODE_BDS2_B2,
+    Bds2B2,
     /// Galileo E1: CASM CBOC(1,1) at 1540*f0
-    GalE1b = c_bindings::code_e_CODE_GAL_E1B,
-    GalE1c = c_bindings::code_e_CODE_GAL_E1C,
-    GalE1x = c_bindings::code_e_CODE_GAL_E1X,
+    GalE1b,
+    GalE1c,
+    GalE1x,
     /// Galileo E6: CASM BPSK(5) at 1250*f0
-    GalE6b = c_bindings::code_e_CODE_GAL_E6B,
-    GalE6c = c_bindings::code_e_CODE_GAL_E6C,
-    GalE6x = c_bindings::code_e_CODE_GAL_E6X,
+    GalE6b,
+    GalE6c,
+    GalE6x,
     /// Galileo E5b: QPSK(10) at 1180*f0
-    GalE7i = c_bindings::code_e_CODE_GAL_E7I,
-    GalE7q = c_bindings::code_e_CODE_GAL_E7Q,
-    GalE7x = c_bindings::code_e_CODE_GAL_E7X,
+    GalE7i,
+    GalE7q,
+    GalE7x,
     /// Galileo E5AltBOC(15,10) at 1165*f0
-    GalE8i = c_bindings::code_e_CODE_GAL_E8I,
-    GalE8q = c_bindings::code_e_CODE_GAL_E8Q,
-    GalE8x = c_bindings::code_e_CODE_GAL_E8X,
+    GalE8i,
+    GalE8q,
+    GalE8x,
     /// Galileo E5a: QPSK(10) at 1150*f0
-    GalE5i = c_bindings::code_e_CODE_GAL_E5I,
-    GalE5q = c_bindings::code_e_CODE_GAL_E5Q,
-    GalE5x = c_bindings::code_e_CODE_GAL_E5X,
+    GalE5i,
+    GalE5q,
+    GalE5x,
     /// GLONASS L1P: encrypted
-    GloL1p = c_bindings::code_e_CODE_GLO_L1P,
+    GloL1p,
     /// GLONASS L2P: encrypted
-    GloL2p = c_bindings::code_e_CODE_GLO_L2P,
+    GloL2p,
     /// QZSS L1CA: BPSK(1) at 1540*f0
-    QzsL1ca = c_bindings::code_e_CODE_QZS_L1CA,
+    QzsL1ca,
     /// QZSS L1C: TM-BOC at 1540*f0
-    QzsL1ci = c_bindings::code_e_CODE_QZS_L1CI,
-    QzsL1cq = c_bindings::code_e_CODE_QZS_L1CQ,
-    QzsL1cx = c_bindings::code_e_CODE_QZS_L1CX,
+    QzsL1ci,
+    QzsL1cq,
+    QzsL1cx,
     /// QZSS L2C: 2 x BPSK(0.5) at 1200*f0
-    QzsL2cm = c_bindings::code_e_CODE_QZS_L2CM,
-    QzsL2cl = c_bindings::code_e_CODE_QZS_L2CL,
-    QzsL2cx = c_bindings::code_e_CODE_QZS_L2CX,
+    QzsL2cm,
+    QzsL2cl,
+    QzsL2cx,
     /// QZSS L5: QPSK(10) at 1150*f0
-    QzsL5i = c_bindings::code_e_CODE_QZS_L5I,
-    QzsL5q = c_bindings::code_e_CODE_QZS_L5Q,
-    QzsL5x = c_bindings::code_e_CODE_QZS_L5X,
+    QzsL5i,
+    QzsL5q,
+    QzsL5x,
     /// SBAS L5: ? at 1150*f0
-    SbasL5i = c_bindings::code_e_CODE_SBAS_L5I,
-    SbasL5q = c_bindings::code_e_CODE_SBAS_L5Q,
-    SbasL5x = c_bindings::code_e_CODE_SBAS_L5X,
+    SbasL5i,
+    SbasL5q,
+    SbasL5x,
     /// BDS3 B1C: TM-BOC at 1540*f0
-    Bds3B1ci = c_bindings::code_e_CODE_BDS3_B1CI,
-    Bds3B1cq = c_bindings::code_e_CODE_BDS3_B1CQ,
-    Bds3B1cx = c_bindings::code_e_CODE_BDS3_B1CX,
+    Bds3B1ci,
+    Bds3B1cq,
+    Bds3B1cx,
     /// BDS3 B2a: QPSK(10) at 1150*f0
-    Bds3B5i = c_bindings::code_e_CODE_BDS3_B5I,
-    Bds3B5q = c_bindings::code_e_CODE_BDS3_B5Q,
-    Bds3B5x = c_bindings::code_e_CODE_BDS3_B5X,
+    Bds3B5i,
+    Bds3B5q,
+    Bds3B5x,
     /// BDS3 B2b: QPSK(10) at 1180*f0
-    Bds3B7i = c_bindings::code_e_CODE_BDS3_B7I,
-    Bds3B7q = c_bindings::code_e_CODE_BDS3_B7Q,
-    Bds3B7x = c_bindings::code_e_CODE_BDS3_B7X,
+    Bds3B7i,
+    Bds3B7q,
+    Bds3B7x,
     /// BDS3 B3I: QPSK(10) at 1240*f0
-    Bds3B3i = c_bindings::code_e_CODE_BDS3_B3I,
-    Bds3B3q = c_bindings::code_e_CODE_BDS3_B3Q,
-    Bds3B3x = c_bindings::code_e_CODE_BDS3_B3X,
+    Bds3B3i,
+    Bds3B3q,
+    Bds3B3x,
     /// GPS L1C: TM-BOC at 1540*f0
-    GpsL1ci = c_bindings::code_e_CODE_GPS_L1CI,
-    GpsL1cq = c_bindings::code_e_CODE_GPS_L1CQ,
-    GpsL1cx = c_bindings::code_e_CODE_GPS_L1CX,
+    GpsL1ci,
+    GpsL1cq,
+    GpsL1cx,
     /// Auxiliary GPS antenna signals
-    AuxGps = c_bindings::code_e_CODE_AUX_GPS,
+    AuxGps,
     /// Auxiliary SBAS antenna signals
-    AuxSbas = c_bindings::code_e_CODE_AUX_SBAS,
+    AuxSbas,
     /// Auxiliary GAL antenna signals
-    AuxGal = c_bindings::code_e_CODE_AUX_GAL,
+    AuxGal,
     /// Auxiliary QZSS antenna signals
-    AuxQzs = c_bindings::code_e_CODE_AUX_QZS,
+    AuxQzs,
     /// Auxiliary BDS antenna signals
-    AuxBds = c_bindings::code_e_CODE_AUX_BDS,
+    AuxBds,
 }
 
 impl Code {
@@ -234,6 +239,75 @@ impl Code {
         }
     }
 
+    pub(crate) fn to_code_t(&self) -> c_bindings::code_t {
+        match *self {
+            Code::GpsL1ca => c_bindings::code_e_CODE_GPS_L1CA,
+            Code::GpsL2cm => c_bindings::code_e_CODE_GPS_L2CM,
+            Code::SbasL1ca => c_bindings::code_e_CODE_SBAS_L1CA,
+            Code::GloL1of => c_bindings::code_e_CODE_GLO_L1OF,
+            Code::GloL2of => c_bindings::code_e_CODE_GLO_L2OF,
+            Code::GpsL1p => c_bindings::code_e_CODE_GPS_L1P,
+            Code::GpsL2p => c_bindings::code_e_CODE_GPS_L2P,
+            Code::GpsL2cl => c_bindings::code_e_CODE_GPS_L2CL,
+            Code::GpsL2cx => c_bindings::code_e_CODE_GPS_L2CX,
+            Code::GpsL5i => c_bindings::code_e_CODE_GPS_L5I,
+            Code::GpsL5q => c_bindings::code_e_CODE_GPS_L5Q,
+            Code::GpsL5x => c_bindings::code_e_CODE_GPS_L5X,
+            Code::Bds2B1 => c_bindings::code_e_CODE_BDS2_B1,
+            Code::Bds2B2 => c_bindings::code_e_CODE_BDS2_B2,
+            Code::GalE1b => c_bindings::code_e_CODE_GAL_E1B,
+            Code::GalE1c => c_bindings::code_e_CODE_GAL_E1C,
+            Code::GalE1x => c_bindings::code_e_CODE_GAL_E1X,
+            Code::GalE6b => c_bindings::code_e_CODE_GAL_E6B,
+            Code::GalE6c => c_bindings::code_e_CODE_GAL_E6C,
+            Code::GalE6x => c_bindings::code_e_CODE_GAL_E6X,
+            Code::GalE7i => c_bindings::code_e_CODE_GAL_E7I,
+            Code::GalE7q => c_bindings::code_e_CODE_GAL_E7Q,
+            Code::GalE7x => c_bindings::code_e_CODE_GAL_E7X,
+            Code::GalE8i => c_bindings::code_e_CODE_GAL_E8I,
+            Code::GalE8q => c_bindings::code_e_CODE_GAL_E8Q,
+            Code::GalE8x => c_bindings::code_e_CODE_GAL_E8X,
+            Code::GalE5i => c_bindings::code_e_CODE_GAL_E5I,
+            Code::GalE5q => c_bindings::code_e_CODE_GAL_E5Q,
+            Code::GalE5x => c_bindings::code_e_CODE_GAL_E5X,
+            Code::GloL1p => c_bindings::code_e_CODE_GLO_L1P,
+            Code::GloL2p => c_bindings::code_e_CODE_GLO_L2P,
+            Code::QzsL1ca => c_bindings::code_e_CODE_QZS_L1CA,
+            Code::QzsL1ci => c_bindings::code_e_CODE_QZS_L1CI,
+            Code::QzsL1cq => c_bindings::code_e_CODE_QZS_L1CQ,
+            Code::QzsL1cx => c_bindings::code_e_CODE_QZS_L1CX,
+            Code::QzsL2cm => c_bindings::code_e_CODE_QZS_L2CM,
+            Code::QzsL2cl => c_bindings::code_e_CODE_QZS_L2CL,
+            Code::QzsL2cx => c_bindings::code_e_CODE_QZS_L2CX,
+            Code::QzsL5i => c_bindings::code_e_CODE_QZS_L5I,
+            Code::QzsL5q => c_bindings::code_e_CODE_QZS_L5Q,
+            Code::QzsL5x => c_bindings::code_e_CODE_QZS_L5X,
+            Code::SbasL5i => c_bindings::code_e_CODE_SBAS_L5I,
+            Code::SbasL5q => c_bindings::code_e_CODE_SBAS_L5Q,
+            Code::SbasL5x => c_bindings::code_e_CODE_SBAS_L5X,
+            Code::Bds3B1ci => c_bindings::code_e_CODE_BDS3_B1CI,
+            Code::Bds3B1cq => c_bindings::code_e_CODE_BDS3_B1CQ,
+            Code::Bds3B1cx => c_bindings::code_e_CODE_BDS3_B1CX,
+            Code::Bds3B5i => c_bindings::code_e_CODE_BDS3_B5I,
+            Code::Bds3B5q => c_bindings::code_e_CODE_BDS3_B5Q,
+            Code::Bds3B5x => c_bindings::code_e_CODE_BDS3_B5X,
+            Code::Bds3B7i => c_bindings::code_e_CODE_BDS3_B7I,
+            Code::Bds3B7q => c_bindings::code_e_CODE_BDS3_B7Q,
+            Code::Bds3B7x => c_bindings::code_e_CODE_BDS3_B7X,
+            Code::Bds3B3i => c_bindings::code_e_CODE_BDS3_B3I,
+            Code::Bds3B3q => c_bindings::code_e_CODE_BDS3_B3Q,
+            Code::Bds3B3x => c_bindings::code_e_CODE_BDS3_B3X,
+            Code::GpsL1ci => c_bindings::code_e_CODE_GPS_L1CI,
+            Code::GpsL1cq => c_bindings::code_e_CODE_GPS_L1CQ,
+            Code::GpsL1cx => c_bindings::code_e_CODE_GPS_L1CX,
+            Code::AuxGps => c_bindings::code_e_CODE_AUX_GPS,
+            Code::AuxSbas => c_bindings::code_e_CODE_AUX_SBAS,
+            Code::AuxGal => c_bindings::code_e_CODE_AUX_GAL,
+            Code::AuxQzs => c_bindings::code_e_CODE_AUX_QZS,
+            Code::AuxBds => c_bindings::code_e_CODE_AUX_BDS,
+        }
+    }
+
     /// Attempts to make a `Code` from a string
     pub fn from_str(s: &ffi::CStr) -> Option<Code> {
         Self::from_code_t(unsafe { c_bindings::code_string_to_enum(s.as_ptr()) })
@@ -250,10 +324,6 @@ impl Code {
             c_bindings::code_to_constellation(self.to_code_t())
         })
         .unwrap()
-    }
-
-    pub(crate) fn to_code_t(&self) -> c_bindings::code_t {
-        *self as c_bindings::code_t
     }
 
     /// Get the number of signals for a code
