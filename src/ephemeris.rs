@@ -36,7 +36,8 @@ type Result<T> = std::result::Result<T, InvalidEphemeris>;
 
 /// Various statuses that an ephemeris can be in
 #[derive(Copy, Clone, Debug)]
-#[repr(u32)]
+#[cfg_attr(windows, repr(i32))]
+#[cfg_attr(not(windows), repr(u32))]
 pub enum Status {
     Null = c_bindings::ephemeris_status_t_EPH_NULL,
     Invalid = c_bindings::ephemeris_status_t_EPH_INVALID,
