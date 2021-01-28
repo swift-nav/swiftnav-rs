@@ -1,5 +1,16 @@
+//! Error detection code
+
 use crate::c_bindings;
 
+/// Calculate Qualcomm 24-bit Cyclical Redundancy Check (CRC-24Q).
+///
+/// This CRC is used with the RTCM protocol
+///
+/// The CRC polynomial used is:
+///   x^{24} + x^{23} + x^{18} + x^{17} + x^{14} + x^{11} + x^{10} +
+///   x^7    + x^6    + x^5    + x^4    + x^3    + x+1
+///
+/// Mask 0x1864CFB, not reversed, not XOR'd
 pub fn compute_crc24q(buf: &[u8], initial_value: u32) -> u32 {
     unsafe { c_bindings::crc24q(buf.as_ptr(), buf.len() as u32, initial_value) }
 }
