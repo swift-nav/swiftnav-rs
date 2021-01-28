@@ -36,18 +36,16 @@ type Result<T> = std::result::Result<T, InvalidEphemeris>;
 
 /// Various statuses that an ephemeris can be in
 #[derive(Copy, Clone, Debug)]
-#[cfg_attr(windows, repr(i32))]
-#[cfg_attr(not(windows), repr(u32))]
 pub enum Status {
-    Null = c_bindings::ephemeris_status_t_EPH_NULL,
-    Invalid = c_bindings::ephemeris_status_t_EPH_INVALID,
-    WnEqualsZero = c_bindings::ephemeris_status_t_EPH_WN_EQ_0,
-    FitIntervalEqualsZero = c_bindings::ephemeris_status_t_EPH_FIT_INTERVAL_EQ_0,
-    Unhealthy = c_bindings::ephemeris_status_t_EPH_UNHEALTHY,
-    TooOld = c_bindings::ephemeris_status_t_EPH_TOO_OLD,
-    InvalidSid = c_bindings::ephemeris_status_t_EPH_INVALID_SID,
-    InvalidIod = c_bindings::ephemeris_status_t_EPH_INVALID_IOD,
-    Valid = c_bindings::ephemeris_status_t_EPH_VALID,
+    Null,
+    Invalid,
+    WnEqualsZero,
+    FitIntervalEqualsZero,
+    Unhealthy,
+    TooOld,
+    InvalidSid,
+    InvalidIod,
+    Valid,
 }
 
 impl Status {
@@ -66,6 +64,7 @@ impl Status {
 }
 
 /// Orbital terms of an ephemeris
+#[derive(Clone)]
 pub enum EphemerisTerms {
     /// GPS, BDS, GAL, and QZSS all broadcast their terms as keplarian elements
     Kepler(c_bindings::ephemeris_kepler_t),
