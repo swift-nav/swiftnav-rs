@@ -740,9 +740,9 @@ mod tests {
          * geometry */
 
         let mut nm1_broken = make_nm1();
-        nm1_broken.set_pseudorange(23946993.888943646 + 5e8);
+        nm1_broken.set_pseudorange(nm1_broken.get_pseudorange().unwrap() + 5e8);
         let mut nm2_broken = make_nm2();
-        nm2_broken.set_pseudorange(22932174.156858064 - 2e7);
+        nm2_broken.set_pseudorange(nm2_broken.get_pseudorange().unwrap() - 2e7);
 
         let nms = [
             nm1_broken,
@@ -981,9 +981,9 @@ mod tests {
 
         /* add a common bias of 120 m to the L2CM measurements */
         let mut nm10_bias = make_nm10();
-        nm10_bias.set_pseudorange(25781999.479948733 + 120.);
+        nm10_bias.set_pseudorange(nm10_bias.get_pseudorange().unwrap() + 120.);
         let mut nm11_bias = make_nm11();
-        nm11_bias.set_pseudorange(25781999.479948733 + 120.);
+        nm11_bias.set_pseudorange(nm11_bias.get_pseudorange().unwrap() + 120.);
 
         /* healthy measurements, with bias on L2 */
         let nms = [
@@ -1029,7 +1029,7 @@ mod tests {
         );
 
         /* add outlier to one of the L2 measurements  */
-        nm11_bias.set_pseudorange(25781999.479948733 + 1120.);
+        nm11_bias.set_pseudorange(nm11_bias.get_pseudorange().unwrap() + 1000.);
         let nms = [
             make_nm2(),
             make_nm3(),

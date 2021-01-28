@@ -35,6 +35,15 @@ impl NavigationMeasurement {
         self.0.flags |= NAV_MEAS_FLAG_CODE_VALID;
     }
 
+    /// Gets the pseudorange measurement, if a valid one has been set
+    pub fn get_pseudorange(&self) -> Option<f64> {
+        if self.0.flags | NAV_MEAS_FLAG_CODE_VALID != 0 {
+            Some(self.0.pseudorange)
+        } else {
+            None
+        }
+    }
+
     /// Marks the pseudorange measurement as invalid
     pub fn invalidate_pseudorange(&mut self) {
         self.0.flags &= !NAV_MEAS_FLAG_CODE_VALID;
@@ -46,6 +55,15 @@ impl NavigationMeasurement {
     pub fn set_measured_doppler(&mut self, value: f64) {
         self.0.measured_doppler = value;
         self.0.flags |= NAV_MEAS_FLAG_MEAS_DOPPLER_VALID;
+    }
+
+    /// Gets the measured doppler measurement, if a valid one has been set
+    pub fn get_measured_doppler(&self) -> Option<f64> {
+        if self.0.flags | NAV_MEAS_FLAG_MEAS_DOPPLER_VALID != 0 {
+            Some(self.0.measured_doppler)
+        } else {
+            None
+        }
     }
 
     /// Marks the measured doppler measurement as invalid
@@ -70,6 +88,15 @@ impl NavigationMeasurement {
     pub fn set_cn0(&mut self, value: f64) {
         self.0.cn0 = value;
         self.0.flags |= NAV_MEAS_FLAG_CN0_VALID;
+    }
+
+    /// Gets the signal CN0 measurement, if a valid one has been set
+    pub fn get_cn0(&self) -> Option<f64> {
+        if self.0.flags | NAV_MEAS_FLAG_CN0_VALID != 0 {
+            Some(self.0.cn0)
+        } else {
+            None
+        }
     }
 
     /// Marks the CN0 measurement as invalid
