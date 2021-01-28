@@ -1,15 +1,12 @@
 [package]
 name = "swiftnav-rs"
-version = "0.1.0"
-authors = ["Joseph Angelo <joseph.angelo@swift-nav.com>"]
+version = "0.2.0"
+authors = ["Swift Navigation <dev@swiftnav.com>"]
 edition = "2018"
-description = "Low level GNSS decoding and positioning"
+description = "GNSS positioning and related utilities"
 readme = "README.md"
 repository = "https://github.com/swift-nav/swiftnav-rs"
 license = "LGPL-3.0"
-
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 
