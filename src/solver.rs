@@ -400,8 +400,868 @@ pub fn calc_pvt(
     };
 
     if result >= 0 {
-        Ok((solution, dops, sidset))
+        Ok((PvtStatus::from_i8(result), solution, dops, sidset))
     } else {
         Err(PvtError::from_i8(result))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ephemeris::SatelliteState;
+    use crate::signal::Code;
+    use std::time::Duration;
+
+    fn make_tor() -> GpsTime {
+        GpsTime::new(1939, 42.0).unwrap()
+    }
+
+    fn make_nm1() -> NavigationMeasurement {
+        let mut nm = NavigationMeasurement::new();
+        nm.set_sid(GnssSignal::new(9, Code::GpsL1ca));
+        nm.set_pseudorange(23946993.888943646);
+        nm.set_satellite_state(&SatelliteState {
+            pos: ECEF::new(-19477278.087422125, -7649508.9457812719, 16674633.163554827),
+            vel: ECEF::new(0.0, 0.0, 0.0),
+            acc: ECEF::new(0.0, 0.0, 0.0),
+            clock_err: 0.0,
+            clock_rate_err: 0.0,
+            iodc: 0,
+            iode: 0,
+        });
+        nm.set_lock_time(Duration::from_secs_f64(5.0));
+        nm.set_measured_doppler(0.);
+        nm
+    }
+
+    fn make_nm1_no_doppler() -> NavigationMeasurement {
+        let mut nm = NavigationMeasurement::new();
+        nm.set_sid(GnssSignal::new(9, Code::GpsL1ca));
+        nm.set_pseudorange(23946993.888943646);
+        nm.set_satellite_state(&SatelliteState {
+            pos: ECEF::new(-19477278.087422125, -7649508.9457812719, 16674633.163554827),
+            vel: ECEF::new(0.0, 0.0, 0.0),
+            acc: ECEF::new(0.0, 0.0, 0.0),
+            clock_err: 0.0,
+            clock_rate_err: 0.0,
+            iodc: 0,
+            iode: 0,
+        });
+        nm.set_lock_time(Duration::from_secs_f64(5.0));
+        nm
+    }
+
+    fn make_nm2() -> NavigationMeasurement {
+        let mut nm = NavigationMeasurement::new();
+        nm.set_sid(GnssSignal::new(1, Code::GpsL1ca));
+        nm.set_pseudorange(22932174.156858064);
+        nm.set_satellite_state(&SatelliteState {
+            pos: ECEF::new(-9680013.5408340245, -15286326.354385279, 19429449.383770257),
+            vel: ECEF::new(0.0, 0.0, 0.0),
+            acc: ECEF::new(0.0, 0.0, 0.0),
+            clock_err: 0.0,
+            clock_rate_err: 0.0,
+            iodc: 0,
+            iode: 0,
+        });
+        nm.set_lock_time(Duration::from_secs_f64(5.0));
+        nm.set_measured_doppler(0.);
+        nm
+    }
+
+    fn make_nm3() -> NavigationMeasurement {
+        let mut nm = NavigationMeasurement::new();
+        nm.set_sid(GnssSignal::new(2, Code::GpsL1ca));
+        nm.set_pseudorange(24373231.648055989);
+        nm.set_satellite_state(&SatelliteState {
+            pos: ECEF::new(-19858593.085281931, -3109845.8288993631, 17180320.439503901),
+            vel: ECEF::new(0.0, 0.0, 0.0),
+            acc: ECEF::new(0.0, 0.0, 0.0),
+            clock_err: 0.0,
+            clock_rate_err: 0.0,
+            iodc: 0,
+            iode: 0,
+        });
+        nm.set_lock_time(Duration::from_secs_f64(5.0));
+        nm.set_measured_doppler(0.);
+        nm
+    }
+
+    fn make_nm4() -> NavigationMeasurement {
+        let mut nm = NavigationMeasurement::new();
+        nm.set_sid(GnssSignal::new(3, Code::GpsL1ca));
+        nm.set_pseudorange(24779663.252316438);
+        nm.set_satellite_state(&SatelliteState {
+            pos: ECEF::new(6682497.8716542246, -14006962.389166718, 21410456.27567846),
+            vel: ECEF::new(0.0, 0.0, 0.0),
+            acc: ECEF::new(0.0, 0.0, 0.0),
+            clock_err: 0.0,
+            clock_rate_err: 0.0,
+            iodc: 0,
+            iode: 0,
+        });
+        nm.set_lock_time(Duration::from_secs_f64(5.0));
+        nm.set_measured_doppler(0.);
+        nm
+    }
+
+    fn make_nm5() -> NavigationMeasurement {
+        let mut nm = NavigationMeasurement::new();
+        nm.set_sid(GnssSignal::new(4, Code::GpsL1ca));
+        nm.set_pseudorange(26948717.022331879);
+        nm.set_satellite_state(&SatelliteState {
+            pos: ECEF::new(7415370.9916331079, -24974079.044485383, -3836019.0262199985),
+            vel: ECEF::new(0.0, 0.0, 0.0),
+            acc: ECEF::new(0.0, 0.0, 0.0),
+            clock_err: 0.0,
+            clock_rate_err: 0.0,
+            iodc: 0,
+            iode: 0,
+        });
+        nm.set_lock_time(Duration::from_secs_f64(5.0));
+        nm.set_measured_doppler(0.);
+        nm
+    }
+
+    fn make_nm6() -> NavigationMeasurement {
+        let mut nm = NavigationMeasurement::new();
+        nm.set_sid(GnssSignal::new(5, Code::GpsL1ca));
+        nm.set_pseudorange(23327405.435463827);
+        nm.set_satellite_state(&SatelliteState {
+            pos: ECEF::new(-2833466.1648670658, -22755197.793894723, 13160322.082875408),
+            vel: ECEF::new(0.0, 0.0, 0.0),
+            acc: ECEF::new(0.0, 0.0, 0.0),
+            clock_err: 0.0,
+            clock_rate_err: 0.0,
+            iodc: 0,
+            iode: 0,
+        });
+        nm.set_lock_time(Duration::from_secs_f64(5.0));
+        nm.set_measured_doppler(0.);
+        nm
+    }
+
+    fn make_nm6b() -> NavigationMeasurement {
+        let mut nm = NavigationMeasurement::new();
+        nm.set_sid(GnssSignal::new(5, Code::GpsL1ca));
+        nm.set_pseudorange(23327405.435463827);
+        nm.set_satellite_state(&SatelliteState {
+            pos: ECEF::new(-2833466.1648670658, -22755197.793894723, 13160322.082875408),
+            vel: ECEF::new(0.0, 0.0, 0.0),
+            acc: ECEF::new(0.0, 0.0, 0.0),
+            clock_err: 0.0,
+            clock_rate_err: 0.0,
+            iodc: 0,
+            iode: 0,
+        });
+        nm.set_lock_time(Duration::from_secs_f64(5.0));
+        nm.set_cn0(40.);
+        nm.set_measured_doppler(10000.); // Doppler outlier
+        nm
+    }
+
+    fn make_nm7() -> NavigationMeasurement {
+        let mut nm = NavigationMeasurement::new();
+        nm.set_sid(GnssSignal::new(6, Code::GpsL1ca));
+        nm.set_pseudorange(27371419.016328193);
+        nm.set_satellite_state(&SatelliteState {
+            pos: ECEF::new(14881660.383624561, -5825253.4316490609, 21204679.68313824),
+            vel: ECEF::new(0.0, 0.0, 0.0),
+            acc: ECEF::new(0.0, 0.0, 0.0),
+            clock_err: 0.0,
+            clock_rate_err: 0.0,
+            iodc: 0,
+            iode: 0,
+        });
+        nm.set_lock_time(Duration::from_secs_f64(5.0));
+        nm.set_measured_doppler(0.);
+        nm
+    }
+
+    fn make_nm8() -> NavigationMeasurement {
+        let mut nm = NavigationMeasurement::new();
+        nm.set_sid(GnssSignal::new(7, Code::GpsL1ca));
+        nm.set_pseudorange(26294221.697782904);
+        nm.set_satellite_state(&SatelliteState {
+            pos: ECEF::new(12246530.477279386, -22184711.955107089, 7739084.285506918),
+            vel: ECEF::new(0.0, 0.0, 0.0),
+            acc: ECEF::new(0.0, 0.0, 0.0),
+            clock_err: 0.0,
+            clock_rate_err: 0.0,
+            iodc: 0,
+            iode: 0,
+        });
+        nm.set_lock_time(Duration::from_secs_f64(5.0));
+        nm.set_measured_doppler(0.);
+        nm
+    }
+
+    fn make_nm9() -> NavigationMeasurement {
+        let mut nm = NavigationMeasurement::new();
+        nm.set_sid(GnssSignal::new(8, Code::GpsL1ca));
+        nm.set_pseudorange(25781999.479948733);
+        nm.set_satellite_state(&SatelliteState {
+            pos: ECEF::new(-25360766.249484103, -1659033.490658124, 7821492.0398916304),
+            vel: ECEF::new(0.0, 0.0, 0.0),
+            acc: ECEF::new(0.0, 0.0, 0.0),
+            clock_err: 0.0,
+            clock_rate_err: 0.0,
+            iodc: 0,
+            iode: 0,
+        });
+        nm.set_lock_time(Duration::from_secs_f64(5.0));
+        nm.set_measured_doppler(0.);
+        nm
+    }
+
+    fn make_nm10() -> NavigationMeasurement {
+        let mut nm = NavigationMeasurement::new();
+        nm.set_sid(GnssSignal::new(8, Code::GpsL2cm));
+        nm.set_pseudorange(25781999.479948733);
+        nm.set_satellite_state(&SatelliteState {
+            pos: ECEF::new(-25360766.249484103, -1659033.490658124, 7821492.0398916304),
+            vel: ECEF::new(0.0, 0.0, 0.0),
+            acc: ECEF::new(0.0, 0.0, 0.0),
+            clock_err: 0.0,
+            clock_rate_err: 0.0,
+            iodc: 0,
+            iode: 0,
+        });
+        nm.set_lock_time(Duration::from_secs_f64(5.0));
+        nm.set_measured_doppler(0.);
+        nm
+    }
+
+    fn make_nm10b() -> NavigationMeasurement {
+        let mut nm = NavigationMeasurement::new();
+        nm.set_sid(GnssSignal::new(8, Code::GpsL2cm));
+        nm.set_pseudorange(25781999.479948733 + 30000.);
+        nm.set_satellite_state(&SatelliteState {
+            pos: ECEF::new(25360766.249484103, -1659033.490658124, 7821492.0398916304),
+            vel: ECEF::new(0.0, 0.0, 0.0),
+            acc: ECEF::new(0.0, 0.0, 0.0),
+            clock_err: 0.0,
+            clock_rate_err: 0.0,
+            iodc: 0,
+            iode: 0,
+        });
+        nm.set_lock_time(Duration::from_secs_f64(5.0));
+        nm.set_measured_doppler(0.);
+        nm
+    }
+
+    fn make_nm11() -> NavigationMeasurement {
+        let mut nm = NavigationMeasurement::new();
+        nm.set_sid(GnssSignal::new(11, Code::GpsL2cm));
+        nm.set_pseudorange(25781999.479948733);
+        nm.set_satellite_state(&SatelliteState {
+            pos: ECEF::new(-25360766.249484103, -1659033.490658124, 7821492.0398916304),
+            vel: ECEF::new(0.0, 0.0, 0.0),
+            acc: ECEF::new(0.0, 0.0, 0.0),
+            clock_err: 0.0,
+            clock_rate_err: 0.0,
+            iodc: 0,
+            iode: 0,
+        });
+        nm.set_lock_time(Duration::from_secs_f64(5.0));
+        nm.set_measured_doppler(0.);
+        nm
+    }
+
+    #[test]
+    fn pvt_failed_repair() {
+        let nms = [make_nm1(), make_nm2(), make_nm3(), make_nm4(), make_nm5()];
+        let settings = PvtSettings {
+            strategy: ProcessingStrategy::AllConstellations,
+            disable_raim: false,
+            disable_velocity: true,
+        };
+
+        let result = calc_pvt(&nms, make_tor(), settings);
+
+        assert!(result.is_err(), "PVT should fail");
+        let err = result.err().unwrap();
+        /* PVT repair requires at least 6 measurements. */
+        assert_eq!(err, PvtError::RaimRepairFailed);
+    }
+
+    #[test]
+    fn pvt_repair() {
+        let expected_removed_sid = GnssSignal::new(9, Code::GpsL1ca);
+
+        let nms = [
+            make_nm1(),
+            make_nm2(),
+            make_nm3(),
+            make_nm4(),
+            make_nm5(),
+            make_nm6(),
+        ];
+        let settings = PvtSettings {
+            strategy: ProcessingStrategy::AllConstellations,
+            disable_raim: false,
+            disable_velocity: true,
+        };
+
+        let result = calc_pvt(&nms, make_tor(), settings);
+
+        assert!(result.is_ok());
+        let (status, soln, _, raim_emoved_sids) = result.unwrap();
+        assert_eq!(
+            status,
+            PvtStatus::RepairedSolution,
+            "Return code should be pvt repaired. Saw: {:?}",
+            status
+        );
+        assert_eq!(
+            soln.signals_used(),
+            (nms.len() - 1) as u8,
+            "n_sigs_used should be {}. Saw: {}",
+            nms.len() - 1,
+            soln.signals_used()
+        );
+        assert_eq!(
+            soln.sats_used(),
+            (nms.len() - 1) as u8,
+            "n_sats_used should be {}. Saw: {}",
+            nms.len() - 1,
+            soln.sats_used()
+        );
+        assert!(
+            raim_emoved_sids.contains(expected_removed_sid),
+            "Unexpected RAIM removed SID!"
+        );
+    }
+
+    #[test]
+    fn pvt_raim_singular() {
+        /* test the case of bug 946 where extreme pseudorange errors lead to singular
+         * geometry */
+
+        let mut nm1_broken = make_nm1();
+        nm1_broken.set_pseudorange(23946993.888943646 + 5e8);
+        let mut nm2_broken = make_nm2();
+        nm2_broken.set_pseudorange(22932174.156858064 - 2e7);
+
+        let nms = [
+            nm1_broken,
+            nm2_broken,
+            make_nm3(),
+            make_nm4(),
+            make_nm5(),
+            make_nm6(),
+            make_nm7(),
+            make_nm9(),
+            make_nm10(),
+        ];
+        let settings = PvtSettings {
+            strategy: ProcessingStrategy::AllConstellations,
+            disable_raim: false,
+            disable_velocity: true,
+        };
+
+        let result = calc_pvt(&nms, make_tor(), settings);
+
+        assert!(result.is_err(), "PVT should fail");
+        let err = result.err().unwrap();
+        assert_eq!(
+            err,
+            PvtError::RaimRepairFailed,
+            "Return code should be RAIM failed. Saw: {:?}",
+            err
+        );
+    }
+
+    #[test]
+    fn pvt_vel_repair() {
+        let expected_removed_sid = GnssSignal::new(5, Code::GpsL1ca);
+
+        let nms = [
+            make_nm2(),
+            make_nm3(),
+            make_nm4(),
+            make_nm5(),
+            make_nm6b(),
+            make_nm7(),
+        ];
+        let settings = PvtSettings {
+            strategy: ProcessingStrategy::AllConstellations,
+            disable_raim: false,
+            disable_velocity: false,
+        };
+
+        let result = calc_pvt(&nms, make_tor(), settings);
+
+        assert!(result.is_ok(), "PVT should succeed");
+        let (pvt_status, soln, _, sid_set) = result.unwrap();
+        assert_eq!(
+            pvt_status,
+            PvtStatus::RepairedSolution,
+            "Return code should be pvt repaired. Saw: {:?}",
+            pvt_status
+        );
+        assert_eq!(
+            soln.signals_used(),
+            (nms.len() - 1) as u8,
+            "n_sigs_used should be {}. Saw: {}",
+            nms.len() - 1,
+            soln.signals_used()
+        );
+        assert_eq!(
+            soln.sats_used(),
+            (nms.len() - 1) as u8,
+            "n_sats_used should be {}. Saw: {}",
+            nms.len() - 1,
+            soln.sats_used()
+        );
+        assert!(
+            sid_set.contains(expected_removed_sid),
+            "Unexpected RAIM removed SID!"
+        );
+    }
+
+    #[test]
+    fn pvt_repair_multifailure() {
+        let expected_removed_sid = GnssSignal::new(9, Code::GpsL1ca);
+
+        let nms = [
+            make_nm1(),
+            make_nm2(),
+            make_nm3(),
+            make_nm7(),
+            make_nm10b(),
+            make_nm5(),
+            make_nm6(),
+        ];
+        let settings = PvtSettings {
+            strategy: ProcessingStrategy::AllConstellations,
+            disable_raim: false,
+            disable_velocity: false,
+        };
+
+        let result = calc_pvt(&nms, make_tor(), settings);
+
+        assert!(result.is_ok(), "PVT should succeed");
+        let (pvt_status, soln, _, sid_set) = result.unwrap();
+        assert_eq!(
+            pvt_status,
+            PvtStatus::RepairedSolution,
+            "Return code should be pvt repaired. Saw: {:?}",
+            pvt_status
+        );
+        assert_eq!(
+            soln.signals_used(),
+            (nms.len() - 2) as u8,
+            "n_sigs_used should be {}. Saw: {}",
+            nms.len() - 2,
+            soln.signals_used()
+        );
+        assert_eq!(
+            soln.sats_used(),
+            (nms.len() - 2) as u8,
+            "n_sats_used should be {}. Saw: {}",
+            nms.len() - 2,
+            soln.sats_used()
+        );
+        assert!(
+            sid_set.contains(expected_removed_sid),
+            "Unexpected RAIM removed SID!"
+        );
+    }
+
+    #[test]
+    fn pvt_raim_gps_l1ca_only() {
+        /* 9 L1CA signals (one broken) and 1 L2CM signal */
+        let expected_removed_sid = GnssSignal::new(9, Code::GpsL1ca);
+
+        let nms = [
+            make_nm1(),
+            make_nm2(),
+            make_nm3(),
+            make_nm4(),
+            make_nm5(),
+            make_nm6(),
+            make_nm7(),
+            make_nm8(),
+            make_nm9(),
+            make_nm10(),
+        ];
+        let settings = PvtSettings {
+            strategy: ProcessingStrategy::GpsL1caWhenPossible,
+            disable_raim: false,
+            disable_velocity: false,
+        };
+
+        let result = calc_pvt(&nms, make_tor(), settings);
+
+        assert!(result.is_ok(), "PVT should succeed");
+        let (pvt_status, soln, _, sid_set) = result.unwrap();
+        assert_eq!(
+            pvt_status,
+            PvtStatus::RepairedSolution,
+            "Return code should be pvt repaired. Saw: {:?}",
+            pvt_status
+        );
+        assert_eq!(
+            soln.signals_used(),
+            (nms.len() - 2) as u8,
+            "n_sigs_used should be {}. Saw: {}",
+            nms.len() - 2,
+            soln.signals_used()
+        );
+        assert_eq!(
+            soln.sats_used(),
+            (nms.len() - 2) as u8,
+            "n_sats_used should be {}. Saw: {}",
+            nms.len() - 2,
+            soln.sats_used()
+        );
+        assert!(
+            sid_set.contains(expected_removed_sid),
+            "Unexpected RAIM removed SID!"
+        );
+    }
+
+    #[test]
+    fn pvt_outlier_gps_l1ca_only() {
+        /* 9 L1CA signals and 1 (broken) L2CM signal */
+        let expected_removed_sid = GnssSignal::new(8, Code::GpsL2cm);
+
+        let nms = [
+            make_nm2(),
+            make_nm3(),
+            make_nm4(),
+            make_nm5(),
+            make_nm6(),
+            make_nm7(),
+            make_nm8(),
+            make_nm9(),
+            make_nm10b(),
+        ];
+        let settings = PvtSettings {
+            strategy: ProcessingStrategy::GpsL1caWhenPossible,
+            disable_raim: false,
+            disable_velocity: false,
+        };
+
+        let result = calc_pvt(&nms, make_tor(), settings);
+
+        assert!(result.is_ok(), "PVT should succeed");
+        let (pvt_status, soln, _, sid_set) = result.unwrap();
+        assert_eq!(
+            pvt_status,
+            PvtStatus::RepairedSolution,
+            "Return code should be pvt repaired. Saw: {:?}",
+            pvt_status
+        );
+        assert_eq!(
+            soln.signals_used(),
+            (nms.len() - 1) as u8,
+            "n_sigs_used should be {}. Saw: {}",
+            nms.len() - 1,
+            soln.signals_used()
+        );
+        assert_eq!(
+            soln.sats_used(),
+            (nms.len() - 1) as u8,
+            "n_sats_used should be {}. Saw: {}",
+            nms.len() - 1,
+            soln.sats_used()
+        );
+        assert!(
+            sid_set.contains(expected_removed_sid),
+            "Unexpected RAIM removed SID!"
+        );
+    }
+
+    #[test]
+    fn pvt_flag_outlier_bias() {
+        /* 8 L1CA signals and 2 L2CM signals */
+
+        /* add a common bias of 120 m to the L2CM measurements */
+        let mut nm10_bias = make_nm10();
+        nm10_bias.set_pseudorange(25781999.479948733 + 120.);
+        let mut nm11_bias = make_nm11();
+        nm11_bias.set_pseudorange(25781999.479948733 + 120.);
+
+        /* healthy measurements, with bias on L2 */
+        let nms = [
+            make_nm2(),
+            make_nm3(),
+            make_nm4(),
+            make_nm5(),
+            make_nm6(),
+            make_nm7(),
+            make_nm8(),
+            nm10_bias.clone(),
+            nm11_bias.clone(),
+        ];
+        let settings = PvtSettings {
+            strategy: ProcessingStrategy::GpsL1caWhenPossible,
+            disable_raim: false,
+            disable_velocity: false,
+        };
+
+        let result = calc_pvt(&nms, make_tor(), settings);
+
+        assert!(result.is_ok(), "PVT should succeed");
+        let (pvt_status, soln, _, sid_set) = result.unwrap();
+        assert_eq!(
+            pvt_status,
+            PvtStatus::RaimPassed,
+            "Return code should be raim passed. Saw: {:?}",
+            pvt_status
+        );
+        assert_eq!(
+            soln.signals_used(),
+            (nms.len() - 2) as u8,
+            "n_sigs_used should be {}. Saw: {}",
+            nms.len() - 2,
+            soln.signals_used()
+        );
+        assert_eq!(
+            soln.sats_used(),
+            (nms.len() - 2) as u8,
+            "n_sats_used should be {}. Saw: {}",
+            nms.len() - 2,
+            soln.sats_used()
+        );
+
+        /* add outlier to one of the L2 measurements  */
+        nm11_bias.set_pseudorange(25781999.479948733 + 1120.);
+        let nms = [
+            make_nm2(),
+            make_nm3(),
+            make_nm4(),
+            make_nm5(),
+            make_nm6(),
+            make_nm7(),
+            make_nm8(),
+            nm10_bias,
+            nm11_bias,
+        ];
+
+        let result = calc_pvt(&nms, make_tor(), settings);
+
+        let expected_removed_sid = GnssSignal::new(8, Code::GpsL2cm);
+        assert!(result.is_ok(), "PVT should succeed");
+        let (pvt_status, soln, _, sid_set) = result.unwrap();
+        assert_eq!(
+            pvt_status,
+            PvtStatus::RepairedSolution,
+            "Return code should be repaired solution. Saw: {:?}",
+            pvt_status
+        );
+        assert_eq!(
+            soln.signals_used(),
+            (nms.len() - 2) as u8,
+            "n_sigs_used should be {}. Saw: {}",
+            nms.len() - 2,
+            soln.signals_used()
+        );
+        assert_eq!(
+            soln.sats_used(),
+            (nms.len() - 2) as u8,
+            "n_sats_used should be {}. Saw: {}",
+            nms.len() - 2,
+            soln.sats_used()
+        );
+        assert!(
+            sid_set.contains(expected_removed_sid),
+            "Unexpected RAIM removed SID!"
+        );
+    }
+
+    #[test]
+    fn disable_pvt_raim() {
+        let nms = [
+            make_nm1(),
+            make_nm2(),
+            make_nm3(),
+            make_nm4(),
+            make_nm5(),
+            make_nm6(),
+        ];
+        /* disable raim check */
+        let settings = PvtSettings {
+            strategy: ProcessingStrategy::AllConstellations,
+            disable_raim: true,
+            disable_velocity: true,
+        };
+
+        let result = calc_pvt(&nms, make_tor(), settings);
+
+        assert!(result.is_ok(), "PVT should succeed");
+        let (pvt_status, soln, _, _) = result.unwrap();
+        assert_eq!(
+            pvt_status,
+            PvtStatus::RaimSkipped,
+            "Return code should be raim not used. Saw: {:?}",
+            pvt_status
+        );
+        assert!(soln.pos_valid(), "Solution should be valid!");
+    }
+
+    #[test]
+    fn disable_pvt_velocity() {
+        let nms = [
+            make_nm1_no_doppler(),
+            make_nm2(),
+            make_nm3(),
+            make_nm4(),
+            make_nm5(),
+            make_nm6(),
+        ];
+        let settings = PvtSettings {
+            strategy: ProcessingStrategy::AllConstellations,
+            disable_raim: false,
+            disable_velocity: true,
+        };
+
+        let result = calc_pvt(&nms, make_tor(), settings);
+
+        assert!(result.is_ok(), "PVT should succeed");
+        let (pvt_status, soln, _, _) = result.unwrap();
+        assert!(soln.pos_valid(), "Solution should be valid!");
+        assert!(!soln.vel_valid(), "Velocity should not be valid!");
+        assert!(soln.vel_ned().is_none(), "Velocity should not be valid!");
+        assert!(soln.vel_ecef().is_none(), "Velocity should not be valid!");
+    }
+
+    #[test]
+    fn count_sats() {
+        let nms = [
+            make_nm1(),
+            make_nm2(),
+            make_nm3(),
+            make_nm4(),
+            make_nm5(),
+            make_nm6(),
+            make_nm7(),
+            make_nm8(),
+            make_nm9(),
+            make_nm10(),
+        ];
+        let settings = PvtSettings {
+            strategy: ProcessingStrategy::AllConstellations,
+            disable_raim: true,
+            disable_velocity: false,
+        };
+
+        let result = calc_pvt(&nms, make_tor(), settings);
+
+        assert!(result.is_ok(), "PVT should succeed");
+        let (_, soln, _, _) = result.unwrap();
+        assert!(soln.pos_valid(), "Solution should be valid!");
+        assert_eq!(
+            soln.signals_used(),
+            10,
+            "n_sigs_used should be 10. Saw: {}",
+            soln.signals_used()
+        );
+        assert_eq!(
+            soln.sats_used(),
+            9,
+            "n_sats_used should be 9. Saw: {}",
+            soln.sats_used()
+        );
+    }
+
+    #[test]
+    fn count_sats_l1ca_only() {
+        let nms = [
+            make_nm1(),
+            make_nm2(),
+            make_nm3(),
+            make_nm4(),
+            make_nm5(),
+            make_nm6(),
+            make_nm7(),
+            make_nm8(),
+            make_nm9(),
+            make_nm10(),
+        ];
+        let settings = PvtSettings {
+            strategy: ProcessingStrategy::GpsL1caWhenPossible,
+            disable_raim: true,
+            disable_velocity: false,
+        };
+
+        let result = calc_pvt(&nms, make_tor(), settings);
+
+        assert!(result.is_ok(), "PVT should succeed");
+        let (_, soln, _, _) = result.unwrap();
+        assert!(soln.pos_valid(), "Solution should be valid!");
+        assert_eq!(
+            soln.signals_used(),
+            9,
+            "n_sigs_used should be 9. Saw: {}",
+            soln.signals_used()
+        );
+        assert_eq!(
+            soln.sats_used(),
+            9,
+            "n_sats_used should be 9. Saw: {}",
+            soln.sats_used()
+        );
+    }
+
+    #[test]
+    fn dops() {
+        let truedops = Dops(c_bindings::dops_t {
+            pdop: 2.69955,
+            gdop: 3.07696,
+            tdop: 1.47652,
+            hdop: 1.76157,
+            vdop: 2.04559,
+        });
+
+        let dop_tol = 1e-3;
+
+        let nms = [
+            make_nm1(),
+            make_nm2(),
+            make_nm3(),
+            make_nm4(),
+            make_nm5(),
+            make_nm6(),
+        ];
+        let settings = PvtSettings {
+            strategy: ProcessingStrategy::AllConstellations,
+            disable_raim: false,
+            disable_velocity: true,
+        };
+
+        let result = calc_pvt(&nms, make_tor(), settings);
+
+        assert!(result.is_ok(), "PVT should succeed");
+        let (_, soln, dops, _) = result.unwrap();
+        assert!(soln.pos_valid(), "Solution should be valid!");
+        assert!(
+            (dops.pdop() * dops.pdop() - (dops.vdop() * dops.vdop() + dops.hdop() * dops.hdop()))
+                .abs()
+                < dop_tol,
+            "HDOP^2 + VDOP^2 != PDOP^2.  Saw: {}, {}, {}, {}, {}",
+            dops.pdop(),
+            dops.gdop(),
+            dops.tdop(),
+            dops.hdop(),
+            dops.vdop()
+        );
+        let dop_err = (dops.pdop() - truedops.pdop()).abs()
+            + (dops.gdop() - truedops.gdop()).abs()
+            + (dops.tdop() - truedops.tdop()).abs()
+            + (dops.hdop() - truedops.hdop()).abs()
+            + (dops.vdop() - truedops.vdop()).abs();
+        assert!(
+            dop_err < dop_tol,
+            "DOPs don't match hardcoded correct values. Saw: {}, {}, {}, {}, {}",
+            dops.pdop(),
+            dops.gdop(),
+            dops.tdop(),
+            dops.hdop(),
+            dops.vdop()
+        );
     }
 }

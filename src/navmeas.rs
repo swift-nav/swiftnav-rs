@@ -124,3 +124,167 @@ pub fn decode_lock_time(sbp_lock_time: u8) -> Duration {
     let value = unsafe { c_bindings::decode_lock_time(sbp_lock_time) };
     Duration::from_secs_f64(value)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn encode() {
+        let mut ret;
+
+        ret = encode_lock_time(Duration::from_secs_f64(0.0));
+        assert_eq!(ret, 0, "Incorrect return ({} vs {})", ret, 0);
+
+        ret = encode_lock_time(Duration::from_secs_f64(0.05));
+        assert_eq!(ret, 1, "Incorrect return ({} vs {})", ret, 1);
+
+        ret = encode_lock_time(Duration::from_secs_f64(0.1));
+        assert_eq!(ret, 2, "Incorrect return ({} vs {})", ret, 2);
+
+        ret = encode_lock_time(Duration::from_secs_f64(0.2));
+        assert_eq!(ret, 3, "Incorrect return ({} vs {})", ret, 3);
+
+        ret = encode_lock_time(Duration::from_secs_f64(0.5));
+        assert_eq!(ret, 4, "Incorrect return ({} vs {})", ret, 4);
+
+        ret = encode_lock_time(Duration::from_secs_f64(1.0));
+        assert_eq!(ret, 5, "Incorrect return ({} vs {})", ret, 5);
+
+        ret = encode_lock_time(Duration::from_secs_f64(2.0));
+        assert_eq!(ret, 6, "Incorrect return ({} vs {})", ret, 6);
+
+        ret = encode_lock_time(Duration::from_secs_f64(4.0));
+        assert_eq!(ret, 7, "Incorrect return ({} vs {})", ret, 7);
+
+        ret = encode_lock_time(Duration::from_secs_f64(5.0));
+        assert_eq!(ret, 8, "Incorrect return ({} vs {})", ret, 8);
+
+        ret = encode_lock_time(Duration::from_secs_f64(10.0));
+        assert_eq!(ret, 9, "Incorrect return ({} vs {})", ret, 9);
+
+        ret = encode_lock_time(Duration::from_secs_f64(20.0));
+        assert_eq!(ret, 10, "Incorrect return ({} vs {})", ret, 10);
+
+        ret = encode_lock_time(Duration::from_secs_f64(50.0));
+        assert_eq!(ret, 11, "Incorrect return ({} vs {})", ret, 11);
+
+        ret = encode_lock_time(Duration::from_secs_f64(100.0));
+        assert_eq!(ret, 12, "Incorrect return ({} vs {})", ret, 12);
+
+        ret = encode_lock_time(Duration::from_secs_f64(200.0));
+        assert_eq!(ret, 13, "Incorrect return ({} vs {})", ret, 13);
+
+        ret = encode_lock_time(Duration::from_secs_f64(500.0));
+        assert_eq!(ret, 14, "Incorrect return ({} vs {})", ret, 14);
+
+        ret = encode_lock_time(Duration::from_secs_f64(1000.0));
+        assert_eq!(ret, 15, "Incorrect return ({} vs {})", ret, 15);
+
+        ret = encode_lock_time(Duration::new(u64::MAX, 1_000_000_000 - 1));
+        assert_eq!(ret, 15, "Incorrect return ({} vs {})", ret, 15);
+    }
+
+    #[test]
+    fn decode() {
+        let mut ret;
+        let mut exp;
+
+        ret = decode_lock_time(0);
+        exp = Duration::from_secs_f64(0.0);
+        assert_eq!(ret, exp, "Incorrect return ({:?} vs {:?})", ret, exp);
+
+        ret = decode_lock_time(0xF0);
+        exp = Duration::from_secs_f64(0.0);
+        assert_eq!(ret, exp, "Incorrect return ({:?} vs {:?})", ret, exp);
+
+        ret = decode_lock_time(1);
+        exp = Duration::from_secs_f64(0.032);
+        assert_eq!(ret, exp, "Incorrect return ({:?} vs {:?})", ret, exp);
+
+        ret = decode_lock_time(2);
+        exp = Duration::from_secs_f64(0.064);
+        assert_eq!(ret, exp, "Incorrect return ({:?} vs {:?})", ret, exp);
+
+        ret = decode_lock_time(3);
+        exp = Duration::from_secs_f64(0.128);
+        assert_eq!(ret, exp, "Incorrect return ({:?} vs {:?})", ret, exp);
+
+        ret = decode_lock_time(4);
+        exp = Duration::from_secs_f64(0.256);
+        assert_eq!(ret, exp, "Incorrect return ({:?} vs {:?})", ret, exp);
+
+        ret = decode_lock_time(5);
+        exp = Duration::from_secs_f64(0.512);
+        assert_eq!(ret, exp, "Incorrect return ({:?} vs {:?})", ret, exp);
+
+        ret = decode_lock_time(6);
+        exp = Duration::from_secs_f64(1.024);
+        assert_eq!(ret, exp, "Incorrect return ({:?} vs {:?})", ret, exp);
+
+        ret = decode_lock_time(7);
+        exp = Duration::from_secs_f64(2.048);
+        assert_eq!(ret, exp, "Incorrect return ({:?} vs {:?})", ret, exp);
+
+        ret = decode_lock_time(8);
+        exp = Duration::from_secs_f64(4.096);
+        assert_eq!(ret, exp, "Incorrect return ({:?} vs {:?})", ret, exp);
+
+        ret = decode_lock_time(9);
+        exp = Duration::from_secs_f64(8.192);
+        assert_eq!(ret, exp, "Incorrect return ({:?} vs {:?})", ret, exp);
+
+        ret = decode_lock_time(10);
+        exp = Duration::from_secs_f64(16.384);
+        assert_eq!(ret, exp, "Incorrect return ({:?} vs {:?})", ret, exp);
+
+        ret = decode_lock_time(11);
+        exp = Duration::from_secs_f64(32.768);
+        assert_eq!(ret, exp, "Incorrect return ({:?} vs {:?})", ret, exp);
+
+        ret = decode_lock_time(12);
+        exp = Duration::from_secs_f64(65.536);
+        assert_eq!(ret, exp, "Incorrect return ({:?} vs {:?})", ret, exp);
+
+        ret = decode_lock_time(13);
+        exp = Duration::from_secs_f64(131.072);
+        assert_eq!(ret, exp, "Incorrect return ({:?} vs {:?})", ret, exp);
+
+        ret = decode_lock_time(14);
+        exp = Duration::from_secs_f64(262.144);
+        assert_eq!(ret, exp, "Incorrect return ({:?} vs {:?})", ret, exp);
+
+        ret = decode_lock_time(15);
+        exp = Duration::from_secs_f64(524.288);
+        assert_eq!(ret, exp, "Incorrect return ({:?} vs {:?})", ret, exp);
+    }
+
+    #[test]
+    fn round_trip() {
+        let value_to_encode = Duration::from_secs_f64(260.0);
+
+        let encoded_value = encode_lock_time(value_to_encode);
+        let decoded_value = decode_lock_time(encoded_value);
+
+        assert_eq!(
+            encoded_value, 13,
+            "Incorrect return ({} vs {})",
+            encoded_value, 13
+        );
+
+        assert_eq!(
+            decoded_value,
+            Duration::from_secs_f64(131.072),
+            "Incorrect return ({:?} vs {:?})",
+            decoded_value,
+            Duration::from_secs_f64(131.072)
+        );
+
+        assert!(
+            decoded_value < value_to_encode,
+            "Minimum lock time not less than original lock time ({:?} < {:?})",
+            decoded_value,
+            value_to_encode
+        );
+    }
+}
