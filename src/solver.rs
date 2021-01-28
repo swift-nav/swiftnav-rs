@@ -181,8 +181,12 @@ impl ProcessingStrategy {
     pub(crate) fn to_processing_strategy_t(&self) -> c_bindings::processing_strategy_t {
         match *self {
             ProcessingStrategy::GpsOnly => c_bindings::processing_strategy_t_GPS_ONLY,
-            ProcessingStrategy::AllConstellations => c_bindings::processing_strategy_t_ALL_CONSTELLATIONS,
-            ProcessingStrategy::GpsL1caWhenPossible => c_bindings::processing_strategy_t_GPS_L1CA_WHEN_POSSIBLE,
+            ProcessingStrategy::AllConstellations => {
+                c_bindings::processing_strategy_t_ALL_CONSTELLATIONS
+            }
+            ProcessingStrategy::GpsL1caWhenPossible => {
+                c_bindings::processing_strategy_t_GPS_L1CA_WHEN_POSSIBLE
+            }
             ProcessingStrategy::L1Only => c_bindings::processing_strategy_t_L1_ONLY,
         }
     }
