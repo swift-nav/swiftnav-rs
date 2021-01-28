@@ -27,6 +27,11 @@ fn main() {
         .header(format!("{}/include/swiftnav/troposphere.h", dst.display()))
         .header(format!("{}/include/swiftnav/ephemeris.h", dst.display()))
         .header(format!("{}/include/swiftnav/edc.h", dst.display()))
+        .header(format!("{}/include/swiftnav/nav_meas.h", dst.display()))
+        .header(format!(
+            "{}/include/swiftnav/single_epoch_solver.h",
+            dst.display()
+        ))
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
@@ -83,6 +88,20 @@ fn main() {
         .whitelist_function("decode_bds_d1_ephemeris")
         .whitelist_function("decode_gal_ephemeris")
         .whitelist_function("crc24q")
+        .whitelist_type("measurement_std_t")
+        .whitelist_function("nav_meas_flags_valid")
+        .whitelist_function("pseudorange_valid")
+        .whitelist_function("encode_lock_time")
+        .whitelist_function("decode_lock_time")
+        .whitelist_var("NAV_MEAS_FLAG_CODE_VALID")
+        .whitelist_var("NAV_MEAS_FLAG_MEAS_DOPPLER_VALID")
+        .whitelist_var("NAV_MEAS_FLAG_CN0_VALID")
+        .whitelist_function("sid_set_init")
+        .whitelist_function("sid_set_get_sat_count")
+        .whitelist_function("sid_set_get_sig_count")
+        .whitelist_function("sid_set_contains")
+        .whitelist_function("calc_PVT")
+        .whitelist_var("pvt_err_msg")
         // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.
