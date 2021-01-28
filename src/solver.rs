@@ -298,7 +298,7 @@ impl Default for SidSet {
 }
 
 /// Causes of a failed PVT solution
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[repr(usize)]
 pub enum PvtError {
     /// The PDOP of the solution was unacceptably high
@@ -330,6 +330,7 @@ impl PvtError {
             _ => panic!("Invalid PVT Error code: {}", val),
         }
     }
+
     pub fn as_string_lossy(&self) -> Cow<'static, str> {
         let index = *self as usize;
         unsafe {
@@ -347,12 +348,35 @@ impl fmt::Display for PvtError {
 
 impl std::error::Error for PvtError {}
 
+/// Indicates action taken while successfully calculating a solution
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[repr(usize)]
+pub enum PvtStatus {
+    /// Solution OK and RAIM check passed
+    RaimPassed,
+    /// Repaired solution, using fewer observations. The SidSet contained the removed measurements
+    RepairedSolution,
+    /// Solution OK, but RAIM check was not used (exactly 4 measurements given) or disabled
+    RaimSkipped,
+}
+
+impl PvtStatus {
+    pub(crate) fn from_i8(val: i8) -> PvtStatus {
+        match val {
+            0 => PvtStatus::RaimPassed,
+            1 => PvtStatus::RepairedSolution,
+            2 => PvtStatus::RaimSkipped,
+            _ => panic!("Invalid PVT success code: {}", val),
+        }
+    }
+}
+
 /// Try to calculate a single point GNSS solution
 pub fn calc_pvt(
     measurements: &[NavigationMeasurement],
     tor: GpsTime,
     settings: PvtSettings,
-) -> Result<(GnssSolution, Dops, SidSet), PvtError> {
+) -> Result<(PvtStatus, GnssSolution, Dops, SidSet), PvtError> {
     assert!(measurements.len() <= std::u8::MAX as usize);
 
     let mut solution = GnssSolution::new();
