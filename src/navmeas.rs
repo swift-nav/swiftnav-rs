@@ -15,6 +15,7 @@ use std::time::Duration;
 const NAV_MEAS_FLAG_CODE_VALID: u16 = 1 << 0;
 const NAV_MEAS_FLAG_MEAS_DOPPLER_VALID: u16 = 1 << 2;
 const NAV_MEAS_FLAG_CN0_VALID: u16 = 1 << 5;
+const NAV_MEAS_FLAG_RAIM_EXCLUSION: u16 = 1 << 6;
 
 /// Represents a single raw GNSS measurement
 #[derive(Debug, Clone, PartialOrd, PartialEq)]
@@ -138,6 +139,40 @@ impl NavigationMeasurement {
 impl Default for NavigationMeasurement {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(feature = "sbp-conversions")]
+impl TryFrom<sbp::messages::observation::MsgObs> for Vec<NavigationMeasurement> {
+    type Error = InvalidGnssSignal;
+
+    fn try_from(
+        obs: sbp::messages::observation::MsgObs,
+    ) -> Result<Vec<NavigationMeasurement>, InvalidGnssSignal> {
+        let mut measurements = Vec::new();
+
+        for obs in obs.obs {
+            let mut measurment = NavigationMeasurement::new();
+
+            measurment.set_lock_time(decode_lock_time(obs.lock));
+            measurment.set_sid(GnssSignal::from_sbp(obs.sid)?);
+            // A CN0 of 0 is considered invalid
+            if obs.cn0 != 0 {
+                measurment.set_cn0(obs.cn0 as f64 / 4.);
+            }
+            if obs.flags & 0x01 != 0 {
+                measurment.set_pseudorange(obs.P as f64 / 5e1);
+            }
+            if obs.flags & 0x08 != 0 {
+                measurment.set_measured_doppler(obs.D.i as f64 + (obs.D.f as f64) / 256.);
+            }
+            if obs.flags & 0x80 != 0 {
+                measurment.0.flags |= NAV_MEAS_FLAG_RAIM_EXCLUSION;
+            }
+            measurements.push(measurment)
+        }
+
+        Ok(measurements)
     }
 }
 

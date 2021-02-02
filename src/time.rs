@@ -175,6 +175,25 @@ impl SubAssign<Duration> for GpsTime {
     }
 }
 
+#[cfg(feature = "sbp-conversions")]
+impl TryFrom<sbp::messages::gnss::GPSTime> for GpsTime {
+    type Error = InvalidGpsTime;
+
+    fn try_from(msg: sbp::messages::gnss::GPSTime) -> Result<GpsTime, InvalidGpsTime> {
+        let tow = (msg.tow as f64) * 1e-3 + (msg.ns_residual as f64) * 1e-9;
+        GpsTime::new(msg.wn as i16, tow)
+    }
+}
+
+#[cfg(feature = "sbp-conversions")]
+impl TryFrom<sbp::messages::gnss::GPSTimeSec> for GpsTime {
+    type Error = InvalidGpsTime;
+
+    fn try_from(msg: sbp::messages::gnss::GPSTimeSec) -> Result<GpsTime, InvalidGpsTime> {
+        GpsTime::new(msg.wn as i16, msg.tow as f64)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

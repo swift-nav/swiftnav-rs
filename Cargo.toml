@@ -8,7 +8,11 @@ readme = "README.md"
 repository = "https://github.com/swift-nav/swiftnav-rs"
 license = "LGPL-3.0"
 
+[features]
+sbp-conversions = ["sbp"]
+
 [dependencies]
+sbp = { git = "https://github.com/swift-nav/libsbp.git", rev="51660bd02f18216aef7abcdebf27fec72a93c161", optional = true }
 
 [build-dependencies]
 bindgen = "0.57"

@@ -395,6 +395,13 @@ impl Code {
     }
 }
 
+#[cfg(feature = "sbp-conversions")]
+impl TryFrom<u8> for Code {
+    fn try_from(value: u8) -> Result<Code, InvalidCode> {
+        Self::from_code_t(value as c_bindings::code_t)
+    }
+}
+
 /// GNSS Signal identifier
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct GnssSignal(c_bindings::gnss_signal_t);
@@ -466,6 +473,15 @@ impl GnssSignal {
     /// Get the carrier frequency of the signal
     pub fn carrier_frequency(&self) -> f64 {
         unsafe { c_bindings::sid_to_carr_freq(self.0) }
+    }
+}
+
+#[cfg(feature = "sbp-conversions")]
+impl TryFrom<sbp::messages::gnss::GnssSignal> for GnssSignal {
+    type Error = InvalidGnssSignal;
+
+    fn try_from(value: sbp::messages::gnss::GnssSignal) -> Result<GnssSignal, InvalidGnssSignal> {
+        GnssSignal::new(value.sat as u16, Code::from_sbp(value.code)?)
     }
 }
 
