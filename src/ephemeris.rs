@@ -265,7 +265,7 @@ impl Ephemeris {
     }
 
     /// Calculate satellite position, velocity and clock offset from ephemeris.
-    pub fn calc_satellite_state(&self, t: &GpsTime) -> Result<SatelliteState> {
+    pub fn calc_satellite_state(&self, t: GpsTime) -> Result<SatelliteState> {
         let mut sat = SatelliteState {
             pos: ECEF::default(),
             vel: ECEF::default(),
@@ -349,7 +349,7 @@ impl Ephemeris {
     }
 
     /// Is this ephemeris usable?
-    pub fn is_valid_at_time(&self, t: &GpsTime) -> bool {
+    pub fn is_valid_at_time(&self, t: GpsTime) -> bool {
         let result = unsafe { c_bindings::ephemeris_valid(&self.0, t.c_ptr()) };
         result == 0
     }
