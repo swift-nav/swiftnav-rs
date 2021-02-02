@@ -8,6 +8,7 @@
 //! midnight on Sunday.
 
 use crate::c_bindings;
+use std::error::Error;
 use std::fmt;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::time::Duration;
@@ -21,6 +22,23 @@ pub const WEEK: Duration = Duration::from_secs(c_bindings::WEEK_SECS as u64);
 #[derive(Copy, Clone)]
 pub struct GpsTime(c_bindings::gps_time_t);
 
+#[derive(Debug, Copy, Clone, PartialOrd, PartialEq)]
+pub enum InvalidGpsTime {
+    InvalidWN(i16),
+    InvalidTOW(f64),
+}
+
+impl fmt::Display for InvalidGpsTime {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            InvalidGpsTime::InvalidWN(wn) => write!(f, "Invalid Week Number: {}", wn),
+            InvalidGpsTime::InvalidTOW(tow) => write!(f, "Invalid Time of Wee: {}", tow),
+        }
+    }
+}
+
+impl Error for InvalidGpsTime {}
+
 impl GpsTime {
     const JIFFY: f64 = c_bindings::FLOAT_EQUALITY_EPS;
 
@@ -28,19 +46,19 @@ impl GpsTime {
     ///
     /// Invalid values include negative week values, negative, non-finite, or to
     /// large time of week values.
-    pub fn new(wn: i16, tow: f64) -> Option<GpsTime> {
-        let time = GpsTime::new_unchecked(wn, tow);
-
-        if time.is_valid() {
-            Some(time)
+    pub fn new(wn: i16, tow: f64) -> Result<GpsTime, InvalidGpsTime> {
+        if wn < 0 {
+            Err(InvalidGpsTime::InvalidWN(wn))
+        } else if !tow.is_finite() || tow < 0. || tow >= WEEK.as_secs_f64() {
+            Err(InvalidGpsTime::InvalidTOW(tow))
         } else {
-            None
+            Ok(GpsTime::new_unchecked(wn, tow))
         }
     }
 
     /// Makes a new GPS time object without checking the validity of the given
     /// values.
-    pub fn new_unchecked(wn: i16, tow: f64) -> GpsTime {
+    pub(crate) fn new_unchecked(wn: i16, tow: f64) -> GpsTime {
         GpsTime(c_bindings::gps_time_t { wn, tow })
     }
 
@@ -163,12 +181,12 @@ mod tests {
 
     #[test]
     fn validity() {
-        assert!(GpsTime::new(0, 0.0).is_some());
-        assert!(GpsTime::new(-1, -1.0).is_none());
-        assert!(GpsTime::new(-1, -1.0).is_none());
-        assert!(GpsTime::new(12, WEEK.as_secs_f64()).is_none());
-        assert!(GpsTime::new(12, std::f64::NAN).is_none());
-        assert!(GpsTime::new(12, std::f64::INFINITY).is_none());
+        assert!(GpsTime::new(0, 0.0).is_ok());
+        assert!(GpsTime::new(-1, -1.0).is_err());
+        assert!(GpsTime::new(-1, -1.0).is_err());
+        assert!(GpsTime::new(12, WEEK.as_secs_f64()).is_err());
+        assert!(GpsTime::new(12, std::f64::NAN).is_err());
+        assert!(GpsTime::new(12, std::f64::INFINITY).is_err());
     }
 
     #[test]
