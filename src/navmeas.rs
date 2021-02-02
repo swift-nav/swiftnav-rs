@@ -111,9 +111,17 @@ impl NavigationMeasurement {
         self.0.lock_time = value.as_secs_f64();
     }
 
+    pub fn get_lock_time(&self) -> Duration {
+        Duration::from_secs_f64(self.0.lock_time)
+    }
+
     /// Sets the signal ID of the measured signal
     pub fn set_sid(&mut self, value: GnssSignal) {
         self.0.sid = value.to_gnss_signal_t();
+    }
+
+    pub fn get_sid(&self) -> GnssSignal {
+        GnssSignal::from_gnss_signal_t(self.0.sid).unwrap()
     }
 
     /// Checks to see if all of the measurement flags marked as valid

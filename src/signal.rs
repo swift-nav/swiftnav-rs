@@ -375,8 +375,20 @@ impl GnssSignal {
         GnssSignal(c_bindings::gnss_signal_t { sat, code })
     }
 
+    pub(crate) fn from_gnss_signal_t(sid: c_bindings::gnss_signal_t) -> Option<GnssSignal> {
+        Some(GnssSignal::new(sid.sat, Code::from_code_t(sid.code)?))
+    }
+
     pub(crate) fn to_gnss_signal_t(&self) -> c_bindings::gnss_signal_t {
         self.0
+    }
+
+    pub fn get_sat(&self) -> u16 {
+        self.0.sat
+    }
+
+    pub fn get_code(&self) -> Code {
+        Code::from_code_t(self.0.code).unwrap()
     }
 
     /// Get the constellation of the signal

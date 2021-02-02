@@ -342,6 +342,10 @@ impl Ephemeris {
         }
     }
 
+    pub fn get_sid(&self) -> GnssSignal {
+        GnssSignal::from_gnss_signal_t(self.0.sid).unwrap()
+    }
+
     /// Gets the status of an ephemeris - is the ephemeris invalid, unhealthy,
     /// or has some other condition which makes it unusable?
     pub fn get_status(&self) -> Status {
