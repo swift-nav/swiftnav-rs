@@ -265,7 +265,7 @@ impl Ephemeris {
     }
 
     /// Calculate satellite position, velocity and clock offset from ephemeris.
-    pub fn calc_satellite_state(&self, t: &GpsTime) -> Result<SatelliteState> {
+    pub fn calc_satellite_state(&self, t: GpsTime) -> Result<SatelliteState> {
         let mut sat = SatelliteState {
             pos: ECEF::default(),
             vel: ECEF::default(),
@@ -342,6 +342,10 @@ impl Ephemeris {
         }
     }
 
+    pub fn get_sid(&self) -> GnssSignal {
+        GnssSignal::from_gnss_signal_t(self.0.sid).unwrap()
+    }
+
     /// Gets the status of an ephemeris - is the ephemeris invalid, unhealthy,
     /// or has some other condition which makes it unusable?
     pub fn get_status(&self) -> Status {
@@ -349,7 +353,7 @@ impl Ephemeris {
     }
 
     /// Is this ephemeris usable?
-    pub fn is_valid_at_time(&self, t: &GpsTime) -> bool {
+    pub fn is_valid_at_time(&self, t: GpsTime) -> bool {
         let result = unsafe { c_bindings::ephemeris_valid(&self.0, t.c_ptr()) };
         result == 0
     }

@@ -14,7 +14,7 @@ use std::ffi;
 use std::fmt;
 
 /// A position velocity and time solution
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, PartialOrd, PartialEq)]
 pub struct GnssSolution(c_bindings::gnss_solution);
 
 impl GnssSolution {
@@ -134,7 +134,7 @@ impl GnssSolution {
 ///
 /// DOP is a measurement of how the satellite geometry impacts the precision of
 /// the solution
-#[derive(Clone, Debug)]
+#[derive(Debug, Clone, PartialOrd, PartialEq)]
 pub struct Dops(c_bindings::dops_t);
 
 impl Dops {
@@ -169,7 +169,7 @@ impl Dops {
 }
 
 /// Different strategies of how to choose which measurements to use in a solution
-#[derive(Copy, Clone, Debug)]
+#[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub enum ProcessingStrategy {
     GpsOnly,
     AllConstellations,
@@ -193,7 +193,7 @@ impl ProcessingStrategy {
 }
 
 /// Holds the settings to customize how the GNSS solution is calculated
-#[derive(Copy, Clone, Debug)]
+#[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub struct PvtSettings {
     strategy: ProcessingStrategy,
     disable_raim: bool,
@@ -312,10 +312,10 @@ impl Default for SidSet {
 }
 
 /// Causes of a failed PVT solution
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub enum PvtError {
     /// The PDOP of the solution was unacceptably high
-    HighPdop = 0,
+    HighPdop,
     /// Alitutde of the solution was unacceptable
     UnreasonableAltitude,
     /// The velocity of the solution was >= 1000 kts
@@ -362,7 +362,7 @@ impl fmt::Display for PvtError {
 impl std::error::Error for PvtError {}
 
 /// Indicates action taken while successfully calculating a solution
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub enum PvtStatus {
     /// Solution OK and RAIM check passed
     RaimPassed,
@@ -1018,7 +1018,7 @@ mod tests {
         let result = calc_pvt(&nms, make_tor(), settings);
 
         assert!(result.is_ok(), "PVT should succeed");
-        let (pvt_status, soln, _, sid_set) = result.unwrap();
+        let (pvt_status, soln, _, _) = result.unwrap();
         assert_eq!(
             pvt_status,
             PvtStatus::RaimPassed,
@@ -1134,7 +1134,7 @@ mod tests {
         let result = calc_pvt(&nms, make_tor(), settings);
 
         assert!(result.is_ok(), "PVT should succeed");
-        let (pvt_status, soln, _, _) = result.unwrap();
+        let (_, soln, _, _) = result.unwrap();
         assert!(soln.pos_valid(), "Solution should be valid!");
         assert!(!soln.vel_valid(), "Velocity should not be valid!");
         assert!(soln.vel_ned().is_none(), "Velocity should not be valid!");

@@ -18,6 +18,11 @@ fn main() {
     let bindings = bindgen::Builder::default()
         .array_pointers_in_arguments(true)
         .clang_args(include_args)
+        .derive_hash(true)
+        .derive_partialord(true)
+        .derive_ord(true)
+        .derive_partialeq(true)
+        .derive_eq(true)
         // The input header we would like to generate
         // bindings for.
         .header(format!("{}/include/swiftnav/signal.h", dst.display()))
