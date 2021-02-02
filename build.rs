@@ -98,6 +98,7 @@ fn main() {
         .whitelist_function("calc_sat_az_el")
         .whitelist_function("calc_sat_doppler")
         .whitelist_function("get_ephemeris_status_t")
+        .whitelist_function("ephemeris_valid_detailed")
         .whitelist_function("ephemeris_valid")
         .whitelist_function("ephemeris_equal")
         .whitelist_function("ephemeris_healthy")
