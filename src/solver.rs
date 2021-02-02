@@ -1018,7 +1018,7 @@ mod tests {
         let result = calc_pvt(&nms, make_tor(), settings);
 
         assert!(result.is_ok(), "PVT should succeed");
-        let (pvt_status, soln, _, sid_set) = result.unwrap();
+        let (pvt_status, soln, _, _) = result.unwrap();
         assert_eq!(
             pvt_status,
             PvtStatus::RaimPassed,
@@ -1134,7 +1134,7 @@ mod tests {
         let result = calc_pvt(&nms, make_tor(), settings);
 
         assert!(result.is_ok(), "PVT should succeed");
-        let (pvt_status, soln, _, _) = result.unwrap();
+        let (_, soln, _, _) = result.unwrap();
         assert!(soln.pos_valid(), "Solution should be valid!");
         assert!(!soln.vel_valid(), "Velocity should not be valid!");
         assert!(soln.vel_ned().is_none(), "Velocity should not be valid!");
