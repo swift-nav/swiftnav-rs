@@ -11,6 +11,7 @@
 use crate::{c_bindings, time::GpsTime};
 
 /// Represents an ionosphere model
+#[derive(Debug, Clone, PartialOrd, PartialEq)]
 pub struct Ionosphere(c_bindings::ionosphere_t);
 
 impl Ionosphere {

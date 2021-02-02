@@ -17,7 +17,7 @@ const NAV_MEAS_FLAG_MEAS_DOPPLER_VALID: u16 = 1 << 2;
 const NAV_MEAS_FLAG_CN0_VALID: u16 = 1 << 5;
 
 /// Represents a single raw GNSS measurement
-#[derive(Clone)]
+#[derive(Debug, Clone, PartialOrd, PartialEq)]
 #[repr(transparent)]
 pub struct NavigationMeasurement(c_bindings::navigation_measurement_t);
 

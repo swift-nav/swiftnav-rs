@@ -9,7 +9,7 @@ use std::borrow::Cow;
 use std::ffi;
 
 /// GNSS satellite constellations
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub enum Constellation {
     /// GPS
     Gps,
@@ -67,7 +67,7 @@ impl Constellation {
 }
 
 /// Code identifiers
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub enum Code {
     /// GPS L1CA: BPSK(1)
     GpsL1ca,
@@ -366,7 +366,7 @@ impl Code {
 }
 
 /// GNSS Signal identifier
-#[derive(Copy, Clone)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct GnssSignal(c_bindings::gnss_signal_t);
 
 impl GnssSignal {
