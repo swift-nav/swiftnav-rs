@@ -6,7 +6,9 @@
 
 use crate::c_bindings;
 use std::borrow::Cow;
+use std::error::Error;
 use std::ffi;
+use std::fmt;
 
 /// GNSS satellite constellations
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
@@ -25,18 +27,32 @@ pub enum Constellation {
     Gal,
 }
 
+/// Invalid constellation integer value
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+struct InvalidConstellation(c_bindings::constellation_t);
+
+impl fmt::Display for InvalidConstellation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Invalid constellation integer value: {}", self.0)
+    }
+}
+
+impl Error for InvalidConstellation {}
+
 impl Constellation {
-    fn from_constellation_t(value: c_bindings::constellation_t) -> Option<Constellation> {
+    fn from_constellation_t(
+        value: c_bindings::constellation_t,
+    ) -> Result<Constellation, InvalidConstellation> {
         match value {
-            c_bindings::constellation_e_CONSTELLATION_GPS => Some(Constellation::Gps),
-            c_bindings::constellation_e_CONSTELLATION_SBAS => Some(Constellation::Sbas),
-            c_bindings::constellation_e_CONSTELLATION_GLO => Some(Constellation::Glo),
-            c_bindings::constellation_e_CONSTELLATION_BDS => Some(Constellation::Bds),
-            c_bindings::constellation_e_CONSTELLATION_QZS => Some(Constellation::Qzs),
-            c_bindings::constellation_e_CONSTELLATION_GAL => Some(Constellation::Gal),
+            c_bindings::constellation_e_CONSTELLATION_GPS => Ok(Constellation::Gps),
+            c_bindings::constellation_e_CONSTELLATION_SBAS => Ok(Constellation::Sbas),
+            c_bindings::constellation_e_CONSTELLATION_GLO => Ok(Constellation::Glo),
+            c_bindings::constellation_e_CONSTELLATION_BDS => Ok(Constellation::Bds),
+            c_bindings::constellation_e_CONSTELLATION_QZS => Ok(Constellation::Qzs),
+            c_bindings::constellation_e_CONSTELLATION_GAL => Ok(Constellation::Gal),
             c_bindings::constellation_e_CONSTELLATION_INVALID
             | c_bindings::constellation_e_CONSTELLATION_COUNT
-            | _ => None,
+            | _ => Err(InvalidConstellation(value)),
         }
     }
 
@@ -167,74 +183,88 @@ pub enum Code {
     AuxBds,
 }
 
+/// Invalid code integer value
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+pub struct InvalidCode(c_bindings::code_t);
+
+impl fmt::Display for InvalidCode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Invalid code integer value: {}", self.0)
+    }
+}
+
+impl Error for InvalidCode {}
+
 impl Code {
-    pub(crate) fn from_code_t(value: c_bindings::code_t) -> Option<Code> {
+    pub(crate) fn from_code_t(value: c_bindings::code_t) -> Result<Code, InvalidCode> {
         match value {
-            c_bindings::code_e_CODE_GPS_L1CA => Some(Code::GpsL1ca),
-            c_bindings::code_e_CODE_GPS_L2CM => Some(Code::GpsL2cm),
-            c_bindings::code_e_CODE_SBAS_L1CA => Some(Code::SbasL1ca),
-            c_bindings::code_e_CODE_GLO_L1OF => Some(Code::GloL1of),
-            c_bindings::code_e_CODE_GLO_L2OF => Some(Code::GloL2of),
-            c_bindings::code_e_CODE_GPS_L1P => Some(Code::GpsL1p),
-            c_bindings::code_e_CODE_GPS_L2P => Some(Code::GpsL2p),
-            c_bindings::code_e_CODE_GPS_L2CL => Some(Code::GpsL2cl),
-            c_bindings::code_e_CODE_GPS_L2CX => Some(Code::GpsL2cx),
-            c_bindings::code_e_CODE_GPS_L5I => Some(Code::GpsL5i),
-            c_bindings::code_e_CODE_GPS_L5Q => Some(Code::GpsL5q),
-            c_bindings::code_e_CODE_GPS_L5X => Some(Code::GpsL5x),
-            c_bindings::code_e_CODE_BDS2_B1 => Some(Code::Bds2B1),
-            c_bindings::code_e_CODE_BDS2_B2 => Some(Code::Bds2B2),
-            c_bindings::code_e_CODE_GAL_E1B => Some(Code::GalE1b),
-            c_bindings::code_e_CODE_GAL_E1C => Some(Code::GalE1c),
-            c_bindings::code_e_CODE_GAL_E1X => Some(Code::GalE1x),
-            c_bindings::code_e_CODE_GAL_E6B => Some(Code::GalE6b),
-            c_bindings::code_e_CODE_GAL_E6C => Some(Code::GalE6c),
-            c_bindings::code_e_CODE_GAL_E6X => Some(Code::GalE6x),
-            c_bindings::code_e_CODE_GAL_E7I => Some(Code::GalE7i),
-            c_bindings::code_e_CODE_GAL_E7Q => Some(Code::GalE7q),
-            c_bindings::code_e_CODE_GAL_E7X => Some(Code::GalE7x),
-            c_bindings::code_e_CODE_GAL_E8I => Some(Code::GalE8i),
-            c_bindings::code_e_CODE_GAL_E8Q => Some(Code::GalE8q),
-            c_bindings::code_e_CODE_GAL_E8X => Some(Code::GalE8x),
-            c_bindings::code_e_CODE_GAL_E5I => Some(Code::GalE5i),
-            c_bindings::code_e_CODE_GAL_E5Q => Some(Code::GalE5q),
-            c_bindings::code_e_CODE_GAL_E5X => Some(Code::GalE5x),
-            c_bindings::code_e_CODE_GLO_L1P => Some(Code::GloL1p),
-            c_bindings::code_e_CODE_GLO_L2P => Some(Code::GloL2p),
-            c_bindings::code_e_CODE_QZS_L1CA => Some(Code::QzsL1ca),
-            c_bindings::code_e_CODE_QZS_L1CI => Some(Code::QzsL1ci),
-            c_bindings::code_e_CODE_QZS_L1CQ => Some(Code::QzsL1cq),
-            c_bindings::code_e_CODE_QZS_L1CX => Some(Code::QzsL1cx),
-            c_bindings::code_e_CODE_QZS_L2CM => Some(Code::QzsL2cm),
-            c_bindings::code_e_CODE_QZS_L2CL => Some(Code::QzsL2cl),
-            c_bindings::code_e_CODE_QZS_L2CX => Some(Code::QzsL2cx),
-            c_bindings::code_e_CODE_QZS_L5I => Some(Code::QzsL5i),
-            c_bindings::code_e_CODE_QZS_L5Q => Some(Code::QzsL5q),
-            c_bindings::code_e_CODE_QZS_L5X => Some(Code::QzsL5x),
-            c_bindings::code_e_CODE_SBAS_L5I => Some(Code::SbasL5i),
-            c_bindings::code_e_CODE_SBAS_L5Q => Some(Code::SbasL5q),
-            c_bindings::code_e_CODE_SBAS_L5X => Some(Code::SbasL5x),
-            c_bindings::code_e_CODE_BDS3_B1CI => Some(Code::Bds3B1ci),
-            c_bindings::code_e_CODE_BDS3_B1CQ => Some(Code::Bds3B1cq),
-            c_bindings::code_e_CODE_BDS3_B1CX => Some(Code::Bds3B1cx),
-            c_bindings::code_e_CODE_BDS3_B5I => Some(Code::Bds3B5i),
-            c_bindings::code_e_CODE_BDS3_B5Q => Some(Code::Bds3B5q),
-            c_bindings::code_e_CODE_BDS3_B5X => Some(Code::Bds3B5x),
-            c_bindings::code_e_CODE_BDS3_B7I => Some(Code::Bds3B7i),
-            c_bindings::code_e_CODE_BDS3_B7Q => Some(Code::Bds3B7q),
-            c_bindings::code_e_CODE_BDS3_B7X => Some(Code::Bds3B7x),
-            c_bindings::code_e_CODE_BDS3_B3I => Some(Code::Bds3B3i),
-            c_bindings::code_e_CODE_BDS3_B3Q => Some(Code::Bds3B3q),
-            c_bindings::code_e_CODE_BDS3_B3X => Some(Code::Bds3B3x),
-            c_bindings::code_e_CODE_GPS_L1CI => Some(Code::GpsL1ci),
-            c_bindings::code_e_CODE_GPS_L1CQ => Some(Code::GpsL1cq),
-            c_bindings::code_e_CODE_GPS_L1CX => Some(Code::GpsL1cx),
-            c_bindings::code_e_CODE_AUX_GPS => Some(Code::AuxGps),
-            c_bindings::code_e_CODE_AUX_SBAS => Some(Code::AuxSbas),
-            c_bindings::code_e_CODE_AUX_GAL => Some(Code::AuxGal),
-            c_bindings::code_e_CODE_AUX_QZS => Some(Code::AuxQzs),
-            c_bindings::code_e_CODE_AUX_BDS => Some(Code::AuxBds),
-            c_bindings::code_e_CODE_INVALID | c_bindings::code_e_CODE_COUNT | _ => None,
+            c_bindings::code_e_CODE_GPS_L1CA => Ok(Code::GpsL1ca),
+            c_bindings::code_e_CODE_GPS_L2CM => Ok(Code::GpsL2cm),
+            c_bindings::code_e_CODE_SBAS_L1CA => Ok(Code::SbasL1ca),
+            c_bindings::code_e_CODE_GLO_L1OF => Ok(Code::GloL1of),
+            c_bindings::code_e_CODE_GLO_L2OF => Ok(Code::GloL2of),
+            c_bindings::code_e_CODE_GPS_L1P => Ok(Code::GpsL1p),
+            c_bindings::code_e_CODE_GPS_L2P => Ok(Code::GpsL2p),
+            c_bindings::code_e_CODE_GPS_L2CL => Ok(Code::GpsL2cl),
+            c_bindings::code_e_CODE_GPS_L2CX => Ok(Code::GpsL2cx),
+            c_bindings::code_e_CODE_GPS_L5I => Ok(Code::GpsL5i),
+            c_bindings::code_e_CODE_GPS_L5Q => Ok(Code::GpsL5q),
+            c_bindings::code_e_CODE_GPS_L5X => Ok(Code::GpsL5x),
+            c_bindings::code_e_CODE_BDS2_B1 => Ok(Code::Bds2B1),
+            c_bindings::code_e_CODE_BDS2_B2 => Ok(Code::Bds2B2),
+            c_bindings::code_e_CODE_GAL_E1B => Ok(Code::GalE1b),
+            c_bindings::code_e_CODE_GAL_E1C => Ok(Code::GalE1c),
+            c_bindings::code_e_CODE_GAL_E1X => Ok(Code::GalE1x),
+            c_bindings::code_e_CODE_GAL_E6B => Ok(Code::GalE6b),
+            c_bindings::code_e_CODE_GAL_E6C => Ok(Code::GalE6c),
+            c_bindings::code_e_CODE_GAL_E6X => Ok(Code::GalE6x),
+            c_bindings::code_e_CODE_GAL_E7I => Ok(Code::GalE7i),
+            c_bindings::code_e_CODE_GAL_E7Q => Ok(Code::GalE7q),
+            c_bindings::code_e_CODE_GAL_E7X => Ok(Code::GalE7x),
+            c_bindings::code_e_CODE_GAL_E8I => Ok(Code::GalE8i),
+            c_bindings::code_e_CODE_GAL_E8Q => Ok(Code::GalE8q),
+            c_bindings::code_e_CODE_GAL_E8X => Ok(Code::GalE8x),
+            c_bindings::code_e_CODE_GAL_E5I => Ok(Code::GalE5i),
+            c_bindings::code_e_CODE_GAL_E5Q => Ok(Code::GalE5q),
+            c_bindings::code_e_CODE_GAL_E5X => Ok(Code::GalE5x),
+            c_bindings::code_e_CODE_GLO_L1P => Ok(Code::GloL1p),
+            c_bindings::code_e_CODE_GLO_L2P => Ok(Code::GloL2p),
+            c_bindings::code_e_CODE_QZS_L1CA => Ok(Code::QzsL1ca),
+            c_bindings::code_e_CODE_QZS_L1CI => Ok(Code::QzsL1ci),
+            c_bindings::code_e_CODE_QZS_L1CQ => Ok(Code::QzsL1cq),
+            c_bindings::code_e_CODE_QZS_L1CX => Ok(Code::QzsL1cx),
+            c_bindings::code_e_CODE_QZS_L2CM => Ok(Code::QzsL2cm),
+            c_bindings::code_e_CODE_QZS_L2CL => Ok(Code::QzsL2cl),
+            c_bindings::code_e_CODE_QZS_L2CX => Ok(Code::QzsL2cx),
+            c_bindings::code_e_CODE_QZS_L5I => Ok(Code::QzsL5i),
+            c_bindings::code_e_CODE_QZS_L5Q => Ok(Code::QzsL5q),
+            c_bindings::code_e_CODE_QZS_L5X => Ok(Code::QzsL5x),
+            c_bindings::code_e_CODE_SBAS_L5I => Ok(Code::SbasL5i),
+            c_bindings::code_e_CODE_SBAS_L5Q => Ok(Code::SbasL5q),
+            c_bindings::code_e_CODE_SBAS_L5X => Ok(Code::SbasL5x),
+            c_bindings::code_e_CODE_BDS3_B1CI => Ok(Code::Bds3B1ci),
+            c_bindings::code_e_CODE_BDS3_B1CQ => Ok(Code::Bds3B1cq),
+            c_bindings::code_e_CODE_BDS3_B1CX => Ok(Code::Bds3B1cx),
+            c_bindings::code_e_CODE_BDS3_B5I => Ok(Code::Bds3B5i),
+            c_bindings::code_e_CODE_BDS3_B5Q => Ok(Code::Bds3B5q),
+            c_bindings::code_e_CODE_BDS3_B5X => Ok(Code::Bds3B5x),
+            c_bindings::code_e_CODE_BDS3_B7I => Ok(Code::Bds3B7i),
+            c_bindings::code_e_CODE_BDS3_B7Q => Ok(Code::Bds3B7q),
+            c_bindings::code_e_CODE_BDS3_B7X => Ok(Code::Bds3B7x),
+            c_bindings::code_e_CODE_BDS3_B3I => Ok(Code::Bds3B3i),
+            c_bindings::code_e_CODE_BDS3_B3Q => Ok(Code::Bds3B3q),
+            c_bindings::code_e_CODE_BDS3_B3X => Ok(Code::Bds3B3x),
+            c_bindings::code_e_CODE_GPS_L1CI => Ok(Code::GpsL1ci),
+            c_bindings::code_e_CODE_GPS_L1CQ => Ok(Code::GpsL1cq),
+            c_bindings::code_e_CODE_GPS_L1CX => Ok(Code::GpsL1cx),
+            c_bindings::code_e_CODE_AUX_GPS => Ok(Code::AuxGps),
+            c_bindings::code_e_CODE_AUX_SBAS => Ok(Code::AuxSbas),
+            c_bindings::code_e_CODE_AUX_GAL => Ok(Code::AuxGal),
+            c_bindings::code_e_CODE_AUX_QZS => Ok(Code::AuxQzs),
+            c_bindings::code_e_CODE_AUX_BDS => Ok(Code::AuxBds),
+            c_bindings::code_e_CODE_INVALID | c_bindings::code_e_CODE_COUNT | _ => {
+                Err(InvalidCode(value))
+            }
         }
     }
 
@@ -308,7 +338,7 @@ impl Code {
     }
 
     /// Attempts to make a `Code` from a string
-    pub fn from_str(s: &ffi::CStr) -> Option<Code> {
+    pub fn from_str(s: &ffi::CStr) -> Result<Code, InvalidCode> {
         Self::from_code_t(unsafe { c_bindings::code_string_to_enum(s.as_ptr()) })
     }
 
@@ -369,14 +399,50 @@ impl Code {
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct GnssSignal(c_bindings::gnss_signal_t);
 
+/// Invalid values when creating a `GnssSignal` object
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+pub enum InvalidGnssSignal {
+    /// The code integer value was invalid
+    InvalidCode(InvalidCode),
+    /// The satellite number is not in the valid range for the associated constellation
+    InvalidSatellite(u16),
+}
+
+impl fmt::Display for InvalidGnssSignal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            InvalidGnssSignal::InvalidCode(code) => code.fmt(f),
+            InvalidGnssSignal::InvalidSatellite(sat) => {
+                write!(f, "Invalid satellite number: {}", sat)
+            }
+        }
+    }
+}
+
+impl Error for InvalidGnssSignal {}
+
+impl From<InvalidCode> for InvalidGnssSignal {
+    fn from(other: InvalidCode) -> InvalidGnssSignal {
+        InvalidGnssSignal::InvalidCode(other)
+    }
+}
+
 impl GnssSignal {
-    pub fn new(sat: u16, code: Code) -> GnssSignal {
-        let code = code as c_bindings::code_t;
-        GnssSignal(c_bindings::gnss_signal_t { sat, code })
+    pub fn new(sat: u16, code: Code) -> Result<GnssSignal, InvalidGnssSignal> {
+        let code = code.to_code_t();
+        let sid = c_bindings::gnss_signal_t { sat, code };
+        let sid_is_valid = unsafe { c_bindings::sid_valid(sid) };
+        if sid_is_valid {
+            Ok(GnssSignal(sid))
+        } else {
+            Err(InvalidGnssSignal::InvalidSatellite(sat))
+        }
     }
 
-    pub(crate) fn from_gnss_signal_t(sid: c_bindings::gnss_signal_t) -> Option<GnssSignal> {
-        Some(GnssSignal::new(sid.sat, Code::from_code_t(sid.code)?))
+    pub(crate) fn from_gnss_signal_t(
+        sid: c_bindings::gnss_signal_t,
+    ) -> Result<GnssSignal, InvalidGnssSignal> {
+        GnssSignal::new(sid.sat, Code::from_code_t(sid.code)?)
     }
 
     pub(crate) fn to_gnss_signal_t(&self) -> c_bindings::gnss_signal_t {
@@ -488,260 +554,427 @@ mod tests {
     #[test]
     fn signal_to_constellation() {
         assert_eq!(
-            GnssSignal::new(0, Code::GpsL1ca).to_constellation(),
+            GnssSignal::new(1, Code::GpsL1ca)
+                .unwrap()
+                .to_constellation(),
             Constellation::Gps
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GpsL2cm).to_constellation(),
+            GnssSignal::new(1, Code::GpsL2cm)
+                .unwrap()
+                .to_constellation(),
             Constellation::Gps
         );
         assert_eq!(
-            GnssSignal::new(0, Code::SbasL1ca).to_constellation(),
+            GnssSignal::new(120, Code::SbasL1ca)
+                .unwrap()
+                .to_constellation(),
             Constellation::Sbas
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GloL1of).to_constellation(),
+            GnssSignal::new(1, Code::GloL1of)
+                .unwrap()
+                .to_constellation(),
             Constellation::Glo
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GloL2of).to_constellation(),
+            GnssSignal::new(1, Code::GloL2of)
+                .unwrap()
+                .to_constellation(),
             Constellation::Glo
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GpsL1p).to_constellation(),
+            GnssSignal::new(1, Code::GpsL1p).unwrap().to_constellation(),
             Constellation::Gps
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GpsL2p).to_constellation(),
+            GnssSignal::new(1, Code::GpsL2p).unwrap().to_constellation(),
             Constellation::Gps
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GpsL2cl).to_constellation(),
+            GnssSignal::new(1, Code::GpsL2cl)
+                .unwrap()
+                .to_constellation(),
             Constellation::Gps
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GpsL2cx).to_constellation(),
+            GnssSignal::new(1, Code::GpsL2cx)
+                .unwrap()
+                .to_constellation(),
             Constellation::Gps
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GpsL5i).to_constellation(),
+            GnssSignal::new(1, Code::GpsL5i).unwrap().to_constellation(),
             Constellation::Gps
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GpsL5q).to_constellation(),
+            GnssSignal::new(1, Code::GpsL5q).unwrap().to_constellation(),
             Constellation::Gps
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GpsL5x).to_constellation(),
+            GnssSignal::new(1, Code::GpsL5x).unwrap().to_constellation(),
             Constellation::Gps
         );
         assert_eq!(
-            GnssSignal::new(0, Code::Bds2B1).to_constellation(),
+            GnssSignal::new(1, Code::Bds2B1).unwrap().to_constellation(),
             Constellation::Bds
         );
         assert_eq!(
-            GnssSignal::new(0, Code::Bds2B2).to_constellation(),
+            GnssSignal::new(1, Code::Bds2B2).unwrap().to_constellation(),
             Constellation::Bds
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GalE1b).to_constellation(),
+            GnssSignal::new(1, Code::GalE1b).unwrap().to_constellation(),
             Constellation::Gal
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GalE1c).to_constellation(),
+            GnssSignal::new(1, Code::GalE1c).unwrap().to_constellation(),
             Constellation::Gal
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GalE1x).to_constellation(),
+            GnssSignal::new(1, Code::GalE1x).unwrap().to_constellation(),
             Constellation::Gal
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GalE6b).to_constellation(),
+            GnssSignal::new(1, Code::GalE6b).unwrap().to_constellation(),
             Constellation::Gal
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GalE6c).to_constellation(),
+            GnssSignal::new(1, Code::GalE6c).unwrap().to_constellation(),
             Constellation::Gal
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GalE6x).to_constellation(),
+            GnssSignal::new(1, Code::GalE6x).unwrap().to_constellation(),
             Constellation::Gal
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GalE7i).to_constellation(),
+            GnssSignal::new(1, Code::GalE7i).unwrap().to_constellation(),
             Constellation::Gal
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GalE7q).to_constellation(),
+            GnssSignal::new(1, Code::GalE7q).unwrap().to_constellation(),
             Constellation::Gal
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GalE7x).to_constellation(),
+            GnssSignal::new(1, Code::GalE7x).unwrap().to_constellation(),
             Constellation::Gal
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GalE8i).to_constellation(),
+            GnssSignal::new(1, Code::GalE8i).unwrap().to_constellation(),
             Constellation::Gal
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GalE8q).to_constellation(),
+            GnssSignal::new(1, Code::GalE8q).unwrap().to_constellation(),
             Constellation::Gal
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GalE8x).to_constellation(),
+            GnssSignal::new(1, Code::GalE8x).unwrap().to_constellation(),
             Constellation::Gal
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GalE5i).to_constellation(),
+            GnssSignal::new(1, Code::GalE5i).unwrap().to_constellation(),
             Constellation::Gal
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GalE5q).to_constellation(),
+            GnssSignal::new(1, Code::GalE5q).unwrap().to_constellation(),
             Constellation::Gal
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GalE5x).to_constellation(),
+            GnssSignal::new(1, Code::GalE5x).unwrap().to_constellation(),
             Constellation::Gal
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GloL1p).to_constellation(),
+            GnssSignal::new(1, Code::GloL1p).unwrap().to_constellation(),
             Constellation::Glo
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GloL2p).to_constellation(),
+            GnssSignal::new(1, Code::GloL2p).unwrap().to_constellation(),
             Constellation::Glo
         );
         assert_eq!(
-            GnssSignal::new(0, Code::QzsL1ca).to_constellation(),
+            GnssSignal::new(193, Code::QzsL1ca)
+                .unwrap()
+                .to_constellation(),
             Constellation::Qzs
         );
         assert_eq!(
-            GnssSignal::new(0, Code::QzsL1ci).to_constellation(),
+            GnssSignal::new(193, Code::QzsL1ci)
+                .unwrap()
+                .to_constellation(),
             Constellation::Qzs
         );
         assert_eq!(
-            GnssSignal::new(0, Code::QzsL1cq).to_constellation(),
+            GnssSignal::new(193, Code::QzsL1cq)
+                .unwrap()
+                .to_constellation(),
             Constellation::Qzs
         );
         assert_eq!(
-            GnssSignal::new(0, Code::QzsL1cx).to_constellation(),
+            GnssSignal::new(193, Code::QzsL1cx)
+                .unwrap()
+                .to_constellation(),
             Constellation::Qzs
         );
         assert_eq!(
-            GnssSignal::new(0, Code::QzsL2cm).to_constellation(),
+            GnssSignal::new(193, Code::QzsL2cm)
+                .unwrap()
+                .to_constellation(),
             Constellation::Qzs
         );
         assert_eq!(
-            GnssSignal::new(0, Code::QzsL2cl).to_constellation(),
+            GnssSignal::new(193, Code::QzsL2cl)
+                .unwrap()
+                .to_constellation(),
             Constellation::Qzs
         );
         assert_eq!(
-            GnssSignal::new(0, Code::QzsL2cx).to_constellation(),
+            GnssSignal::new(193, Code::QzsL2cx)
+                .unwrap()
+                .to_constellation(),
             Constellation::Qzs
         );
         assert_eq!(
-            GnssSignal::new(0, Code::QzsL5i).to_constellation(),
+            GnssSignal::new(193, Code::QzsL5i)
+                .unwrap()
+                .to_constellation(),
             Constellation::Qzs
         );
         assert_eq!(
-            GnssSignal::new(0, Code::QzsL5q).to_constellation(),
+            GnssSignal::new(193, Code::QzsL5q)
+                .unwrap()
+                .to_constellation(),
             Constellation::Qzs
         );
         assert_eq!(
-            GnssSignal::new(0, Code::QzsL5x).to_constellation(),
+            GnssSignal::new(193, Code::QzsL5x)
+                .unwrap()
+                .to_constellation(),
             Constellation::Qzs
         );
         assert_eq!(
-            GnssSignal::new(0, Code::SbasL5i).to_constellation(),
+            GnssSignal::new(120, Code::SbasL5i)
+                .unwrap()
+                .to_constellation(),
             Constellation::Sbas
         );
         assert_eq!(
-            GnssSignal::new(0, Code::SbasL5q).to_constellation(),
+            GnssSignal::new(120, Code::SbasL5q)
+                .unwrap()
+                .to_constellation(),
             Constellation::Sbas
         );
         assert_eq!(
-            GnssSignal::new(0, Code::SbasL5x).to_constellation(),
+            GnssSignal::new(120, Code::SbasL5x)
+                .unwrap()
+                .to_constellation(),
             Constellation::Sbas
         );
         assert_eq!(
-            GnssSignal::new(0, Code::Bds3B1ci).to_constellation(),
+            GnssSignal::new(1, Code::Bds3B1ci)
+                .unwrap()
+                .to_constellation(),
             Constellation::Bds
         );
         assert_eq!(
-            GnssSignal::new(0, Code::Bds3B1cq).to_constellation(),
+            GnssSignal::new(1, Code::Bds3B1cq)
+                .unwrap()
+                .to_constellation(),
             Constellation::Bds
         );
         assert_eq!(
-            GnssSignal::new(0, Code::Bds3B1cx).to_constellation(),
+            GnssSignal::new(1, Code::Bds3B1cx)
+                .unwrap()
+                .to_constellation(),
             Constellation::Bds
         );
         assert_eq!(
-            GnssSignal::new(0, Code::Bds3B5i).to_constellation(),
+            GnssSignal::new(1, Code::Bds3B5i)
+                .unwrap()
+                .to_constellation(),
             Constellation::Bds
         );
         assert_eq!(
-            GnssSignal::new(0, Code::Bds3B5q).to_constellation(),
+            GnssSignal::new(1, Code::Bds3B5q)
+                .unwrap()
+                .to_constellation(),
             Constellation::Bds
         );
         assert_eq!(
-            GnssSignal::new(0, Code::Bds3B5x).to_constellation(),
+            GnssSignal::new(1, Code::Bds3B5x)
+                .unwrap()
+                .to_constellation(),
             Constellation::Bds
         );
         assert_eq!(
-            GnssSignal::new(0, Code::Bds3B7i).to_constellation(),
+            GnssSignal::new(1, Code::Bds3B7i)
+                .unwrap()
+                .to_constellation(),
             Constellation::Bds
         );
         assert_eq!(
-            GnssSignal::new(0, Code::Bds3B7q).to_constellation(),
+            GnssSignal::new(1, Code::Bds3B7q)
+                .unwrap()
+                .to_constellation(),
             Constellation::Bds
         );
         assert_eq!(
-            GnssSignal::new(0, Code::Bds3B7x).to_constellation(),
+            GnssSignal::new(1, Code::Bds3B7x)
+                .unwrap()
+                .to_constellation(),
             Constellation::Bds
         );
         assert_eq!(
-            GnssSignal::new(0, Code::Bds3B3i).to_constellation(),
+            GnssSignal::new(1, Code::Bds3B3i)
+                .unwrap()
+                .to_constellation(),
             Constellation::Bds
         );
         assert_eq!(
-            GnssSignal::new(0, Code::Bds3B3q).to_constellation(),
+            GnssSignal::new(1, Code::Bds3B3q)
+                .unwrap()
+                .to_constellation(),
             Constellation::Bds
         );
         assert_eq!(
-            GnssSignal::new(0, Code::Bds3B3x).to_constellation(),
+            GnssSignal::new(1, Code::Bds3B3x)
+                .unwrap()
+                .to_constellation(),
             Constellation::Bds
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GpsL1ci).to_constellation(),
+            GnssSignal::new(1, Code::GpsL1ci)
+                .unwrap()
+                .to_constellation(),
             Constellation::Gps
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GpsL1cq).to_constellation(),
+            GnssSignal::new(1, Code::GpsL1cq)
+                .unwrap()
+                .to_constellation(),
             Constellation::Gps
         );
         assert_eq!(
-            GnssSignal::new(0, Code::GpsL1cx).to_constellation(),
+            GnssSignal::new(1, Code::GpsL1cx)
+                .unwrap()
+                .to_constellation(),
             Constellation::Gps
         );
         assert_eq!(
-            GnssSignal::new(0, Code::AuxGps).to_constellation(),
+            GnssSignal::new(1, Code::AuxGps).unwrap().to_constellation(),
             Constellation::Gps
         );
         assert_eq!(
-            GnssSignal::new(0, Code::AuxSbas).to_constellation(),
+            GnssSignal::new(120, Code::AuxSbas)
+                .unwrap()
+                .to_constellation(),
             Constellation::Sbas
         );
         assert_eq!(
-            GnssSignal::new(0, Code::AuxGal).to_constellation(),
+            GnssSignal::new(1, Code::AuxGal).unwrap().to_constellation(),
             Constellation::Gal
         );
         assert_eq!(
-            GnssSignal::new(0, Code::AuxQzs).to_constellation(),
+            GnssSignal::new(193, Code::AuxQzs)
+                .unwrap()
+                .to_constellation(),
             Constellation::Qzs
         );
         assert_eq!(
-            GnssSignal::new(0, Code::AuxBds).to_constellation(),
+            GnssSignal::new(1, Code::AuxBds).unwrap().to_constellation(),
             Constellation::Bds
         );
+    }
+
+    #[test]
+    fn invalid_sats() {
+        let first = c_bindings::GPS_FIRST_PRN;
+        let last = c_bindings::GPS_FIRST_PRN + c_bindings::NUM_SATS_GPS;
+        for sat in (first - 1)..(last + 2) {
+            let result = GnssSignal::new(sat as u16, Code::GpsL1ca);
+            if sat < first || sat >= last {
+                assert!(result.is_err());
+                assert_eq!(
+                    result.unwrap_err(),
+                    InvalidGnssSignal::InvalidSatellite(sat as u16)
+                );
+            } else {
+                assert!(result.is_ok());
+            }
+        }
+
+        let first = c_bindings::SBAS_FIRST_PRN;
+        let last = c_bindings::SBAS_FIRST_PRN + c_bindings::NUM_SATS_SBAS;
+        for sat in (first - 1)..(last + 2) {
+            let result = GnssSignal::new(sat as u16, Code::SbasL1ca);
+            if sat < first || sat >= last {
+                assert!(result.is_err());
+                assert_eq!(
+                    result.unwrap_err(),
+                    InvalidGnssSignal::InvalidSatellite(sat as u16)
+                );
+            } else {
+                assert!(result.is_ok());
+            }
+        }
+
+        let first = c_bindings::GLO_FIRST_PRN;
+        let last = c_bindings::GLO_FIRST_PRN + c_bindings::NUM_SATS_GLO;
+        for sat in (first - 1)..(last + 2) {
+            let result = GnssSignal::new(sat as u16, Code::GloL1of);
+            if sat < first || sat >= last {
+                assert!(result.is_err());
+                assert_eq!(
+                    result.unwrap_err(),
+                    InvalidGnssSignal::InvalidSatellite(sat as u16)
+                );
+            } else {
+                assert!(result.is_ok());
+            }
+        }
+
+        let first = c_bindings::BDS_FIRST_PRN;
+        let last = c_bindings::BDS_FIRST_PRN + c_bindings::NUM_SATS_BDS;
+        for sat in (first - 1)..(last + 2) {
+            let result = GnssSignal::new(sat as u16, Code::Bds2B1);
+            if sat < first || sat >= last {
+                assert!(result.is_err());
+                assert_eq!(
+                    result.unwrap_err(),
+                    InvalidGnssSignal::InvalidSatellite(sat as u16)
+                );
+            } else {
+                assert!(result.is_ok());
+            }
+        }
+
+        let first = c_bindings::GAL_FIRST_PRN;
+        let last = c_bindings::GAL_FIRST_PRN + c_bindings::NUM_SATS_GAL;
+        for sat in (first - 1)..(last + 2) {
+            let result = GnssSignal::new(sat as u16, Code::GalE1b);
+            if sat < first || sat >= last {
+                assert!(result.is_err());
+                assert_eq!(
+                    result.unwrap_err(),
+                    InvalidGnssSignal::InvalidSatellite(sat as u16)
+                );
+            } else {
+                assert!(result.is_ok());
+            }
+        }
+
+        let first = c_bindings::QZS_FIRST_PRN;
+        let last = c_bindings::QZS_FIRST_PRN + c_bindings::NUM_SATS_QZS;
+        for sat in (first - 1)..(last + 2) {
+            let result = GnssSignal::new(sat as u16, Code::QzsL1ca);
+            if sat < first || sat >= last {
+                assert!(result.is_err());
+                assert_eq!(
+                    result.unwrap_err(),
+                    InvalidGnssSignal::InvalidSatellite(sat as u16)
+                );
+            } else {
+                assert!(result.is_ok());
+            }
+        }
     }
 }

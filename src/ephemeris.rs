@@ -11,7 +11,7 @@
 use crate::{
     c_bindings,
     coords::{AzimuthElevation, ECEF},
-    signal::{Code, Constellation, GnssSignal},
+    signal::{Code, Constellation, GnssSignal, InvalidGnssSignal},
     time::GpsTime,
 };
 use std::fmt::{Display, Formatter};
@@ -342,8 +342,8 @@ impl Ephemeris {
         }
     }
 
-    pub fn get_sid(&self) -> GnssSignal {
-        GnssSignal::from_gnss_signal_t(self.0.sid).unwrap()
+    pub fn get_sid(&self) -> std::result::Result<GnssSignal, InvalidGnssSignal> {
+        GnssSignal::from_gnss_signal_t(self.0.sid)
     }
 
     /// Gets the status of an ephemeris - is the ephemeris invalid, unhealthy,
