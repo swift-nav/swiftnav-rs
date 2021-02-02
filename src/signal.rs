@@ -7,7 +7,6 @@
 use crate::c_bindings;
 use std::borrow::Cow;
 use std::ffi;
-use std::str::Utf8Error;
 
 /// GNSS satellite constellations
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq)]
