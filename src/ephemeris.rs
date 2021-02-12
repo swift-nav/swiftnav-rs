@@ -59,10 +59,18 @@ impl Status {
     fn from_ephemeris_status_t(value: c_bindings::ephemeris_status_t) -> Status {
         match value {
             c_bindings::ephemeris_status_t_EPH_NULL => Status::Invalid(InvalidEphemeris::Null),
-            c_bindings::ephemeris_status_t_EPH_INVALID => Status::Invalid(InvalidEphemeris::Invalid),
-            c_bindings::ephemeris_status_t_EPH_WN_EQ_0 => Status::Invalid(InvalidEphemeris::WnEqualsZero),
-            c_bindings::ephemeris_status_t_EPH_FIT_INTERVAL_EQ_0 => Status::Invalid(InvalidEphemeris::FitIntervalEqualsZero),
-            c_bindings::ephemeris_status_t_EPH_UNHEALTHY => Status::Invalid(InvalidEphemeris::Unhealthy),
+            c_bindings::ephemeris_status_t_EPH_INVALID => {
+                Status::Invalid(InvalidEphemeris::Invalid)
+            }
+            c_bindings::ephemeris_status_t_EPH_WN_EQ_0 => {
+                Status::Invalid(InvalidEphemeris::WnEqualsZero)
+            }
+            c_bindings::ephemeris_status_t_EPH_FIT_INTERVAL_EQ_0 => {
+                Status::Invalid(InvalidEphemeris::FitIntervalEqualsZero)
+            }
+            c_bindings::ephemeris_status_t_EPH_UNHEALTHY => {
+                Status::Invalid(InvalidEphemeris::Unhealthy)
+            }
             c_bindings::ephemeris_status_t_EPH_TOO_OLD => Status::Invalid(InvalidEphemeris::TooOld),
             c_bindings::ephemeris_status_t_EPH_VALID => Status::Valid,
             _ => panic!("Invalid ephemeris_status_t value: {}", value),
