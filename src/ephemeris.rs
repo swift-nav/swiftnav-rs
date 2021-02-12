@@ -23,21 +23,21 @@ pub const GAL_INAV_CONTENT_BYTE: usize = (128 + 8 - 1) / 8;
 
 /// An error indicating that the ephemeris is invalid
 #[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
-pub struct InvalidEphemeris(Status);
+pub struct EphemerisError(InvalidEphemeris);
 
-impl fmt::Display for InvalidEphemeris {
+impl fmt::Display for EphemerisError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "Invalid ephemeris: {:?}", self.0)
     }
 }
 
-impl Error for InvalidEphemeris {}
+impl Error for EphemerisError {}
 
-type Result<T> = std::result::Result<T, InvalidEphemeris>;
+type Result<T> = std::result::Result<T, EphemerisError>;
 
-/// Various statuses that an ephemeris can be in
+/// Different ways an ephemeris can be invalid
 #[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
-pub enum Status {
+pub enum InvalidEphemeris {
     Null,
     Invalid,
     WnEqualsZero,
@@ -46,18 +46,24 @@ pub enum Status {
     TooOld,
     InvalidSid,
     InvalidIod,
+}
+
+/// Various statuses that an ephemeris can be in
+#[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
+pub enum Status {
+    Invalid(InvalidEphemeris),
     Valid,
 }
 
 impl Status {
     fn from_ephemeris_status_t(value: c_bindings::ephemeris_status_t) -> Status {
         match value {
-            c_bindings::ephemeris_status_t_EPH_NULL => Status::Null,
-            c_bindings::ephemeris_status_t_EPH_INVALID => Status::Invalid,
-            c_bindings::ephemeris_status_t_EPH_WN_EQ_0 => Status::WnEqualsZero,
-            c_bindings::ephemeris_status_t_EPH_FIT_INTERVAL_EQ_0 => Status::FitIntervalEqualsZero,
-            c_bindings::ephemeris_status_t_EPH_UNHEALTHY => Status::Unhealthy,
-            c_bindings::ephemeris_status_t_EPH_TOO_OLD => Status::TooOld,
+            c_bindings::ephemeris_status_t_EPH_NULL => Status::Invalid(InvalidEphemeris::Null),
+            c_bindings::ephemeris_status_t_EPH_INVALID => Status::Invalid(InvalidEphemeris::Invalid),
+            c_bindings::ephemeris_status_t_EPH_WN_EQ_0 => Status::Invalid(InvalidEphemeris::WnEqualsZero),
+            c_bindings::ephemeris_status_t_EPH_FIT_INTERVAL_EQ_0 => Status::Invalid(InvalidEphemeris::FitIntervalEqualsZero),
+            c_bindings::ephemeris_status_t_EPH_UNHEALTHY => Status::Invalid(InvalidEphemeris::Unhealthy),
+            c_bindings::ephemeris_status_t_EPH_TOO_OLD => Status::Invalid(InvalidEphemeris::TooOld),
             c_bindings::ephemeris_status_t_EPH_VALID => Status::Valid,
             _ => panic!("Invalid ephemeris_status_t value: {}", value),
         }
@@ -268,8 +274,8 @@ impl Ephemeris {
     /// Calculate satellite position, velocity and clock offset from ephemeris.
     pub fn calc_satellite_state(&self, t: GpsTime) -> Result<SatelliteState> {
         let status = self.get_detailed_status(t);
-        if status != Status::Valid {
-            return Err(InvalidEphemeris(status));
+        if let Status::Invalid(invalid_status) = status {
+            return Err(EphemerisError(invalid_status));
         }
 
         let mut sat = SatelliteState {
@@ -302,8 +308,8 @@ impl Ephemeris {
     /// position given the satellite ephemeris.
     pub fn calc_satellite_az_el(&self, t: GpsTime, pos: ECEF) -> Result<AzimuthElevation> {
         let status = self.get_detailed_status(t);
-        if status != Status::Valid {
-            return Err(InvalidEphemeris(status));
+        if let Status::Invalid(invalid_status) = status {
+            return Err(EphemerisError(invalid_status));
         }
 
         let mut sat = AzimuthElevation::default();
@@ -328,8 +334,8 @@ impl Ephemeris {
     /// position given the satellite ephemeris.
     pub fn calc_satellite_doppler(&self, t: GpsTime, pos: ECEF, vel: ECEF) -> Result<f64> {
         let status = self.get_detailed_status(t);
-        if status != Status::Valid {
-            return Err(InvalidEphemeris(status));
+        if let Status::Invalid(invalid_status) = status {
+            return Err(EphemerisError(invalid_status));
         }
 
         let mut doppler = 0.0;
