@@ -37,6 +37,10 @@ fn main() {
             "{}/include/swiftnav/single_epoch_solver.h",
             dst.display()
         ))
+        .header(format!(
+            "{}/include/swiftnav/correct_iono_tropo.h",
+            dst.display()
+        ))
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
@@ -107,6 +111,8 @@ fn main() {
         .whitelist_function("sid_set_contains")
         .whitelist_function("calc_PVT")
         .whitelist_var("pvt_err_msg")
+        .whitelist_function("correct_iono")
+        .whitelist_function("correct_tropo")
         // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.
