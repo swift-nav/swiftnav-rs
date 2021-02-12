@@ -9,9 +9,9 @@
 //!  * IS-GPS-200H, Section 20.3.3.5.2.5 and Figure 20-4
 
 use crate::{c_bindings, time::GpsTime};
+use crate::{coords::ECEF, navmeas::NavigationMeasurement};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
-use crate::{coords::ECEF, navmeas::NavigationMeasurement};
 
 /// Represents an ionosphere model
 #[derive(Debug, Clone, PartialOrd, PartialEq)]
