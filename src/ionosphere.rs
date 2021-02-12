@@ -11,6 +11,7 @@
 use crate::{c_bindings, time::GpsTime};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use crate::{coords::ECEF, navmeas::NavigationMeasurement};
 
 /// Represents an ionosphere model
 #[derive(Debug, Clone, PartialOrd, PartialEq)]
@@ -29,6 +30,10 @@ impl Display for IonoDecodeFailure {
 impl Error for IonoDecodeFailure {}
 
 impl Ionosphere {
+    fn as_ptr(&self) -> *const c_bindings::ionosphere_t {
+        &self.0
+    }
+
     /// Construct an ionosphere model from already decoded parameters
     pub fn new(
         toa: GpsTime,
@@ -97,6 +102,19 @@ impl Ionosphere {
     /// \return Ionospheric delay distance for GPS L1 frequency [m]
     pub fn calc_delay(&self, t: &GpsTime, lat_u: f64, lon_u: f64, a: f64, e: f64) -> f64 {
         unsafe { c_bindings::calc_ionosphere(t.c_ptr(), lat_u, lon_u, a, e, &self.0) }
+    }
+
+    /// Apply ionosphere corrections to a set of measurements
+    pub fn correct_measurements(&self, pos: ECEF, measurements: &mut [NavigationMeasurement]) {
+        assert!(measurements.len() <= std::u8::MAX as usize);
+        unsafe {
+            c_bindings::correct_iono(
+                pos.as_single_ptr(),
+                self.as_ptr(),
+                measurements.len() as u8,
+                measurements.as_mut_ptr() as *mut c_bindings::navigation_measurement_t,
+            );
+        }
     }
 }
 

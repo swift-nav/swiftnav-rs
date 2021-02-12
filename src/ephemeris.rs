@@ -382,7 +382,7 @@ impl Ephemeris {
     /// Is this ephemeris usable?
     pub fn is_valid_at_time(&self, t: GpsTime) -> bool {
         let result = unsafe { c_bindings::ephemeris_valid(&self.0, t.c_ptr()) };
-        result == 0
+        result == 1
     }
 
     /// Check if this this ephemeris is healthy

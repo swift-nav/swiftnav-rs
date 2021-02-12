@@ -242,6 +242,10 @@ impl ECEF {
         &mut self.0
     }
 
+    pub fn as_single_ptr(&self) -> *const f64 {
+        &self.0[0]
+    }
+
     pub fn as_array_ref(&self) -> &[f64; 3] {
         &self.0
     }
