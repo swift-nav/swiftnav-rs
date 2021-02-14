@@ -71,6 +71,10 @@ impl Status {
         }
     }
 
+    /// Converts a `Status` into a Result.
+    ///
+    /// A valid status is represented by the empty `Ok` variant and an invalid status
+    /// is represented by the `Err` variant.
     pub fn to_result(self) -> Result<(), InvalidEphemeris> {
         match self {
             Status::Valid => Ok(()),
