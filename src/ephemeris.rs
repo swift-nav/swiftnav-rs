@@ -21,20 +21,6 @@ use std::fmt;
 // TODO(jbangelo) bindgen doesn't catch this variable on linux for some reason
 pub const GAL_INAV_CONTENT_BYTE: usize = (128 + 8 - 1) / 8;
 
-/// An error indicating that the ephemeris is invalid
-#[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
-pub struct EphemerisError(InvalidEphemeris);
-
-impl fmt::Display for EphemerisError {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Invalid ephemeris: {:?}", self.0)
-    }
-}
-
-impl Error for EphemerisError {}
-
-type Result<T> = std::result::Result<T, EphemerisError>;
-
 /// Different ways an ephemeris can be invalid
 #[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
 pub enum InvalidEphemeris {
@@ -47,6 +33,14 @@ pub enum InvalidEphemeris {
     InvalidSid,
     InvalidIod,
 }
+
+impl fmt::Display for InvalidEphemeris {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Invalid ephemeris ({:?})", self)
+    }
+}
+
+impl Error for InvalidEphemeris {}
 
 /// Various statuses that an ephemeris can be in
 #[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
@@ -74,6 +68,13 @@ impl Status {
             c_bindings::ephemeris_status_t_EPH_TOO_OLD => Status::Invalid(InvalidEphemeris::TooOld),
             c_bindings::ephemeris_status_t_EPH_VALID => Status::Valid,
             _ => panic!("Invalid ephemeris_status_t value: {}", value),
+        }
+    }
+
+    pub fn to_result(self) -> Result<(), InvalidEphemeris> {
+        match self {
+            Status::Valid => Ok(()),
+            Status::Invalid(invalid_status) => Err(invalid_status),
         }
     }
 }
@@ -280,11 +281,9 @@ impl Ephemeris {
     }
 
     /// Calculate satellite position, velocity and clock offset from ephemeris.
-    pub fn calc_satellite_state(&self, t: GpsTime) -> Result<SatelliteState> {
-        let status = self.get_detailed_status(t);
-        if let Status::Invalid(invalid_status) = status {
-            return Err(EphemerisError(invalid_status));
-        }
+    pub fn calc_satellite_state(&self, t: GpsTime) -> Result<SatelliteState, InvalidEphemeris> {
+        // First make sure the ephemeris is valid at `t`, and bail early if it isn't
+        self.get_detailed_status(t).to_result()?;
 
         let mut sat = SatelliteState {
             pos: ECEF::default(),
@@ -314,11 +313,9 @@ impl Ephemeris {
 
     /// Calculate the azimuth and elevation of a satellite from a reference
     /// position given the satellite ephemeris.
-    pub fn calc_satellite_az_el(&self, t: GpsTime, pos: ECEF) -> Result<AzimuthElevation> {
-        let status = self.get_detailed_status(t);
-        if let Status::Invalid(invalid_status) = status {
-            return Err(EphemerisError(invalid_status));
-        }
+    pub fn calc_satellite_az_el(&self, t: GpsTime, pos: ECEF) -> Result<AzimuthElevation, InvalidEphemeris> {
+        // First make sure the ephemeris is valid at `t`, and bail early if it isn't
+        self.get_detailed_status(t).to_result()?;
 
         let mut sat = AzimuthElevation::default();
 
@@ -340,11 +337,9 @@ impl Ephemeris {
 
     /// Calculate the Doppler shift of a satellite as observed at a reference
     /// position given the satellite ephemeris.
-    pub fn calc_satellite_doppler(&self, t: GpsTime, pos: ECEF, vel: ECEF) -> Result<f64> {
-        let status = self.get_detailed_status(t);
-        if let Status::Invalid(invalid_status) = status {
-            return Err(EphemerisError(invalid_status));
-        }
+    pub fn calc_satellite_doppler(&self, t: GpsTime, pos: ECEF, vel: ECEF) -> Result<f64, InvalidEphemeris> {
+        // First make sure the ephemeris is valid at `t`, and bail early if it isn't
+        self.get_detailed_status(t).to_result()?;
 
         let mut doppler = 0.0;
 
