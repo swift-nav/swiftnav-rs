@@ -313,7 +313,11 @@ impl Ephemeris {
 
     /// Calculate the azimuth and elevation of a satellite from a reference
     /// position given the satellite ephemeris.
-    pub fn calc_satellite_az_el(&self, t: GpsTime, pos: ECEF) -> Result<AzimuthElevation, InvalidEphemeris> {
+    pub fn calc_satellite_az_el(
+        &self,
+        t: GpsTime,
+        pos: ECEF,
+    ) -> Result<AzimuthElevation, InvalidEphemeris> {
         // First make sure the ephemeris is valid at `t`, and bail early if it isn't
         self.get_detailed_status(t).to_result()?;
 
@@ -337,7 +341,12 @@ impl Ephemeris {
 
     /// Calculate the Doppler shift of a satellite as observed at a reference
     /// position given the satellite ephemeris.
-    pub fn calc_satellite_doppler(&self, t: GpsTime, pos: ECEF, vel: ECEF) -> Result<f64, InvalidEphemeris> {
+    pub fn calc_satellite_doppler(
+        &self,
+        t: GpsTime,
+        pos: ECEF,
+        vel: ECEF,
+    ) -> Result<f64, InvalidEphemeris> {
         // First make sure the ephemeris is valid at `t`, and bail early if it isn't
         self.get_detailed_status(t).to_result()?;
 
