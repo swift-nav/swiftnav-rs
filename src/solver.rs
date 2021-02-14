@@ -431,7 +431,7 @@ mod tests {
 
     fn make_nm1() -> NavigationMeasurement {
         let mut nm = NavigationMeasurement::new();
-        nm.set_sid(GnssSignal::new(9, Code::GpsL1ca));
+        nm.set_sid(GnssSignal::new(9, Code::GpsL1ca).unwrap());
         nm.set_pseudorange(23946993.888943646);
         nm.set_satellite_state(&SatelliteState {
             pos: ECEF::new(-19477278.087422125, -7649508.9457812719, 16674633.163554827),
@@ -449,7 +449,7 @@ mod tests {
 
     fn make_nm1_no_doppler() -> NavigationMeasurement {
         let mut nm = NavigationMeasurement::new();
-        nm.set_sid(GnssSignal::new(9, Code::GpsL1ca));
+        nm.set_sid(GnssSignal::new(9, Code::GpsL1ca).unwrap());
         nm.set_pseudorange(23946993.888943646);
         nm.set_satellite_state(&SatelliteState {
             pos: ECEF::new(-19477278.087422125, -7649508.9457812719, 16674633.163554827),
@@ -466,7 +466,7 @@ mod tests {
 
     fn make_nm2() -> NavigationMeasurement {
         let mut nm = NavigationMeasurement::new();
-        nm.set_sid(GnssSignal::new(1, Code::GpsL1ca));
+        nm.set_sid(GnssSignal::new(1, Code::GpsL1ca).unwrap());
         nm.set_pseudorange(22932174.156858064);
         nm.set_satellite_state(&SatelliteState {
             pos: ECEF::new(-9680013.5408340245, -15286326.354385279, 19429449.383770257),
@@ -484,7 +484,7 @@ mod tests {
 
     fn make_nm3() -> NavigationMeasurement {
         let mut nm = NavigationMeasurement::new();
-        nm.set_sid(GnssSignal::new(2, Code::GpsL1ca));
+        nm.set_sid(GnssSignal::new(2, Code::GpsL1ca).unwrap());
         nm.set_pseudorange(24373231.648055989);
         nm.set_satellite_state(&SatelliteState {
             pos: ECEF::new(-19858593.085281931, -3109845.8288993631, 17180320.439503901),
@@ -502,7 +502,7 @@ mod tests {
 
     fn make_nm4() -> NavigationMeasurement {
         let mut nm = NavigationMeasurement::new();
-        nm.set_sid(GnssSignal::new(3, Code::GpsL1ca));
+        nm.set_sid(GnssSignal::new(3, Code::GpsL1ca).unwrap());
         nm.set_pseudorange(24779663.252316438);
         nm.set_satellite_state(&SatelliteState {
             pos: ECEF::new(6682497.8716542246, -14006962.389166718, 21410456.27567846),
@@ -520,7 +520,7 @@ mod tests {
 
     fn make_nm5() -> NavigationMeasurement {
         let mut nm = NavigationMeasurement::new();
-        nm.set_sid(GnssSignal::new(4, Code::GpsL1ca));
+        nm.set_sid(GnssSignal::new(4, Code::GpsL1ca).unwrap());
         nm.set_pseudorange(26948717.022331879);
         nm.set_satellite_state(&SatelliteState {
             pos: ECEF::new(7415370.9916331079, -24974079.044485383, -3836019.0262199985),
@@ -538,7 +538,7 @@ mod tests {
 
     fn make_nm6() -> NavigationMeasurement {
         let mut nm = NavigationMeasurement::new();
-        nm.set_sid(GnssSignal::new(5, Code::GpsL1ca));
+        nm.set_sid(GnssSignal::new(5, Code::GpsL1ca).unwrap());
         nm.set_pseudorange(23327405.435463827);
         nm.set_satellite_state(&SatelliteState {
             pos: ECEF::new(-2833466.1648670658, -22755197.793894723, 13160322.082875408),
@@ -556,7 +556,7 @@ mod tests {
 
     fn make_nm6b() -> NavigationMeasurement {
         let mut nm = NavigationMeasurement::new();
-        nm.set_sid(GnssSignal::new(5, Code::GpsL1ca));
+        nm.set_sid(GnssSignal::new(5, Code::GpsL1ca).unwrap());
         nm.set_pseudorange(23327405.435463827);
         nm.set_satellite_state(&SatelliteState {
             pos: ECEF::new(-2833466.1648670658, -22755197.793894723, 13160322.082875408),
@@ -575,7 +575,7 @@ mod tests {
 
     fn make_nm7() -> NavigationMeasurement {
         let mut nm = NavigationMeasurement::new();
-        nm.set_sid(GnssSignal::new(6, Code::GpsL1ca));
+        nm.set_sid(GnssSignal::new(6, Code::GpsL1ca).unwrap());
         nm.set_pseudorange(27371419.016328193);
         nm.set_satellite_state(&SatelliteState {
             pos: ECEF::new(14881660.383624561, -5825253.4316490609, 21204679.68313824),
@@ -593,7 +593,7 @@ mod tests {
 
     fn make_nm8() -> NavigationMeasurement {
         let mut nm = NavigationMeasurement::new();
-        nm.set_sid(GnssSignal::new(7, Code::GpsL1ca));
+        nm.set_sid(GnssSignal::new(7, Code::GpsL1ca).unwrap());
         nm.set_pseudorange(26294221.697782904);
         nm.set_satellite_state(&SatelliteState {
             pos: ECEF::new(12246530.477279386, -22184711.955107089, 7739084.285506918),
@@ -611,7 +611,7 @@ mod tests {
 
     fn make_nm9() -> NavigationMeasurement {
         let mut nm = NavigationMeasurement::new();
-        nm.set_sid(GnssSignal::new(8, Code::GpsL1ca));
+        nm.set_sid(GnssSignal::new(8, Code::GpsL1ca).unwrap());
         nm.set_pseudorange(25781999.479948733);
         nm.set_satellite_state(&SatelliteState {
             pos: ECEF::new(-25360766.249484103, -1659033.490658124, 7821492.0398916304),
@@ -629,7 +629,7 @@ mod tests {
 
     fn make_nm10() -> NavigationMeasurement {
         let mut nm = NavigationMeasurement::new();
-        nm.set_sid(GnssSignal::new(8, Code::GpsL2cm));
+        nm.set_sid(GnssSignal::new(8, Code::GpsL2cm).unwrap());
         nm.set_pseudorange(25781999.479948733);
         nm.set_satellite_state(&SatelliteState {
             pos: ECEF::new(-25360766.249484103, -1659033.490658124, 7821492.0398916304),
@@ -647,7 +647,7 @@ mod tests {
 
     fn make_nm10b() -> NavigationMeasurement {
         let mut nm = NavigationMeasurement::new();
-        nm.set_sid(GnssSignal::new(8, Code::GpsL2cm));
+        nm.set_sid(GnssSignal::new(8, Code::GpsL2cm).unwrap());
         nm.set_pseudorange(25781999.479948733 + 30000.);
         nm.set_satellite_state(&SatelliteState {
             pos: ECEF::new(25360766.249484103, -1659033.490658124, 7821492.0398916304),
@@ -665,7 +665,7 @@ mod tests {
 
     fn make_nm11() -> NavigationMeasurement {
         let mut nm = NavigationMeasurement::new();
-        nm.set_sid(GnssSignal::new(11, Code::GpsL2cm));
+        nm.set_sid(GnssSignal::new(11, Code::GpsL2cm).unwrap());
         nm.set_pseudorange(25781999.479948733);
         nm.set_satellite_state(&SatelliteState {
             pos: ECEF::new(-25360766.249484103, -1659033.490658124, 7821492.0398916304),
@@ -700,7 +700,7 @@ mod tests {
 
     #[test]
     fn pvt_repair() {
-        let expected_removed_sid = GnssSignal::new(9, Code::GpsL1ca);
+        let expected_removed_sid = GnssSignal::new(9, Code::GpsL1ca).unwrap();
 
         let nms = [
             make_nm1(),
@@ -787,7 +787,7 @@ mod tests {
 
     #[test]
     fn pvt_vel_repair() {
-        let expected_removed_sid = GnssSignal::new(5, Code::GpsL1ca);
+        let expected_removed_sid = GnssSignal::new(5, Code::GpsL1ca).unwrap();
 
         let nms = [
             make_nm2(),
@@ -835,7 +835,7 @@ mod tests {
 
     #[test]
     fn pvt_repair_multifailure() {
-        let expected_removed_sid = GnssSignal::new(9, Code::GpsL1ca);
+        let expected_removed_sid = GnssSignal::new(9, Code::GpsL1ca).unwrap();
 
         let nms = [
             make_nm1(),
@@ -885,7 +885,7 @@ mod tests {
     #[test]
     fn pvt_raim_gps_l1ca_only() {
         /* 9 L1CA signals (one broken) and 1 L2CM signal */
-        let expected_removed_sid = GnssSignal::new(9, Code::GpsL1ca);
+        let expected_removed_sid = GnssSignal::new(9, Code::GpsL1ca).unwrap();
 
         let nms = [
             make_nm1(),
@@ -938,7 +938,7 @@ mod tests {
     #[test]
     fn pvt_outlier_gps_l1ca_only() {
         /* 9 L1CA signals and 1 (broken) L2CM signal */
-        let expected_removed_sid = GnssSignal::new(8, Code::GpsL2cm);
+        let expected_removed_sid = GnssSignal::new(8, Code::GpsL2cm).unwrap();
 
         let nms = [
             make_nm2(),
@@ -1056,7 +1056,7 @@ mod tests {
 
         let result = calc_pvt(&nms, make_tor(), settings);
 
-        let expected_removed_sid = GnssSignal::new(8, Code::GpsL2cm);
+        let expected_removed_sid = GnssSignal::new(8, Code::GpsL2cm).unwrap();
         assert!(result.is_ok(), "PVT should succeed");
         let (pvt_status, soln, _, sid_set) = result.unwrap();
         assert_eq!(

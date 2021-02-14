@@ -10,10 +10,24 @@
 
 use crate::{c_bindings, time::GpsTime};
 use crate::{coords::ECEF, navmeas::NavigationMeasurement};
+use std::error::Error;
+use std::fmt::{Display, Formatter};
 
 /// Represents an ionosphere model
 #[derive(Debug, Clone, PartialOrd, PartialEq)]
 pub struct Ionosphere(c_bindings::ionosphere_t);
+
+/// An error indicating that the iono model failed to be decoded
+#[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
+pub struct IonoDecodeFailure;
+
+impl Display for IonoDecodeFailure {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(f, "Error decoding iono model")
+    }
+}
+
+impl Error for IonoDecodeFailure {}
 
 impl Ionosphere {
     fn as_ptr(&self) -> *const c_bindings::ionosphere_t {
@@ -54,7 +68,7 @@ impl Ionosphere {
     /// --------
     /// References:
     /// * IS-GPS-200H, Section 20.3.3.5.1.7
-    pub fn decode_parameters(words: &[u32; 8]) -> Option<Ionosphere> {
+    pub fn decode_parameters(words: &[u32; 8]) -> Result<Ionosphere, IonoDecodeFailure> {
         let mut iono = Ionosphere(c_bindings::ionosphere_t {
             toa: GpsTime::unknown(),
             a0: 0.0,
@@ -70,9 +84,9 @@ impl Ionosphere {
         let success = unsafe { c_bindings::decode_iono_parameters(words, &mut iono.0) };
 
         if success {
-            Some(iono)
+            Ok(iono)
         } else {
-            None
+            Err(IonoDecodeFailure)
         }
     }
 

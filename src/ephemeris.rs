@@ -11,32 +11,19 @@
 use crate::{
     c_bindings,
     coords::{AzimuthElevation, ECEF},
-    signal::{Code, Constellation, GnssSignal},
+    signal::{Code, Constellation, GnssSignal, InvalidGnssSignal},
     time::GpsTime,
 };
-use std::fmt::{Display, Formatter};
+use std::error::Error;
+use std::fmt;
 
 /// Number of bytes in  the Galileo INAV message
 // TODO(jbangelo) bindgen doesn't catch this variable on linux for some reason
 pub const GAL_INAV_CONTENT_BYTE: usize = (128 + 8 - 1) / 8;
 
-/// An error indicating that the ephemeris is invalid
-#[derive(Copy, Clone, Debug)]
-pub struct InvalidEphemeris {}
-
-impl Display for InvalidEphemeris {
-    fn fmt(&self, f: &mut Formatter) -> std::result::Result<(), std::fmt::Error> {
-        write!(f, "Invalid Ephemeris")
-    }
-}
-
-impl std::error::Error for InvalidEphemeris {}
-
-type Result<T> = std::result::Result<T, InvalidEphemeris>;
-
-/// Various statuses that an ephemeris can be in
-#[derive(Copy, Clone, Debug)]
-pub enum Status {
+/// Different ways an ephemeris can be invalid
+#[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
+pub enum InvalidEphemeris {
     Null,
     Invalid,
     WnEqualsZero,
@@ -45,20 +32,53 @@ pub enum Status {
     TooOld,
     InvalidSid,
     InvalidIod,
+}
+
+impl fmt::Display for InvalidEphemeris {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Invalid ephemeris ({:?})", self)
+    }
+}
+
+impl Error for InvalidEphemeris {}
+
+/// Various statuses that an ephemeris can be in
+#[derive(Debug, Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Hash)]
+pub enum Status {
+    Invalid(InvalidEphemeris),
     Valid,
 }
 
 impl Status {
     fn from_ephemeris_status_t(value: c_bindings::ephemeris_status_t) -> Status {
         match value {
-            c_bindings::ephemeris_status_t_EPH_NULL => Status::Null,
-            c_bindings::ephemeris_status_t_EPH_INVALID => Status::Invalid,
-            c_bindings::ephemeris_status_t_EPH_WN_EQ_0 => Status::WnEqualsZero,
-            c_bindings::ephemeris_status_t_EPH_FIT_INTERVAL_EQ_0 => Status::FitIntervalEqualsZero,
-            c_bindings::ephemeris_status_t_EPH_UNHEALTHY => Status::Unhealthy,
-            c_bindings::ephemeris_status_t_EPH_TOO_OLD => Status::TooOld,
+            c_bindings::ephemeris_status_t_EPH_NULL => Status::Invalid(InvalidEphemeris::Null),
+            c_bindings::ephemeris_status_t_EPH_INVALID => {
+                Status::Invalid(InvalidEphemeris::Invalid)
+            }
+            c_bindings::ephemeris_status_t_EPH_WN_EQ_0 => {
+                Status::Invalid(InvalidEphemeris::WnEqualsZero)
+            }
+            c_bindings::ephemeris_status_t_EPH_FIT_INTERVAL_EQ_0 => {
+                Status::Invalid(InvalidEphemeris::FitIntervalEqualsZero)
+            }
+            c_bindings::ephemeris_status_t_EPH_UNHEALTHY => {
+                Status::Invalid(InvalidEphemeris::Unhealthy)
+            }
+            c_bindings::ephemeris_status_t_EPH_TOO_OLD => Status::Invalid(InvalidEphemeris::TooOld),
             c_bindings::ephemeris_status_t_EPH_VALID => Status::Valid,
             _ => panic!("Invalid ephemeris_status_t value: {}", value),
+        }
+    }
+
+    /// Converts a `Status` into a Result.
+    ///
+    /// A valid status is represented by the empty `Ok` variant and an invalid status
+    /// is represented by the `Err` variant.
+    pub fn to_result(self) -> Result<(), InvalidEphemeris> {
+        match self {
+            Status::Valid => Ok(()),
+            Status::Invalid(invalid_status) => Err(invalid_status),
         }
     }
 }
@@ -265,7 +285,10 @@ impl Ephemeris {
     }
 
     /// Calculate satellite position, velocity and clock offset from ephemeris.
-    pub fn calc_satellite_state(&self, t: GpsTime) -> Result<SatelliteState> {
+    pub fn calc_satellite_state(&self, t: GpsTime) -> Result<SatelliteState, InvalidEphemeris> {
+        // First make sure the ephemeris is valid at `t`, and bail early if it isn't
+        self.get_detailed_status(t).to_result()?;
+
         let mut sat = SatelliteState {
             pos: ECEF::default(),
             vel: ECEF::default(),
@@ -288,16 +311,20 @@ impl Ephemeris {
             )
         };
 
-        if result == 0 {
-            Ok(sat)
-        } else {
-            Err(InvalidEphemeris {})
-        }
+        assert_eq!(result, 0);
+        Ok(sat)
     }
 
     /// Calculate the azimuth and elevation of a satellite from a reference
     /// position given the satellite ephemeris.
-    pub fn calc_satellite_az_el(&self, t: &GpsTime, pos: &ECEF) -> Result<AzimuthElevation> {
+    pub fn calc_satellite_az_el(
+        &self,
+        t: GpsTime,
+        pos: ECEF,
+    ) -> Result<AzimuthElevation, InvalidEphemeris> {
+        // First make sure the ephemeris is valid at `t`, and bail early if it isn't
+        self.get_detailed_status(t).to_result()?;
+
         let mut sat = AzimuthElevation::default();
 
         let result = unsafe {
@@ -312,16 +339,21 @@ impl Ephemeris {
             )
         };
 
-        if result == 0 {
-            Ok(sat)
-        } else {
-            Err(InvalidEphemeris {})
-        }
+        assert_eq!(result, 0);
+        Ok(sat)
     }
 
     /// Calculate the Doppler shift of a satellite as observed at a reference
     /// position given the satellite ephemeris.
-    pub fn calc_satellite_doppler(&self, t: &GpsTime, pos: &ECEF, vel: &ECEF) -> Result<f64> {
+    pub fn calc_satellite_doppler(
+        &self,
+        t: GpsTime,
+        pos: ECEF,
+        vel: ECEF,
+    ) -> Result<f64, InvalidEphemeris> {
+        // First make sure the ephemeris is valid at `t`, and bail early if it isn't
+        self.get_detailed_status(t).to_result()?;
+
         let mut doppler = 0.0;
 
         let result = unsafe {
@@ -335,21 +367,24 @@ impl Ephemeris {
             )
         };
 
-        if result == 0 {
-            Ok(doppler)
-        } else {
-            Err(InvalidEphemeris {})
-        }
+        assert_eq!(result, 0);
+        Ok(doppler)
     }
 
-    pub fn get_sid(&self) -> GnssSignal {
-        GnssSignal::from_gnss_signal_t(self.0.sid).unwrap()
+    pub fn get_sid(&self) -> std::result::Result<GnssSignal, InvalidGnssSignal> {
+        GnssSignal::from_gnss_signal_t(self.0.sid)
     }
 
     /// Gets the status of an ephemeris - is the ephemeris invalid, unhealthy,
     /// or has some other condition which makes it unusable?
     pub fn get_status(&self) -> Status {
         Status::from_ephemeris_status_t(unsafe { c_bindings::get_ephemeris_status_t(&self.0) })
+    }
+
+    pub fn get_detailed_status(&self, t: GpsTime) -> Status {
+        Status::from_ephemeris_status_t(unsafe {
+            c_bindings::ephemeris_valid_detailed(&self.0, t.c_ptr())
+        })
     }
 
     /// Is this ephemeris usable?
@@ -407,13 +442,13 @@ mod tests {
     #[test]
     fn bds_decode() {
         let expected_ephemeris = Ephemeris::new(
-            GnssSignal::new(25, Code::Bds2B1),      // sid
-            GpsTime::new_unchecked(2091, 460800.0), // toe
-            2.0,                                    //ura
-            0,                                      // fit_interval
-            0,                                      // valid
-            0,                                      // health_bits
-            0,                                      // source
+            GnssSignal::new(25, Code::Bds2B1).unwrap(), // sid
+            GpsTime::new_unchecked(2091, 460800.0),     // toe
+            2.0,                                        //ura
+            0,                                          // fit_interval
+            0,                                          // valid
+            0,                                          // health_bits
+            0,                                          // source
             EphemerisTerms::new_kepler(
                 Constellation::Bds,
                 [-2.99999997e-10, -2.99999997e-10],    // tgd
@@ -456,7 +491,7 @@ mod tests {
             ],
         ];
 
-        let sid = GnssSignal::new(25, Code::Bds2B1);
+        let sid = GnssSignal::new(25, Code::Bds2B1).unwrap();
 
         let decoded_eph = Ephemeris::decode_bds(&words, sid);
 
@@ -468,13 +503,13 @@ mod tests {
         use super::GAL_INAV_CONTENT_BYTE;
 
         let expected_ephemeris = Ephemeris::new(
-            GnssSignal::new(8, Code::GalE1b),      // sid
-            GpsTime::new_unchecked(2090, 135000.), // toe
-            3.120000,                              // ura
-            14400,                                 // fit_interval
-            1,                                     // valid
-            0,                                     // health_bits
-            0,                                     // source
+            GnssSignal::new(8, Code::GalE1b).unwrap(), // sid
+            GpsTime::new_unchecked(2090, 135000.),     // toe
+            3.120000,                                  // ura
+            14400,                                     // fit_interval
+            1,                                         // valid
+            0,                                         // health_bits
+            0,                                         // source
             EphemerisTerms::new_kepler(
                 Constellation::Gal,
                 [-5.5879354476928711e-09, -6.5192580223083496e-09], // tgd
