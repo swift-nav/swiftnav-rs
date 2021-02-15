@@ -35,6 +35,7 @@ impl Ionosphere {
     }
 
     /// Construct an ionosphere model from already decoded parameters
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         toa: GpsTime,
         a0: f64,

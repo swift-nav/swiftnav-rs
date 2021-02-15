@@ -96,6 +96,7 @@ pub enum EphemerisTerms {
 
 impl EphemerisTerms {
     /// Create new keplarian ephemeris terms from already decoded data
+    #[allow(clippy::too_many_arguments)]
     pub fn new_kepler(
         constellation: Constellation,
         tgd: [f32; 2],
@@ -171,6 +172,7 @@ impl EphemerisTerms {
     }
 
     /// Create new GLONASS ephemeris terms from already decoded data
+    #[allow(clippy::too_many_arguments)]
     pub fn new_glo(
         gamma: f64,
         tau: f64,
@@ -199,6 +201,7 @@ pub struct Ephemeris(c_bindings::ephemeris_t);
 
 impl Ephemeris {
     /// Create new ephemeris from already decoded data
+    #[allow(clippy::too_many_arguments)]
     pub fn new(
         sid: crate::signal::GnssSignal,
         toe: crate::time::GpsTime,
