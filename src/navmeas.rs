@@ -15,6 +15,7 @@ use std::time::Duration;
 const NAV_MEAS_FLAG_CODE_VALID: u16 = 1 << 0;
 const NAV_MEAS_FLAG_MEAS_DOPPLER_VALID: u16 = 1 << 2;
 const NAV_MEAS_FLAG_CN0_VALID: u16 = 1 << 5;
+#[allow(dead_code)]
 const NAV_MEAS_FLAG_RAIM_EXCLUSION: u16 = 1 << 6;
 
 /// Represents a single raw GNSS measurement
