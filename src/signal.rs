@@ -29,7 +29,7 @@ pub enum Constellation {
 
 /// Invalid constellation integer value
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-struct InvalidConstellation(c_bindings::constellation_t);
+pub struct InvalidConstellation(c_bindings::constellation_t);
 
 impl fmt::Display for InvalidConstellation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -79,6 +79,13 @@ impl Constellation {
             ))
         };
         c_str.to_string_lossy()
+    }
+}
+
+impl std::convert::TryFrom<u8> for Constellation {
+    type Error = InvalidConstellation;
+    fn try_from(value: u8) -> Result<Constellation, InvalidConstellation> {
+        Self::from_constellation_t(value as c_bindings::constellation_t)
     }
 }
 
@@ -395,7 +402,6 @@ impl Code {
     }
 }
 
-#[cfg(feature = "sbp-conversions")]
 impl std::convert::TryFrom<u8> for Code {
     type Error = InvalidCode;
     fn try_from(value: u8) -> Result<Code, InvalidCode> {
