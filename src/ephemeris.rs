@@ -439,15 +439,17 @@ mod sbp_error {
 pub use sbp_error::EphemerisDecodeError;
 
 #[cfg(feature = "sbp-conversions")]
-impl TryFrom<sbp::messages::observation::MsgEphemerisGPS> for Ephemeris {
+impl std::convert::TryFrom<sbp::messages::observation::MsgEphemerisGPS> for Ephemeris {
     type Error = EphemerisDecodeError;
 
     fn try_from(
         eph: sbp::messages::observation::MsgEphemerisGPS,
     ) -> Result<Ephemeris, EphemerisDecodeError> {
+        use std::convert::TryInto;
+
         Ok(Ephemeris::new(
-            GnssSignal::from_sbp(eph.common.sid)?,
-            GpsTime::from_sbp_secs(eph.common.toe)?,
+            eph.common.sid.try_into()?,
+            eph.common.toe.try_into()?,
             eph.common.ura,
             eph.common.fit_interval,
             eph.common.valid,
@@ -474,7 +476,7 @@ impl TryFrom<sbp::messages::observation::MsgEphemerisGPS> for Ephemeris {
                 eph.af0 as f64,
                 eph.af1 as f64,
                 eph.af2 as f64,
-                GpsTime::from_sbp_secs(eph.toc)?,
+                eph.toc.try_into()?,
                 eph.iodc,
                 eph.iode as u16,
             ),
@@ -483,15 +485,17 @@ impl TryFrom<sbp::messages::observation::MsgEphemerisGPS> for Ephemeris {
 }
 
 #[cfg(feature = "sbp-conversions")]
-impl TryFrom<sbp::messages::observation::MsgEphemerisGal> for Ephemeris {
+impl std::convert::TryFrom<sbp::messages::observation::MsgEphemerisGal> for Ephemeris {
     type Error = EphemerisDecodeError;
 
     fn try_from(
         eph: sbp::messages::observation::MsgEphemerisGal,
     ) -> Result<Ephemeris, EphemerisDecodeError> {
+        use std::convert::TryInto;
+
         Ok(Ephemeris::new(
-            GnssSignal::from_sbp(eph.common.sid)?,
-            GpsTime::from_sbp_secs(eph.common.toe)?,
+            eph.common.sid.try_into()?,
+            eph.common.toe.try_into()?,
             eph.common.ura,
             eph.common.fit_interval,
             eph.common.valid,
@@ -518,7 +522,7 @@ impl TryFrom<sbp::messages::observation::MsgEphemerisGal> for Ephemeris {
                 eph.af0 as f64,
                 eph.af1 as f64,
                 eph.af2 as f64,
-                GpsTime::from_sbp_secs(eph.toc)?,
+                eph.toc.try_into()?,
                 eph.iodc,
                 eph.iode as u16,
             ),

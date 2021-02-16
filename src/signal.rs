@@ -396,7 +396,8 @@ impl Code {
 }
 
 #[cfg(feature = "sbp-conversions")]
-impl TryFrom<u8> for Code {
+impl std::convert::TryFrom<u8> for Code {
+    type Error = InvalidCode;
     fn try_from(value: u8) -> Result<Code, InvalidCode> {
         Self::from_code_t(value as c_bindings::code_t)
     }
@@ -477,11 +478,13 @@ impl GnssSignal {
 }
 
 #[cfg(feature = "sbp-conversions")]
-impl TryFrom<sbp::messages::gnss::GnssSignal> for GnssSignal {
+impl std::convert::TryFrom<sbp::messages::gnss::GnssSignal> for GnssSignal {
     type Error = InvalidGnssSignal;
 
     fn try_from(value: sbp::messages::gnss::GnssSignal) -> Result<GnssSignal, InvalidGnssSignal> {
-        GnssSignal::new(value.sat as u16, Code::from_sbp(value.code)?)
+        use std::convert::TryInto;
+
+        GnssSignal::new(value.sat as u16, value.code.try_into()?)
     }
 }
 

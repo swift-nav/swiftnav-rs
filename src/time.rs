@@ -176,7 +176,7 @@ impl SubAssign<Duration> for GpsTime {
 }
 
 #[cfg(feature = "sbp-conversions")]
-impl TryFrom<sbp::messages::gnss::GPSTime> for GpsTime {
+impl std::convert::TryFrom<sbp::messages::gnss::GPSTime> for GpsTime {
     type Error = InvalidGpsTime;
 
     fn try_from(msg: sbp::messages::gnss::GPSTime) -> Result<GpsTime, InvalidGpsTime> {
@@ -186,7 +186,7 @@ impl TryFrom<sbp::messages::gnss::GPSTime> for GpsTime {
 }
 
 #[cfg(feature = "sbp-conversions")]
-impl TryFrom<sbp::messages::gnss::GPSTimeSec> for GpsTime {
+impl std::convert::TryFrom<sbp::messages::gnss::GPSTimeSec> for GpsTime {
     type Error = InvalidGpsTime;
 
     fn try_from(msg: sbp::messages::gnss::GPSTimeSec) -> Result<GpsTime, InvalidGpsTime> {

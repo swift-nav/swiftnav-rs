@@ -143,36 +143,34 @@ impl Default for NavigationMeasurement {
 }
 
 #[cfg(feature = "sbp-conversions")]
-impl TryFrom<sbp::messages::observation::MsgObs> for Vec<NavigationMeasurement> {
-    type Error = InvalidGnssSignal;
+impl std::convert::TryFrom<sbp::messages::observation::PackedObsContent> for NavigationMeasurement {
+    type Error = crate::signal::InvalidGnssSignal;
 
     fn try_from(
-        obs: sbp::messages::observation::MsgObs,
-    ) -> Result<Vec<NavigationMeasurement>, InvalidGnssSignal> {
-        let mut measurements = Vec::new();
+        observation: sbp::messages::observation::PackedObsContent,
+    ) -> Result<NavigationMeasurement, crate::signal::InvalidGnssSignal> {
+        use std::convert::TryInto;
 
-        for obs in obs.obs {
-            let mut measurment = NavigationMeasurement::new();
+        let mut measurement = NavigationMeasurement::new();
 
-            measurment.set_lock_time(decode_lock_time(obs.lock));
-            measurment.set_sid(GnssSignal::from_sbp(obs.sid)?);
-            // A CN0 of 0 is considered invalid
-            if obs.cn0 != 0 {
-                measurment.set_cn0(obs.cn0 as f64 / 4.);
-            }
-            if obs.flags & 0x01 != 0 {
-                measurment.set_pseudorange(obs.P as f64 / 5e1);
-            }
-            if obs.flags & 0x08 != 0 {
-                measurment.set_measured_doppler(obs.D.i as f64 + (obs.D.f as f64) / 256.);
-            }
-            if obs.flags & 0x80 != 0 {
-                measurment.0.flags |= NAV_MEAS_FLAG_RAIM_EXCLUSION;
-            }
-            measurements.push(measurment)
+        measurement.set_lock_time(decode_lock_time(observation.lock));
+        measurement.set_sid(observation.sid.try_into()?);
+        // A CN0 of 0 is considered invalid
+        if observation.cn0 != 0 {
+            measurement.set_cn0(observation.cn0 as f64 / 4.);
+        }
+        if observation.flags & 0x01 != 0 {
+            measurement.set_pseudorange(observation.P as f64 / 5e1);
+        }
+        if observation.flags & 0x08 != 0 {
+            measurement
+                .set_measured_doppler(observation.D.i as f64 + (observation.D.f as f64) / 256.);
+        }
+        if observation.flags & 0x80 != 0 {
+            measurement.0.flags |= NAV_MEAS_FLAG_RAIM_EXCLUSION;
         }
 
-        Ok(measurements)
+        Ok(measurement)
     }
 }
 
