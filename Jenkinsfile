@@ -24,7 +24,7 @@ pipeline {
       steps {
         gitPrep()
         script {
-          sh("cargo check")
+          sh("cargo check --all-targets --all-features")
         }
       }
     }
@@ -50,7 +50,7 @@ pipeline {
           agent { dockerfile { reuseNode true } }
           steps {
             script {
-              sh("cargo clippy")
+              sh("cargo clippy --all-targets --all-features")
             }
           }
         }

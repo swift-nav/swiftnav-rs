@@ -29,7 +29,7 @@ pub enum Constellation {
 
 /// Invalid constellation integer value
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-struct InvalidConstellation(c_bindings::constellation_t);
+pub struct InvalidConstellation(c_bindings::constellation_t);
 
 impl fmt::Display for InvalidConstellation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -79,6 +79,13 @@ impl Constellation {
             ))
         };
         c_str.to_string_lossy()
+    }
+}
+
+impl std::convert::TryFrom<u8> for Constellation {
+    type Error = InvalidConstellation;
+    fn try_from(value: u8) -> Result<Constellation, InvalidConstellation> {
+        Self::from_constellation_t(value as c_bindings::constellation_t)
     }
 }
 
@@ -395,6 +402,13 @@ impl Code {
     }
 }
 
+impl std::convert::TryFrom<u8> for Code {
+    type Error = InvalidCode;
+    fn try_from(value: u8) -> Result<Code, InvalidCode> {
+        Self::from_code_t(value as c_bindings::code_t)
+    }
+}
+
 /// GNSS Signal identifier
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct GnssSignal(c_bindings::gnss_signal_t);
@@ -466,6 +480,17 @@ impl GnssSignal {
     /// Get the carrier frequency of the signal
     pub fn carrier_frequency(&self) -> f64 {
         unsafe { c_bindings::sid_to_carr_freq(self.0) }
+    }
+}
+
+#[cfg(feature = "sbp-conversions")]
+impl std::convert::TryFrom<sbp::messages::gnss::GnssSignal> for GnssSignal {
+    type Error = InvalidGnssSignal;
+
+    fn try_from(value: sbp::messages::gnss::GnssSignal) -> Result<GnssSignal, InvalidGnssSignal> {
+        use std::convert::TryInto;
+
+        GnssSignal::new(value.sat as u16, value.code.try_into()?)
     }
 }
 

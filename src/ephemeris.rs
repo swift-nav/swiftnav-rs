@@ -377,7 +377,7 @@ impl Ephemeris {
         Ok(doppler)
     }
 
-    pub fn get_sid(&self) -> std::result::Result<GnssSignal, InvalidGnssSignal> {
+    pub fn get_sid(&self) -> Result<GnssSignal, InvalidGnssSignal> {
         GnssSignal::from_gnss_signal_t(self.0.sid)
     }
 
@@ -402,6 +402,137 @@ impl Ephemeris {
     /// Check if this this ephemeris is healthy
     pub fn is_healthy(&self, code: &Code) -> bool {
         unsafe { c_bindings::ephemeris_healthy(&self.0, code.to_code_t()) }
+    }
+}
+
+#[cfg(feature = "sbp-conversions")]
+mod sbp_error {
+    use crate::{signal::InvalidGnssSignal, time::InvalidGpsTime};
+    use std::error::Error;
+    use std::fmt;
+
+    #[derive(Debug, Copy, Clone, PartialOrd, PartialEq)]
+    pub enum EphemerisDecodeError {
+        InvalidTime(InvalidGpsTime),
+        InvalidSignal(InvalidGnssSignal),
+    }
+
+    impl fmt::Display for EphemerisDecodeError {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            match self {
+                EphemerisDecodeError::InvalidTime(time_err) => time_err.fmt(f),
+                EphemerisDecodeError::InvalidSignal(sig_err) => sig_err.fmt(f),
+            }
+        }
+    }
+
+    impl Error for EphemerisDecodeError {}
+
+    impl From<InvalidGpsTime> for EphemerisDecodeError {
+        fn from(other: InvalidGpsTime) -> EphemerisDecodeError {
+            EphemerisDecodeError::InvalidTime(other)
+        }
+    }
+
+    impl From<InvalidGnssSignal> for EphemerisDecodeError {
+        fn from(other: InvalidGnssSignal) -> EphemerisDecodeError {
+            EphemerisDecodeError::InvalidSignal(other)
+        }
+    }
+}
+
+#[cfg(feature = "sbp-conversions")]
+pub use sbp_error::EphemerisDecodeError;
+
+#[cfg(feature = "sbp-conversions")]
+impl std::convert::TryFrom<sbp::messages::observation::MsgEphemerisGPS> for Ephemeris {
+    type Error = EphemerisDecodeError;
+
+    fn try_from(
+        eph: sbp::messages::observation::MsgEphemerisGPS,
+    ) -> Result<Ephemeris, EphemerisDecodeError> {
+        use std::convert::TryInto;
+
+        Ok(Ephemeris::new(
+            eph.common.sid.try_into()?,
+            eph.common.toe.try_into()?,
+            eph.common.ura,
+            eph.common.fit_interval,
+            eph.common.valid,
+            eph.common.health_bits,
+            0,
+            EphemerisTerms::new_kepler(
+                Constellation::Gps,
+                [eph.tgd, 0.],
+                eph.c_rc as f64,
+                eph.c_rs as f64,
+                eph.c_uc as f64,
+                eph.c_us as f64,
+                eph.c_ic as f64,
+                eph.c_is as f64,
+                eph.dn,
+                eph.m0,
+                eph.ecc,
+                eph.sqrta,
+                eph.omega0,
+                eph.omegadot,
+                eph.w,
+                eph.inc,
+                eph.inc_dot,
+                eph.af0 as f64,
+                eph.af1 as f64,
+                eph.af2 as f64,
+                eph.toc.try_into()?,
+                eph.iodc,
+                eph.iode as u16,
+            ),
+        ))
+    }
+}
+
+#[cfg(feature = "sbp-conversions")]
+impl std::convert::TryFrom<sbp::messages::observation::MsgEphemerisGal> for Ephemeris {
+    type Error = EphemerisDecodeError;
+
+    fn try_from(
+        eph: sbp::messages::observation::MsgEphemerisGal,
+    ) -> Result<Ephemeris, EphemerisDecodeError> {
+        use std::convert::TryInto;
+
+        Ok(Ephemeris::new(
+            eph.common.sid.try_into()?,
+            eph.common.toe.try_into()?,
+            eph.common.ura,
+            eph.common.fit_interval,
+            eph.common.valid,
+            eph.common.health_bits,
+            eph.source,
+            EphemerisTerms::new_kepler(
+                Constellation::Gal,
+                [eph.bgd_e1e5a, eph.bgd_e1e5b],
+                eph.c_rc as f64,
+                eph.c_rs as f64,
+                eph.c_uc as f64,
+                eph.c_us as f64,
+                eph.c_ic as f64,
+                eph.c_is as f64,
+                eph.dn,
+                eph.m0,
+                eph.ecc,
+                eph.sqrta,
+                eph.omega0,
+                eph.omegadot,
+                eph.w,
+                eph.inc,
+                eph.inc_dot,
+                eph.af0 as f64,
+                eph.af1 as f64,
+                eph.af2 as f64,
+                eph.toc.try_into()?,
+                eph.iodc,
+                eph.iode as u16,
+            ),
+        ))
     }
 }
 
