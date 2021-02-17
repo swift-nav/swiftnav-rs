@@ -224,7 +224,10 @@ impl Ephemeris {
                 EphemerisTerms::Kepler(c_kepler) => {
                     assert!(matches!(
                         sid.to_constellation(),
-                        Constellation::Gps | Constellation::Gal | Constellation::Bds
+                        Constellation::Gps
+                            | Constellation::Gal
+                            | Constellation::Bds
+                            | Constellation::Qzs
                     ));
                     c_bindings::ephemeris_t__bindgen_ty_1 { kepler: c_kepler }
                 }
