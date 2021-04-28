@@ -483,17 +483,6 @@ impl GnssSignal {
     }
 }
 
-#[cfg(feature = "sbp-conversions")]
-impl std::convert::TryFrom<sbp::messages::gnss::GnssSignal> for GnssSignal {
-    type Error = InvalidGnssSignal;
-
-    fn try_from(value: sbp::messages::gnss::GnssSignal) -> Result<GnssSignal, InvalidGnssSignal> {
-        use std::convert::TryInto;
-
-        GnssSignal::new(value.sat as u16, value.code.try_into()?)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
