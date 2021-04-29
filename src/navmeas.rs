@@ -15,8 +15,7 @@ use std::time::Duration;
 const NAV_MEAS_FLAG_CODE_VALID: u16 = 1 << 0;
 const NAV_MEAS_FLAG_MEAS_DOPPLER_VALID: u16 = 1 << 2;
 const NAV_MEAS_FLAG_CN0_VALID: u16 = 1 << 5;
-#[allow(dead_code)]
-const NAV_MEAS_FLAG_RAIM_EXCLUSION: u16 = 1 << 6;
+pub const NAV_MEAS_FLAG_RAIM_EXCLUSION: u16 = 1 << 6;
 
 /// Represents a single raw GNSS measurement
 #[derive(Debug, Clone, PartialOrd, PartialEq)]
@@ -124,6 +123,15 @@ impl NavigationMeasurement {
 
     pub fn get_sid(&self) -> GnssSignal {
         GnssSignal::from_gnss_signal_t(self.0.sid).unwrap()
+    }
+
+    /// Sets the measurement flags
+    pub fn set_flags(&mut self, flags: u16) {
+        self.0.flags = flags;
+    }
+
+    pub fn get_flags(&self) -> u16 {
+        self.0.flags
     }
 
     /// Checks to see if all of the measurement flags marked as valid
