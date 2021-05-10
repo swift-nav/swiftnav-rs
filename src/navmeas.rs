@@ -15,8 +15,7 @@ use std::time::Duration;
 const NAV_MEAS_FLAG_CODE_VALID: u16 = 1 << 0;
 const NAV_MEAS_FLAG_MEAS_DOPPLER_VALID: u16 = 1 << 2;
 const NAV_MEAS_FLAG_CN0_VALID: u16 = 1 << 5;
-#[allow(dead_code)]
-const NAV_MEAS_FLAG_RAIM_EXCLUSION: u16 = 1 << 6;
+pub const NAV_MEAS_FLAG_RAIM_EXCLUSION: u16 = 1 << 6;
 
 /// Represents a single raw GNSS measurement
 #[derive(Debug, Clone, PartialOrd, PartialEq)]
@@ -126,6 +125,15 @@ impl NavigationMeasurement {
         GnssSignal::from_gnss_signal_t(self.0.sid).unwrap()
     }
 
+    /// Sets the measurement flags
+    pub fn set_flags(&mut self, flags: u16) {
+        self.0.flags = flags;
+    }
+
+    pub fn get_flags(&self) -> u16 {
+        self.0.flags
+    }
+
     /// Checks to see if all of the measurement flags marked as valid
     pub fn flags_are_all_valid(&self) -> bool {
         unsafe { c_bindings::nav_meas_flags_valid(self.0.flags) }
@@ -140,38 +148,6 @@ impl NavigationMeasurement {
 impl Default for NavigationMeasurement {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-#[cfg(feature = "sbp-conversions")]
-impl std::convert::TryFrom<sbp::messages::observation::PackedObsContent> for NavigationMeasurement {
-    type Error = crate::signal::InvalidGnssSignal;
-
-    fn try_from(
-        observation: sbp::messages::observation::PackedObsContent,
-    ) -> Result<NavigationMeasurement, crate::signal::InvalidGnssSignal> {
-        use std::convert::TryInto;
-
-        let mut measurement = NavigationMeasurement::new();
-
-        measurement.set_lock_time(decode_lock_time(observation.lock));
-        measurement.set_sid(observation.sid.try_into()?);
-        // A CN0 of 0 is considered invalid
-        if observation.cn0 != 0 {
-            measurement.set_cn0(observation.cn0 as f64 / 4.);
-        }
-        if observation.flags & 0x01 != 0 {
-            measurement.set_pseudorange(observation.P as f64 / 5e1);
-        }
-        if observation.flags & 0x08 != 0 {
-            measurement
-                .set_measured_doppler(observation.D.i as f64 + (observation.D.f as f64) / 256.);
-        }
-        if observation.flags & 0x80 != 0 {
-            measurement.0.flags |= NAV_MEAS_FLAG_RAIM_EXCLUSION;
-        }
-
-        Ok(measurement)
     }
 }
 
