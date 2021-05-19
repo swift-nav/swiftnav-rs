@@ -5,6 +5,12 @@ use std::path::PathBuf;
 
 fn main() {
     let mut cmake = cmake::Config::new("third-party/libswiftnav/");
+    let out_dir = env::var("OUT_DIR").unwrap();
+
+    cmake
+        .profile("Release")
+        .define("CMAKE_INSTALL_PREFIX", out_dir);
+
     let dst = cmake.build();
 
     println!("cargo:rustc-link-search=native={}/lib/", dst.display());
