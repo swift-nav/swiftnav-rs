@@ -1,11 +1,16 @@
 extern crate bindgen;
 
-use cmake::Config;
 use std::env;
 use std::path::PathBuf;
 
 fn main() {
-    let dst = Config::new("third-party/libswiftnav/").build();
+    let mut cmake = cmake::Config::new("third-party/libswiftnav/");
+
+    cmake
+        .profile("Release")
+        .define("CMAKE_INSTALL_LIBDIR", "lib");
+
+    let dst = cmake.build();
 
     println!("cargo:rustc-link-search=native={}/lib/", dst.display());
     println!("cargo:rustc-link-lib=static=swiftnav");
