@@ -3,20 +3,75 @@ extern crate bindgen;
 use std::env;
 use std::path::PathBuf;
 
+fn is_compiler(compiler_name: &str) -> bool {
+    let target_os = env::var("CARGO_CFG_TARGET_OS").ok();
+    let target_arch = env::var("CARGO_CFG_TARGET_ARCH").ok();
+    target_os.map_or(false, |target_os| {
+        target_arch.map_or(false, |target_arch| {
+            let target = format!("{}-{}", target_arch, target_os);
+            target == compiler_name
+        })
+    })
+}
+
 fn main() {
-    let mut cmake = cmake::Config::new("third-party/libswiftnav/");
+    let mut cmake = cmake::Config::new("third-party/libswiftnav");
     let out_dir = env::var("OUT_DIR").unwrap();
 
     cmake
         .profile("Release")
+        .define("LIBSWIFTNAV_DISABLE_TESTS", "ON")
         .define("CMAKE_INSTALL_PREFIX", out_dir);
+
+    if let Ok(val) = env::var("CMAKE_C_COMPILER") {
+      cmake.define("CMAKE_C_COMPILER", val);
+    }
+
+    if let Ok(val) = env::var("CMAKE_CXX_COMPILER") {
+      cmake.define("CMAKE_CXX_COMPILER", val);
+    }
+
+    if let Ok(val) = env::var("CMAKE_SHARED_LIBRARY_LINK_C_FLAGS") {
+      cmake.define("CMAKE_SHARED_LIBRARY_LINK_C_FLAGS", val);
+    }
+
+    if let Ok(val) = env::var("CMAKE_EXE_LINKER_FLAGS") {
+      cmake.define("CMAKE_EXE_LINKER_FLAGS", val);
+    }
+
+    if let Ok(val) = env::var("CMAKE_AR") {
+      cmake.define("CMAKE_AR", val);
+    }
+
+    if let Ok(val) = env::var("CMAKE_LINKER") {
+      cmake.define("CMAKE_LINKER", val);
+    }
+
+    if let Ok(val) = env::var("CMAKE_RANLIB") {
+      cmake.define("CMAKE_RANLIB", val);
+    }
 
     let dst = cmake.build();
 
-    println!("cargo:rustc-link-search=native={}/lib/", dst.display());
+    println!("cargo:rustc-link-search=native={}/lib", dst.display());
     println!("cargo:rustc-link-lib=static=swiftnav");
 
+    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
+
+    if is_compiler("wasm32-wasi") {
+        copy_bundled_bindings(out_path);
+    } else {
+        generate_bindings(dst, out_path);
+    }
+}
+
+fn copy_bundled_bindings(out_path: PathBuf) {
+    std::fs::copy("bundled_bindings.rs", out_path.join("bindings.rs")).unwrap();
+}
+
+fn generate_bindings(dst: PathBuf, out_path: PathBuf) {
     let include_args = vec![
+        "-DHAVE_TIME_H=0".to_string(),
         "-isystem".to_string(),
         format!("{}/include/", dst.display()),
     ]
@@ -139,8 +194,8 @@ fn main() {
         .expect("Unable to generate bindings");
 
     // Write the bindings
-    let out_path = PathBuf::from(env::var("OUT_DIR").unwrap());
     bindings
         .write_to_file(out_path.join("bindings.rs"))
         .expect("Couldn't write bindings!");
+
 }
