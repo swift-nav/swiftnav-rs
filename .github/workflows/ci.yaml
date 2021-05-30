@@ -1,0 +1,36 @@
+name: CI
+on:
+  pull_request:
+  push:
+    branches:
+      - "main"
+jobs:
+  ci:
+    name: Format, lint, and test
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+      - uses: davidB/rust-cargo-make@v1
+
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Set up Makefile.toml
+        run: |
+          cat >Makefile.toml <<EOF
+          [env]
+          CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
+          CARGO_MAKE_RUN_CLIPPY = true
+          CARGO_MAKE_CLIPPY_ARGS = "--all-features -- -D warnings"
+          CARGO_MAKE_RUN_CHECK_FORMAT = true
+          EOF
+
+      - uses: actions-rs/cargo@v1
+        with:
+          command: make
+          args: --no-workspace workspace-ci-flow
