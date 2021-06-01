@@ -3,7 +3,7 @@ on:
   pull_request:
   push:
     branches:
-      - "main"
+      - "master"
 jobs:
   ci:
     name: Format, lint, and test
