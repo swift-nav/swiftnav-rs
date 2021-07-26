@@ -7,6 +7,12 @@ fn main() {
     let mut cmake = cmake::Config::new("third-party/libswiftnav/");
     let out_dir = env::var("OUT_DIR").unwrap();
 
+    if !cfg!(feature = "testcpp") {
+        cmake
+            .define("libswiftnav_ENABLE_TESTS", "OFF")
+            .define("libswiftnav_ENABLE_TEST_LIBS", "OFF");
+    }
+
     cmake
         .profile("Release")
         .define("CMAKE_INSTALL_PREFIX", out_dir);

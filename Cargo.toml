@@ -11,3 +11,7 @@ license = "LGPL-3.0"
 [build-dependencies]
 bindgen = "0.58"
 cmake = "0.1"
+
+[features]
+default = ["testcpp"]
+testcpp = []
