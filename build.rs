@@ -15,6 +15,8 @@ fn main() {
 
     cmake
         .profile("Release")
+        .define("libswiftnav_ENABLE_CLANG_FORMAT", "OFF")
+        .define("libswiftnav_ENABLE_CLANG_TIDY", "OFF")
         .define("CMAKE_INSTALL_PREFIX", out_dir);
 
     let dst = cmake.build();
