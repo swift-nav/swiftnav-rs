@@ -107,6 +107,64 @@ impl GpsTime {
     pub fn diff(&self, other: &Self) -> f64 {
         unsafe { c_bindings::gpsdifftime(&self.0, &other.0) }
     }
+
+    /// Converts the GPS time into UTC time
+    pub fn to_utc(&self, utc_params: &UtcParams) -> UtcTime {
+        let mut utc = UtcTime::default();
+        unsafe { c_bindings::gps2utc(self.c_ptr(), utc.mut_c_ptr(), utc_params.c_ptr()); }
+        utc
+    }
+
+    /// Converts the GPS time into UTC time using the hardcoded list of leap
+    /// seconds.
+    ///
+    /// Note: The hard coded list of leap seconds will get out of date, it is
+    /// preferable to use `GpsTime::to_utc()` with the newest set of UTC parameters
+    pub fn to_utc_hardcoded(&self) -> UtcTime {
+        let mut utc = UtcTime::default();
+        unsafe { c_bindings::gps2utc(self.c_ptr(), utc.mut_c_ptr(), std::ptr::null()); }
+        utc
+    }
+
+    /// Gets the number of seconds difference between GPS and UTC times
+    pub fn get_utc_offset(&self, utc_params: &UtcParams) -> f64 {
+        unsafe { c_bindings::get_gps_utc_offset(self.c_ptr(), utc_params.c_ptr()) }
+    }
+
+    /// Gets the number of seconds difference between GPS and UTC using a hardcoded
+    /// list of leap seconds
+    ///
+    /// Note: The hard coded list of leap seconds will get out of date, it is
+    /// preferable to use `GpsTime::get_utc_offset_hardcoded()` with the newest set
+    /// of UTC parameters
+    pub fn get_utc_offset_hardcoded(&self) -> f64 {
+        unsafe { c_bindings::get_gps_utc_offset(self.c_ptr(), std::ptr::null()) }
+    }
+
+    /// Checks to see if this point in time is a UTC leap second event
+    pub fn is_leap_second_event(&self, utc_params: &UtcParams) -> bool {
+        unsafe { c_bindings::is_leap_second_event(self.c_ptr(), utc_params.c_ptr()) }
+    }
+
+    /// Checks to see if this point in time is a UTC leap second event using a
+    /// hardcoded list of leap seconds
+    ///
+    /// Note: The hard coded list of leap seconds will get out of date, it is
+    /// preferable to use `GpsTime::is_leap_second_event_hardcoded()` with the newest
+    /// set of UTC parameters
+    pub fn is_leap_second_event_hardcoded(&self) -> bool {
+        unsafe { c_bindings::is_leap_second_event(self.c_ptr(), std::ptr::null()) }
+    }
+
+    /// Rounds the GPS time to the nearest epoch
+    pub fn round_to_epoch(&self, soln_freq: f64) -> GpsTime {
+        GpsTime(unsafe { c_bindings::round_to_epoch(self.c_ptr(), soln_freq) })
+    }
+
+    /// Rounds the GPS time down to the previous whole epoch
+    pub fn floor_to_epoch(&self, soln_freq: f64) -> GpsTime {
+        GpsTime(unsafe { c_bindings::floor_to_epoch(self.c_ptr(), soln_freq) })
+    }
 }
 
 impl fmt::Debug for GpsTime {
@@ -172,6 +230,150 @@ impl Sub<Duration> for GpsTime {
 impl SubAssign<Duration> for GpsTime {
     fn sub_assign(&mut self, rhs: Duration) {
         self.subtract_duration(&rhs);
+    }
+}
+
+/// Structure containing GPS UTC correction parameters
+#[derive(Clone)]
+pub struct UtcParams(c_bindings::utc_params_t);
+
+impl UtcParams {
+    pub(crate) fn mut_c_ptr(&mut self) -> *mut c_bindings::utc_params_t {
+        &mut self.0
+    }
+
+    pub(crate) fn c_ptr(&self) -> *const c_bindings::utc_params_t {
+        &self.0
+    }
+
+    /// Decodes UTC parameters from GLS LNAV message subframe 4 words 6-10.
+    ///
+    /// Note: Fills out the full time of week from current gps week cycle. Also
+    /// sets t_lse to the exact GPS time at the start of the leap second event.
+    ///
+    /// References:
+    /// -# IS-GPS-200H, Section 20.3.3.5.1.6
+    pub fn decode(words: &[u32; 8]) -> Option<Self> {
+        let mut params = UtcParams::default();
+        let result = unsafe {
+            c_bindings::decode_utc_parameters(words, params.mut_c_ptr())
+        };
+
+        if result {
+            Some(params)
+        } else {
+            None
+        }
+    }
+}
+
+impl Default for UtcParams {
+    fn default() -> Self {
+        unsafe { std::mem::zeroed::<UtcParams>() }
+    }
+}
+
+/// Structure representing UTC time
+#[derive(Clone)]
+pub struct UtcTime(c_bindings::utc_tm);
+
+impl UtcTime {
+    pub(crate) fn mut_c_ptr(&mut self) -> *mut c_bindings::utc_tm {
+        &mut self.0
+    }
+
+    pub(crate) fn c_ptr(&self) -> *const c_bindings::utc_tm {
+        &self.0
+    }
+
+    /// Creates a UTC time from it's individual components
+    pub fn from_date(year: u16, month: u8, day: u8, hour: u8, minute: u8, second: f64) -> UtcTime {
+        UtcTime(unsafe { c_bindings::date2utc(year as i32, month as i32, day as i32, hour as i32, minute as i32, second) })
+    }
+
+    /// Number of years CE. In four digit format
+    pub fn get_year(&self) -> u16 {
+        self.0.year
+    }
+
+    /// Day of the year (1 - 366)
+    pub fn get_day_of_year(&self) -> u16 {
+        self.0.year_day
+    }
+
+    /// Month of the year (1 - 12). 1 = January, 12 = December
+    pub fn get_month(&self) -> u8 {
+        self.0.month
+    }
+
+    /// Day of the month (1 - 31)
+    pub fn get_day_of_month(&self) -> u8 {
+        self.0.month_day
+    }
+
+    /// Day of the week (1 - 7). 1 = Monday, 7 = Sunday
+    pub fn get_day_of_week(&self) -> u8 {
+        self.0.week_day
+    }
+
+    /// Hour of the day (0 - 23)
+    pub fn get_hour(&self) -> u8 {
+        self.0.hour
+    }
+
+    /// Minutes of the hour (0 - 59)
+    pub fn get_min(&self) -> u8 {
+        self.0.minute
+    }
+
+    /// seconds of the minute (0 - 60)
+    pub fn get_seconds(&self) -> f64 {
+        (self.0.second_int as f64) + self.0.second_frac
+    }
+
+    /// Converts the UTC time into a modified julian date
+    pub fn to_mjd(&self) -> MJD {
+        MJD(unsafe { c_bindings::utc2mjd(self.c_ptr()) })
+    }
+
+    /// Makes an ISO8601 compatible date time string from the UTC time
+    pub fn iso8601_str(&self) -> String {
+        format!("{}-{}-{}T{}:{}:{:.3}", self.get_year(), self.get_month(), self.get_day_of_month(), self.get_hour(), self.get_min(), self.get_seconds())
+    }
+
+    // TODO: We could easily add conversions to other UTC representations
+    //  for interoperability, but which time crates to support?
+}
+
+impl Default for UtcTime {
+    fn default() -> Self {
+        unsafe { std::mem::zeroed::<UtcTime>() }
+    }
+}
+
+/// Structure representing a modified julian date (MJD)
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+pub struct MJD(f64);
+
+impl MJD {
+    /// Creates a modified julian date from a floating point representation
+    pub fn from_f64(value: f64) -> Self {
+        Self(value)
+    }
+
+    /// Creates a modified julian date from a calendar date and time
+    pub fn from_date(year: u16, month: u8, day: u8, hour: u8, minute: u8, seconds: f64) -> MJD {
+        MJD(unsafe { c_bindings::date2mjd(year as i32, month as i32, day as i32, hour as i32, minute as i32, seconds) })
+    }
+
+    /// Gets the floating point value of the modified julian date
+    pub fn as_f64(&self) -> f64 {
+        self.0
+    }
+
+    /// Converts the modified julian date into a UTC time
+    pub fn to_utc(&self) -> UtcTime {
+        UtcTime(unsafe { c_bindings::mjd2utc(self.0) })
     }
 }
 
