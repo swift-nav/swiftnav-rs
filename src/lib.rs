@@ -15,9 +15,9 @@
 //! the location of itself in relation to the satellites.
 //!
 //! `swiftnav-rs` does not provide any functionality for communicating with
-//! receivers made by Swift Navigation, or any manufacturer. [libsbp](https://github.com/swift-nav/libsbp)
-//! is the library to use if you want to communicate with receivers using Swift
-//! Binary Protocol (SBP).
+//! receivers made by Swift Navigation, or any manufacturer.
+//! [libsbp](https://github.com/swift-nav/libsbp) is the library to use if you
+//! want to communicate with receivers using Swift Binary Protocol (SBP).
 //!
 //! ## Time
 //! Time is a very important aspect of GNSS. `swiftnav-rs` defaults to representing
