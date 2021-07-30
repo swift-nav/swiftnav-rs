@@ -466,4 +466,36 @@ mod tests {
         t -= d;
         assert_eq!(t, t_expected);
     }
+
+    #[test]
+    fn gps_utc_offset() {
+        struct UtcOffsetTestdata {
+            t: GpsTime,
+            d_utc: f64,
+            is_lse: bool,
+        }
+        let test_cases: &[UtcOffsetTestdata] = &[
+            /* July 1 1981 */
+            UtcOffsetTestdata{t: GpsTime::new_unchecked(77, 259199.0), d_utc: 0.0, is_lse: false},
+            UtcOffsetTestdata{t: GpsTime::new_unchecked(77, 259199.5), d_utc: 0.0, is_lse: false},
+            UtcOffsetTestdata{t: GpsTime::new_unchecked(77, 259200.0), d_utc: 0.0, is_lse: true},
+            UtcOffsetTestdata{t: GpsTime::new_unchecked(77, 259200.5), d_utc: 0.0, is_lse: true},
+            UtcOffsetTestdata{t: GpsTime::new_unchecked(77, 259201.0), d_utc: 1.0, is_lse: false},
+            UtcOffsetTestdata{t: GpsTime::new_unchecked(77, 259202.0), d_utc: 1.0, is_lse: false},
+            /* Jan 1 2017 */
+            UtcOffsetTestdata{t: GpsTime::new_unchecked(1930, 16.0), d_utc: 17.0, is_lse: false},
+            UtcOffsetTestdata{t: GpsTime::new_unchecked(1930, 16.5), d_utc: 17.0, is_lse: false},
+            UtcOffsetTestdata{t: GpsTime::new_unchecked(1930, 17.0), d_utc: 17.0, is_lse: true},
+            UtcOffsetTestdata{t: GpsTime::new_unchecked(1930, 17.5), d_utc: 17.0, is_lse: true},
+            UtcOffsetTestdata{t: GpsTime::new_unchecked(1930, 18.0), d_utc: 18.0, is_lse: false},
+            UtcOffsetTestdata{t: GpsTime::new_unchecked(1930, 18.5), d_utc: 18.0, is_lse: false},
+            UtcOffsetTestdata{t: GpsTime::new_unchecked(1930, 19.0), d_utc: 18.0, is_lse: false},
+        ];
+        for test_case in test_cases {
+            let d_utc = test_case.t.get_utc_offset_hardcoded();
+            let is_lse = test_case.t.is_leap_second_event_hardcoded();
+
+            assert!(d_utc == test_case.d_utc && is_lse == test_case.is_lse);
+        }
+    }
 }
