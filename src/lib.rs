@@ -19,13 +19,6 @@
 //! is the library to use if you want to communicate with receivers using Swift
 //! Binary Protocol (SBP).
 //!
-//! # How to use
-//! `swiftnav-rs` is more of a "bring your own algorithm" crate, it provides a
-//! bunch of functionality that is useful when processing raw GNSS data, but it
-//! provides only limited position estimation capabilities. Each module encompasses
-//! a single set of functionality, and they are meant to be pretty self-explanatory
-//! for developers familiar with GNSS processing.
-//!
 //! ## Time
 //! Time is a very important aspect of GNSS. `swiftnav-rs` defaults to representing
 //! all times as GPS times. It provides the ability to manipulate GPS time stamps,
