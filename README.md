@@ -1,6 +1,8 @@
 # swiftnav-rs
 
-`swiftnav-rs` is a crate that implements GNSS utility functions for use by software-defined GNSS receivers or software requiring GNSS functionality. It is intended to be as portable as possible and has limited dependancies
+`swiftnav-rs` is a crate that implements GNSS utility functions for use by
+software-defined GNSS receivers or software requiring GNSS functionality. It is
+intended to be as portable as possible and has limited dependencies.
 
 `swiftnav-rs` does not provide any functionality for communicating with Swift
 Navigation receivers.  See [libsbp](https://github.com/swift-nav/libsbp) to
