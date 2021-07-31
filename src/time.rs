@@ -131,7 +131,7 @@ impl GpsTime {
         unsafe { c_bindings::get_gps_utc_offset(self.c_ptr(), utc_params.c_ptr()) }
     }
 
-    /// Gets the number of seconds difference between GPS and UTC using a hardcoded
+    /// Gets the number of seconds difference between GPS and UTC using the hardcoded
     /// list of leap seconds
     ///
     /// Note: The hard coded list of leap seconds will get out of date, it is
@@ -146,7 +146,7 @@ impl GpsTime {
         unsafe { c_bindings::is_leap_second_event(self.c_ptr(), utc_params.c_ptr()) }
     }
 
-    /// Checks to see if this point in time is a UTC leap second event using a
+    /// Checks to see if this point in time is a UTC leap second event using the
     /// hardcoded list of leap seconds
     ///
     /// Note: The hard coded list of leap seconds will get out of date, it is
@@ -156,12 +156,12 @@ impl GpsTime {
         unsafe { c_bindings::is_leap_second_event(self.c_ptr(), std::ptr::null()) }
     }
 
-    /// Rounds the GPS time to the nearest epoch
+    /// Gets the GPS time of the nearest solution epoch
     pub fn round_to_epoch(&self, soln_freq: f64) -> GpsTime {
         GpsTime(unsafe { c_bindings::round_to_epoch(self.c_ptr(), soln_freq) })
     }
 
-    /// Rounds the GPS time down to the previous whole epoch
+    /// Gets the GPS time down of the previous solution epoch
     pub fn floor_to_epoch(&self, soln_freq: f64) -> GpsTime {
         GpsTime(unsafe { c_bindings::floor_to_epoch(self.c_ptr(), soln_freq) })
     }
@@ -274,6 +274,7 @@ impl UtcParams {
         }
     }
 
+    /// Build the UTC parameters from the already decoded parameters
     pub fn from_components(a0: f64, a1: f64, a2: f64, tot: &GpsTime, t_lse: &GpsTime, dt_ls: i8, dt_lsf: i8) -> UtcParams {
         let tot = tot.to_gps_time_t();
         let t_lse = t_lse.to_gps_time_t();
@@ -317,6 +318,11 @@ impl Default for UtcParams {
 }
 
 /// Structure representing UTC time
+///
+/// Note: This implementation does not aim to be able to represent arbitrary dates and times.
+/// It is only meant to represent dates and times over the period that GNSS systems have been
+/// around. Specifically it shouldn't be relied on for dates significantly before January 6th 1980,
+/// the start of GPS time.
 #[derive(Clone)]
 pub struct UtcTime(c_bindings::utc_tm);
 
