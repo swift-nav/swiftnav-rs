@@ -63,8 +63,6 @@ fn main() {
         .allowlist_type("gps_time_t")
         .allowlist_type("utc_params_t")
         .allowlist_type("utc_tm")
-        .allowlist_function("is_leap_year")
-        .allowlist_function("days_in_month")
         .allowlist_function("gpsdifftime")
         .allowlist_function("gps_time_valid")
         .allowlist_function("add_secs")

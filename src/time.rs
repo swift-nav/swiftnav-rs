@@ -18,14 +18,6 @@ pub const HOUR: Duration = Duration::from_secs(c_bindings::HOUR_SECS as u64);
 pub const DAY: Duration = Duration::from_secs(c_bindings::DAY_SECS as u64);
 pub const WEEK: Duration = Duration::from_secs(c_bindings::WEEK_SECS as u64);
 
-pub fn is_leap_year(year: i32) -> bool {
-    unsafe { c_bindings::is_leap_year(year) }
-}
-
-pub fn days_in_month(year: u16, month: u8) -> u8 {
-    unsafe { c_bindings::days_in_month(year, month) }
-}
-
 /// Representation of GPS Time
 #[derive(Copy, Clone)]
 pub struct GpsTime(c_bindings::gps_time_t);
