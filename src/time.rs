@@ -165,7 +165,7 @@ impl GpsTime {
         GpsTime(unsafe { c_bindings::round_to_epoch(self.c_ptr(), soln_freq) })
     }
 
-    /// Gets the GPS time down of the previous solution epoch
+    /// Gets the GPS time of the previous solution epoch
     pub fn floor_to_epoch(&self, soln_freq: f64) -> GpsTime {
         GpsTime(unsafe { c_bindings::floor_to_epoch(self.c_ptr(), soln_freq) })
     }
@@ -353,7 +353,7 @@ impl UtcTime {
         &self.0
     }
 
-    /// Creates a UTC time from it's individual components
+    /// Creates a UTC time from its individual components
     pub fn from_date(year: u16, month: u8, day: u8, hour: u8, minute: u8, second: f64) -> UtcTime {
         UtcTime(unsafe {
             c_bindings::date2utc(
@@ -415,7 +415,7 @@ impl UtcTime {
     /// Makes an ISO8601 compatible date time string from the UTC time
     pub fn iso8601_str(&self) -> String {
         format!(
-            "{}-{}-{}T{}:{}:{:.3}",
+            "{}-{}-{}T{}:{}:{:.3}Z",
             self.get_year(),
             self.get_month(),
             self.get_day_of_month(),
@@ -432,6 +432,12 @@ impl UtcTime {
 impl Default for UtcTime {
     fn default() -> Self {
         unsafe { std::mem::zeroed::<UtcTime>() }
+    }
+}
+
+impl From<MJD> for UtcTime {
+    fn from(mjd: MJD) -> UtcTime {
+        mjd.to_utc()
     }
 }
 
@@ -467,6 +473,12 @@ impl MJD {
     /// Converts the modified julian date into a UTC time
     pub fn to_utc(&self) -> UtcTime {
         UtcTime(unsafe { c_bindings::mjd2utc(self.0) })
+    }
+}
+
+impl From<UtcTime> for MJD {
+    fn from(utc: UtcTime) -> MJD {
+        utc.to_mjd()
     }
 }
 
