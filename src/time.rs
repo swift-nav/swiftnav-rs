@@ -219,6 +219,14 @@ impl Sub<GpsTime> for GpsTime {
     }
 }
 
+impl Sub<&GpsTime> for GpsTime {
+    type Output = Duration;
+    fn sub(self, rhs: &GpsTime) -> Duration {
+        let diff_seconds = self.diff(rhs).abs();
+        Duration::from_secs_f64(diff_seconds)
+    }
+}
+
 impl Sub<Duration> for GpsTime {
     type Output = Self;
     fn sub(mut self, rhs: Duration) -> Self::Output {
@@ -264,6 +272,41 @@ impl UtcParams {
         } else {
             None
         }
+    }
+
+    pub fn from_components(a0: f64, a1: f64, a2: f64, tot: &GpsTime, t_lse: &GpsTime, dt_ls: i8, dt_lsf: i8) -> UtcParams {
+        let tot = tot.to_gps_time_t();
+        let t_lse = t_lse.to_gps_time_t();
+        UtcParams(c_bindings::utc_params_t { a0, a1, a2, tot, t_lse, dt_ls, dt_lsf })
+    }
+
+    /// Modulo 1 sec offset from GPS to UTC [s]
+    pub fn get_a0(&self) -> f64 {
+        self.0.a0
+    }
+    /// Drift of time offset from GPS to UTC [s/s]
+    pub fn get_a1(&self) -> f64 {
+        self.0.a1
+    }
+    /// Drift rate correction from GPS to UTC [s/s]
+    pub fn get_a2(&self) -> f64 {
+        self.0.a2
+    }
+    /// Reference time of UTC parameters.
+    pub fn get_tot(&self) -> GpsTime {
+        GpsTime(self.0.tot)
+    }
+    /// Time of leap second event.
+    pub fn get_t_lse(&self) -> GpsTime {
+        GpsTime(self.0.t_lse)
+    }
+    /// Leap second delta from GPS to UTC before LS event [s]
+    pub fn get_dt_ls(&self) -> i8 {
+        self.0.dt_ls
+    }
+    /// Leap second delta from GPS to UTC after LS event [s]
+    pub fn get_dt_lsf(&self) -> i8 {
+        self.0.dt_lsf
     }
 }
 
