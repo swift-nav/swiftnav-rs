@@ -398,7 +398,7 @@ impl UtcTime {
     }
 
     /// Minutes of the hour (0 - 59)
-    pub fn get_min(&self) -> u8 {
+    pub fn get_minute(&self) -> u8 {
         self.0.minute
     }
 
@@ -420,7 +420,7 @@ impl UtcTime {
             self.get_month(),
             self.get_day_of_month(),
             self.get_hour(),
-            self.get_min(),
+            self.get_minute(),
             self.get_seconds()
         )
     }
@@ -438,6 +438,49 @@ impl Default for UtcTime {
 impl From<MJD> for UtcTime {
     fn from(mjd: MJD) -> UtcTime {
         mjd.to_utc()
+    }
+}
+
+#[cfg(feature = "chrono-support")]
+impl From<UtcTime> for chrono::DateTime<chrono::offset::Utc> {
+    fn from(utc: UtcTime) -> chrono::DateTime<chrono::offset::Utc> {
+        use chrono::prelude::*;
+
+        let date = NaiveDate::from_ymd(
+            utc.get_year() as i32,
+            utc.get_month() as u32,
+            utc.get_day_of_month() as u32,
+        );
+        let whole_seconds = utc.get_seconds().floor() as u32;
+        let frac_seconds = utc.get_seconds().fract();
+        let nanoseconds = (frac_seconds * 1_000_000_000.0).round() as u32;
+        let time = NaiveTime::from_hms_nano(
+            utc.get_hour() as u32,
+            utc.get_minute() as u32,
+            whole_seconds,
+            nanoseconds,
+        );
+
+        DateTime::<Utc>::from_utc(NaiveDateTime::new(date, time), Utc)
+    }
+}
+
+#[cfg(feature = "chrono-support")]
+impl<Tz: chrono::offset::TimeZone> From<chrono::DateTime<Tz>> for UtcTime {
+    fn from(chrono: chrono::DateTime<Tz>) -> UtcTime {
+        use chrono::prelude::*;
+
+        let datetime = chrono.naive_utc();
+        let seconds = datetime.second() as f64 + (datetime.nanosecond() as f64 / 1_000_000_000.0);
+
+        UtcTime::from_date(
+            datetime.year() as u16,
+            datetime.month() as u8,
+            datetime.day() as u8,
+            datetime.hour() as u8,
+            datetime.minute() as u8,
+            seconds,
+        )
     }
 }
 
@@ -1136,7 +1179,7 @@ mod tests {
             assert_eq!(u.get_month(), expected.month);
             assert_eq!(u.get_day_of_month(), expected.day);
             assert_eq!(u.get_hour(), expected.hour);
-            assert_eq!(u.get_min(), expected.minute);
+            assert_eq!(u.get_minute(), expected.minute);
             assert!(
                 (u.get_seconds() - expected.second).abs() < 1e-5,
                 "{} {} {}",
@@ -1191,5 +1234,21 @@ mod tests {
             let rounded = test_case.floor_to_epoch(soln_freq);
             assert!((rounded - expectation) < epsilon);
         }
+    }
+
+    #[test]
+    fn chrono_conversions() {
+        use chrono::prelude::*;
+        let swift_date = UtcTime::from_date(2021, 8, 1, 00, 11, 0.0);
+        let expected_utc = DateTime::<Utc>::from_utc(NaiveDateTime::new(NaiveDate::from_ymd(2021, 8, 1), NaiveTime::from_hms_nano(00, 11, 0, 0)), Utc);
+
+        let chrono_date: DateTime<Utc> = swift_date.clone().into();
+
+        assert_eq!(chrono_date.year(), swift_date.get_year() as i32);
+        assert_eq!(chrono_date.month(), swift_date.get_month() as u32);
+        assert_eq!(chrono_date.day(), swift_date.get_day_of_month() as u32);
+        assert_eq!(chrono_date.hour(), swift_date.get_hour() as u32);
+        assert_eq!(chrono_date.minute(), swift_date.get_minute() as u32);
+        assert_eq!(chrono_date.second(), swift_date.get_seconds() as u32);
     }
 }
