@@ -28,6 +28,7 @@ jobs:
           CARGO_MAKE_RUN_CLIPPY = true
           CARGO_MAKE_CLIPPY_ARGS = "--all-features -- -D warnings"
           CARGO_MAKE_RUN_CHECK_FORMAT = true
+          RUSTFLAGS="-D warnings"
           EOF
 
       - uses: actions-rs/cargo@v1
