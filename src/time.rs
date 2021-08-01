@@ -109,7 +109,7 @@ impl GpsTime {
     }
 
     /// Converts the GPS time into UTC time
-    pub fn to_utc(&self, utc_params: &UtcParams) -> UtcTime {
+    pub fn to_utc(self, utc_params: &UtcParams) -> UtcTime {
         let mut utc = UtcTime::default();
         unsafe {
             c_bindings::gps2utc(self.c_ptr(), utc.mut_c_ptr(), utc_params.c_ptr());
@@ -122,7 +122,7 @@ impl GpsTime {
     ///
     /// Note: The hard coded list of leap seconds will get out of date, it is
     /// preferable to use `GpsTime::to_utc()` with the newest set of UTC parameters
-    pub fn to_utc_hardcoded(&self) -> UtcTime {
+    pub fn to_utc_hardcoded(self) -> UtcTime {
         let mut utc = UtcTime::default();
         unsafe {
             c_bindings::gps2utc(self.c_ptr(), utc.mut_c_ptr(), std::ptr::null());
