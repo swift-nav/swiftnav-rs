@@ -8,6 +8,9 @@ readme = "README.md"
 repository = "https://github.com/swift-nav/swiftnav-rs"
 license = "LGPL-3.0"
 
+[dependencies]
+chrono = { version = "0.4", optional = true }
+
 [build-dependencies]
 bindgen = "0.59"
 cmake = "0.1"
@@ -15,3 +18,4 @@ cmake = "0.1"
 [features]
 default = ["testcpp"]
 testcpp = []
+chrono-support = ["chrono"]
