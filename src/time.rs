@@ -131,7 +131,7 @@ impl GpsTime {
     }
 
     /// Gets the number of seconds difference between GPS and UTC times
-    pub fn get_utc_offset(&self, utc_params: &UtcParams) -> f64 {
+    pub fn utc_offset(&self, utc_params: &UtcParams) -> f64 {
         unsafe { c_bindings::get_gps_utc_offset(self.c_ptr(), utc_params.c_ptr()) }
     }
 
@@ -139,9 +139,9 @@ impl GpsTime {
     /// list of leap seconds
     ///
     /// Note: The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use `GpsTime::get_utc_offset_hardcoded()` with the newest set
+    /// preferable to use `GpsTime::utc_offset_hardcoded()` with the newest set
     /// of UTC parameters
-    pub fn get_utc_offset_hardcoded(&self) -> f64 {
+    pub fn utc_offset_hardcoded(&self) -> f64 {
         unsafe { c_bindings::get_gps_utc_offset(self.c_ptr(), std::ptr::null()) }
     }
 
@@ -300,31 +300,31 @@ impl UtcParams {
     }
 
     /// Modulo 1 sec offset from GPS to UTC [s]
-    pub fn get_a0(&self) -> f64 {
+    pub fn a0(&self) -> f64 {
         self.0.a0
     }
     /// Drift of time offset from GPS to UTC [s/s]
-    pub fn get_a1(&self) -> f64 {
+    pub fn a1(&self) -> f64 {
         self.0.a1
     }
     /// Drift rate correction from GPS to UTC [s/s]
-    pub fn get_a2(&self) -> f64 {
+    pub fn a2(&self) -> f64 {
         self.0.a2
     }
     /// Reference time of UTC parameters.
-    pub fn get_tot(&self) -> GpsTime {
+    pub fn tot(&self) -> GpsTime {
         GpsTime(self.0.tot)
     }
     /// Time of leap second event.
-    pub fn get_t_lse(&self) -> GpsTime {
+    pub fn t_lse(&self) -> GpsTime {
         GpsTime(self.0.t_lse)
     }
     /// Leap second delta from GPS to UTC before LS event [s]
-    pub fn get_dt_ls(&self) -> i8 {
+    pub fn dt_ls(&self) -> i8 {
         self.0.dt_ls
     }
     /// Leap second delta from GPS to UTC after LS event [s]
-    pub fn get_dt_lsf(&self) -> i8 {
+    pub fn dt_lsf(&self) -> i8 {
         self.0.dt_lsf
     }
 }
@@ -368,42 +368,42 @@ impl UtcTime {
     }
 
     /// Number of years CE. In four digit format
-    pub fn get_year(&self) -> u16 {
+    pub fn year(&self) -> u16 {
         self.0.year
     }
 
     /// Day of the year (1 - 366)
-    pub fn get_day_of_year(&self) -> u16 {
+    pub fn day_of_year(&self) -> u16 {
         self.0.year_day
     }
 
     /// Month of the year (1 - 12). 1 = January, 12 = December
-    pub fn get_month(&self) -> u8 {
+    pub fn month(&self) -> u8 {
         self.0.month
     }
 
     /// Day of the month (1 - 31)
-    pub fn get_day_of_month(&self) -> u8 {
+    pub fn day_of_month(&self) -> u8 {
         self.0.month_day
     }
 
     /// Day of the week (1 - 7). 1 = Monday, 7 = Sunday
-    pub fn get_day_of_week(&self) -> u8 {
+    pub fn day_of_week(&self) -> u8 {
         self.0.week_day
     }
 
     /// Hour of the day (0 - 23)
-    pub fn get_hour(&self) -> u8 {
+    pub fn hour(&self) -> u8 {
         self.0.hour
     }
 
     /// Minutes of the hour (0 - 59)
-    pub fn get_minute(&self) -> u8 {
+    pub fn minute(&self) -> u8 {
         self.0.minute
     }
 
     /// seconds of the minute (0 - 60)
-    pub fn get_seconds(&self) -> f64 {
+    pub fn seconds(&self) -> f64 {
         (self.0.second_int as f64) + self.0.second_frac
     }
 
@@ -416,12 +416,12 @@ impl UtcTime {
     pub fn iso8601_str(&self) -> String {
         format!(
             "{}-{}-{}T{}:{}:{:.3}Z",
-            self.get_year(),
-            self.get_month(),
-            self.get_day_of_month(),
-            self.get_hour(),
-            self.get_minute(),
-            self.get_seconds()
+            self.year(),
+            self.month(),
+            self.day_of_month(),
+            self.hour(),
+            self.minute(),
+            self.seconds()
         )
     }
 
@@ -447,16 +447,16 @@ impl From<UtcTime> for chrono::DateTime<chrono::offset::Utc> {
         use chrono::prelude::*;
 
         let date = NaiveDate::from_ymd(
-            utc.get_year() as i32,
-            utc.get_month() as u32,
-            utc.get_day_of_month() as u32,
+            utc.year() as i32,
+            utc.month() as u32,
+            utc.day_of_month() as u32,
         );
-        let whole_seconds = utc.get_seconds().floor() as u32;
-        let frac_seconds = utc.get_seconds().fract();
+        let whole_seconds = utc.seconds().floor() as u32;
+        let frac_seconds = utc.seconds().fract();
         let nanoseconds = (frac_seconds * 1_000_000_000.0).round() as u32;
         let time = NaiveTime::from_hms_nano(
-            utc.get_hour() as u32,
-            utc.get_minute() as u32,
+            utc.hour() as u32,
+            utc.minute() as u32,
             whole_seconds,
             nanoseconds,
         );
@@ -692,7 +692,7 @@ mod tests {
             },
         ];
         for test_case in test_cases {
-            let d_utc = test_case.t.get_utc_offset_hardcoded();
+            let d_utc = test_case.t.utc_offset_hardcoded();
             let is_lse = test_case.t.is_leap_second_event_hardcoded();
 
             assert!(d_utc == test_case.d_utc && is_lse == test_case.is_lse);
@@ -924,9 +924,9 @@ mod tests {
             assert_eq!(is_lse, test_case.is_lse);
 
             let d_utc = if let Some(params) = &test_case.params {
-                test_case.t.get_utc_offset(params)
+                test_case.t.utc_offset(params)
             } else {
-                test_case.t.get_utc_offset_hardcoded()
+                test_case.t.utc_offset_hardcoded()
             };
             assert!(
                 (d_utc - test_case.d_utc).abs() < 1e-5,
@@ -1175,15 +1175,15 @@ mod tests {
                 test_case.t.to_utc_hardcoded()
             };
 
-            assert_eq!(u.get_year(), expected.year);
-            assert_eq!(u.get_month(), expected.month);
-            assert_eq!(u.get_day_of_month(), expected.day);
-            assert_eq!(u.get_hour(), expected.hour);
-            assert_eq!(u.get_minute(), expected.minute);
+            assert_eq!(u.year(), expected.year);
+            assert_eq!(u.month(), expected.month);
+            assert_eq!(u.day_of_month(), expected.day);
+            assert_eq!(u.hour(), expected.hour);
+            assert_eq!(u.minute(), expected.minute);
             assert!(
-                (u.get_seconds() - expected.second).abs() < 1e-5,
+                (u.seconds() - expected.second).abs() < 1e-5,
                 "{} {} {}",
-                u.get_seconds(),
+                u.seconds(),
                 expected.second,
                 test_case.t.tow()
             );
@@ -1244,11 +1244,11 @@ mod tests {
 
         let chrono_date: DateTime<Utc> = swift_date.clone().into();
 
-        assert_eq!(chrono_date.year(), swift_date.get_year() as i32);
-        assert_eq!(chrono_date.month(), swift_date.get_month() as u32);
-        assert_eq!(chrono_date.day(), swift_date.get_day_of_month() as u32);
-        assert_eq!(chrono_date.hour(), swift_date.get_hour() as u32);
-        assert_eq!(chrono_date.minute(), swift_date.get_minute() as u32);
-        assert_eq!(chrono_date.second(), swift_date.get_seconds() as u32);
+        assert_eq!(chrono_date.year(), swift_date.year() as i32);
+        assert_eq!(chrono_date.month(), swift_date.month() as u32);
+        assert_eq!(chrono_date.day(), swift_date.day_of_month() as u32);
+        assert_eq!(chrono_date.hour(), swift_date.hour() as u32);
+        assert_eq!(chrono_date.minute(), swift_date.minute() as u32);
+        assert_eq!(chrono_date.second(), swift_date.seconds() as u32);
     }
 }
