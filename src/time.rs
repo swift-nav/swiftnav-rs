@@ -218,7 +218,7 @@ impl AddAssign<Duration> for GpsTime {
 impl Sub<GpsTime> for GpsTime {
     type Output = Duration;
     fn sub(self, rhs: GpsTime) -> Duration {
-        let diff_seconds = self.diff(&rhs).abs();
+        let diff_seconds = self.diff(&rhs);
         Duration::from_secs_f64(diff_seconds)
     }
 }
@@ -226,7 +226,7 @@ impl Sub<GpsTime> for GpsTime {
 impl Sub<&GpsTime> for GpsTime {
     type Output = Duration;
     fn sub(self, rhs: &GpsTime) -> Duration {
-        let diff_seconds = self.diff(rhs).abs();
+        let diff_seconds = self.diff(rhs);
         Duration::from_secs_f64(diff_seconds)
     }
 }
@@ -1209,7 +1209,13 @@ mod tests {
 
         for (test_case, expectation) in test_cases.iter().zip(expectations.iter()) {
             let rounded = test_case.round_to_epoch(soln_freq);
-            assert!((rounded - expectation) < epsilon);
+
+            let diff = if &rounded >= expectation {
+                rounded - expectation
+            } else {
+                *expectation - rounded
+            };
+            assert!(diff < epsilon);
         }
     }
 
