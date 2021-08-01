@@ -1245,16 +1245,17 @@ mod tests {
     #[test]
     fn chrono_conversions() {
         use chrono::prelude::*;
+        let epsilon = std::time::Duration::from_secs_f64(1e-6);
         let swift_date = UtcTime::from_date(2021, 8, 1, 00, 11, 0.0);
         let expected_utc = DateTime::<Utc>::from_utc(NaiveDateTime::new(NaiveDate::from_ymd(2021, 8, 1), NaiveTime::from_hms_nano(00, 11, 0, 0)), Utc);
 
-        let chrono_date: DateTime<Utc> = swift_date.clone().into();
-
-        assert_eq!(chrono_date.year(), swift_date.year() as i32);
-        assert_eq!(chrono_date.month(), swift_date.month() as u32);
-        assert_eq!(chrono_date.day(), swift_date.day_of_month() as u32);
-        assert_eq!(chrono_date.hour(), swift_date.hour() as u32);
-        assert_eq!(chrono_date.minute(), swift_date.minute() as u32);
-        assert_eq!(chrono_date.second(), swift_date.seconds() as u32);
+        let converted: DateTime<Utc> = swift_date.clone().into();
+        assert!((converted - expected_utc).to_std().unwrap() < epsilon);
+        assert_eq!(converted.year(), swift_date.year() as i32);
+        assert_eq!(converted.month(), swift_date.month() as u32);
+        assert_eq!(converted.day(), swift_date.day_of_month() as u32);
+        assert_eq!(converted.hour(), swift_date.hour() as u32);
+        assert_eq!(converted.minute(), swift_date.minute() as u32);
+        assert_eq!(converted.second(), swift_date.seconds() as u32);
     }
 }
