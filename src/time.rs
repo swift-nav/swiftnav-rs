@@ -263,5 +263,7 @@ mod tests {
         let mut t = GpsTime::new(0, 1.001).unwrap();
         t -= d;
         assert_eq!(t, t_expected);
+
+        let unused = 543;
     }
 }
