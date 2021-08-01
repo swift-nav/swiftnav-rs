@@ -187,8 +187,8 @@ pub enum ProcessingStrategy {
 }
 
 impl ProcessingStrategy {
-    pub(crate) fn to_processing_strategy_t(&self) -> c_bindings::processing_strategy_t {
-        match *self {
+    pub(crate) fn to_processing_strategy_t(self) -> c_bindings::processing_strategy_t {
+        match self {
             ProcessingStrategy::GpsOnly => c_bindings::processing_strategy_t_GPS_ONLY,
             ProcessingStrategy::AllConstellations => {
                 c_bindings::processing_strategy_t_ALL_CONSTELLATIONS
@@ -299,12 +299,12 @@ impl SidSet {
     }
 
     /// Gets the number of satellites in the set
-    pub fn get_sat_count(&self) -> u32 {
+    pub fn sat_count(&self) -> u32 {
         unsafe { c_bindings::sid_set_get_sat_count(&self.0) }
     }
 
     /// Gets the number of signals in the set
-    pub fn get_sig_count(&self) -> u32 {
+    pub fn sig_count(&self) -> u32 {
         unsafe { c_bindings::sid_set_get_sig_count(&self.0) }
     }
 
@@ -761,9 +761,9 @@ mod tests {
          * geometry */
 
         let mut nm1_broken = make_nm1();
-        nm1_broken.set_pseudorange(nm1_broken.get_pseudorange().unwrap() + 5e8);
+        nm1_broken.set_pseudorange(nm1_broken.pseudorange().unwrap() + 5e8);
         let mut nm2_broken = make_nm2();
-        nm2_broken.set_pseudorange(nm2_broken.get_pseudorange().unwrap() - 2e7);
+        nm2_broken.set_pseudorange(nm2_broken.pseudorange().unwrap() - 2e7);
 
         let nms = [
             nm1_broken,
@@ -1002,9 +1002,9 @@ mod tests {
 
         /* add a common bias of 120 m to the L2CM measurements */
         let mut nm10_bias = make_nm10();
-        nm10_bias.set_pseudorange(nm10_bias.get_pseudorange().unwrap() + 120.);
+        nm10_bias.set_pseudorange(nm10_bias.pseudorange().unwrap() + 120.);
         let mut nm11_bias = make_nm11();
-        nm11_bias.set_pseudorange(nm11_bias.get_pseudorange().unwrap() + 120.);
+        nm11_bias.set_pseudorange(nm11_bias.pseudorange().unwrap() + 120.);
 
         /* healthy measurements, with bias on L2 */
         let nms = [
@@ -1050,7 +1050,7 @@ mod tests {
         );
 
         /* add outlier to one of the L2 measurements  */
-        nm11_bias.set_pseudorange(nm11_bias.get_pseudorange().unwrap() + 1000.);
+        nm11_bias.set_pseudorange(nm11_bias.pseudorange().unwrap() + 1000.);
         let nms = [
             make_nm2(),
             make_nm3(),

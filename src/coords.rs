@@ -291,7 +291,7 @@ impl ECEF {
     /// First the vector between the points is converted into the local North, East,
     /// Down frame of the reference point. Then we can directly calculate the
     /// azimuth and elevation.
-    pub fn get_azel_of(&self, point: &ECEF) -> AzimuthElevation {
+    pub fn azel_of(&self, point: &ECEF) -> AzimuthElevation {
         let mut azel = AzimuthElevation::new(0.0, 0.0);
         unsafe {
             c_bindings::wgsecef2azel(point.as_ptr(), self.as_ptr(), &mut azel.az, &mut azel.el)

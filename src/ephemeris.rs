@@ -302,7 +302,7 @@ impl Ephemeris {
     /// Calculate satellite position, velocity and clock offset from ephemeris.
     pub fn calc_satellite_state(&self, t: GpsTime) -> Result<SatelliteState, InvalidEphemeris> {
         // First make sure the ephemeris is valid at `t`, and bail early if it isn't
-        self.get_detailed_status(t).to_result()?;
+        self.detailed_status(t).to_result()?;
 
         let mut sat = SatelliteState {
             pos: ECEF::default(),
@@ -338,7 +338,7 @@ impl Ephemeris {
         pos: ECEF,
     ) -> Result<AzimuthElevation, InvalidEphemeris> {
         // First make sure the ephemeris is valid at `t`, and bail early if it isn't
-        self.get_detailed_status(t).to_result()?;
+        self.detailed_status(t).to_result()?;
 
         let mut sat = AzimuthElevation::default();
 
@@ -367,7 +367,7 @@ impl Ephemeris {
         vel: ECEF,
     ) -> Result<f64, InvalidEphemeris> {
         // First make sure the ephemeris is valid at `t`, and bail early if it isn't
-        self.get_detailed_status(t).to_result()?;
+        self.detailed_status(t).to_result()?;
 
         let mut doppler = 0.0;
 
@@ -386,17 +386,17 @@ impl Ephemeris {
         Ok(doppler)
     }
 
-    pub fn get_sid(&self) -> Result<GnssSignal, InvalidGnssSignal> {
+    pub fn sid(&self) -> Result<GnssSignal, InvalidGnssSignal> {
         GnssSignal::from_gnss_signal_t(self.0.sid)
     }
 
     /// Gets the status of an ephemeris - is the ephemeris invalid, unhealthy,
     /// or has some other condition which makes it unusable?
-    pub fn get_status(&self) -> Status {
+    pub fn status(&self) -> Status {
         Status::from_ephemeris_status_t(unsafe { c_bindings::get_ephemeris_status_t(&self.0) })
     }
 
-    pub fn get_detailed_status(&self, t: GpsTime) -> Status {
+    pub fn detailed_status(&self, t: GpsTime) -> Status {
         Status::from_ephemeris_status_t(unsafe {
             c_bindings::ephemeris_valid_detailed(&self.0, t.c_ptr())
         })

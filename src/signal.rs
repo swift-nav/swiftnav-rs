@@ -59,14 +59,12 @@ impl Constellation {
             c_bindings::constellation_e_CONSTELLATION_BDS => Ok(Constellation::Bds),
             c_bindings::constellation_e_CONSTELLATION_QZS => Ok(Constellation::Qzs),
             c_bindings::constellation_e_CONSTELLATION_GAL => Ok(Constellation::Gal),
-            c_bindings::constellation_e_CONSTELLATION_INVALID
-            | c_bindings::constellation_e_CONSTELLATION_COUNT
-            | _ => Err(InvalidConstellation(value)),
+            _ => Err(InvalidConstellation(value)),
         }
     }
 
-    pub(crate) fn to_constellation_t(&self) -> c_bindings::constellation_t {
-        match *self {
+    pub(crate) fn to_constellation_t(self) -> c_bindings::constellation_t {
+        match self {
             Constellation::Gps => c_bindings::constellation_e_CONSTELLATION_GPS,
             Constellation::Sbas => c_bindings::constellation_e_CONSTELLATION_SBAS,
             Constellation::Glo => c_bindings::constellation_e_CONSTELLATION_GLO,
@@ -278,14 +276,14 @@ impl Code {
             c_bindings::code_e_CODE_AUX_GAL => Ok(Code::AuxGal),
             c_bindings::code_e_CODE_AUX_QZS => Ok(Code::AuxQzs),
             c_bindings::code_e_CODE_AUX_BDS => Ok(Code::AuxBds),
-            c_bindings::code_e_CODE_INVALID | c_bindings::code_e_CODE_COUNT | _ => {
+            _ => {
                 Err(InvalidCode(value))
             }
         }
     }
 
-    pub(crate) fn to_code_t(&self) -> c_bindings::code_t {
-        match *self {
+    pub(crate) fn to_code_t(self) -> c_bindings::code_t {
+        match self {
             Code::GpsL1ca => c_bindings::code_e_CODE_GPS_L1CA,
             Code::GpsL2cm => c_bindings::code_e_CODE_GPS_L2CM,
             Code::SbasL1ca => c_bindings::code_e_CODE_SBAS_L1CA,
@@ -354,7 +352,7 @@ impl Code {
     }
 
     /// Attempts to make a `Code` from a string
-    pub fn from_str(s: &ffi::CStr) -> Result<Code, InvalidCode> {
+    pub fn from_c_str(s: &ffi::CStr) -> Result<Code, InvalidCode> {
         Self::from_code_t(unsafe { c_bindings::code_string_to_enum(s.as_ptr()) })
     }
 
@@ -468,15 +466,15 @@ impl GnssSignal {
         GnssSignal::new(sid.sat, Code::from_code_t(sid.code)?)
     }
 
-    pub(crate) fn to_gnss_signal_t(&self) -> c_bindings::gnss_signal_t {
+    pub(crate) fn to_gnss_signal_t(self) -> c_bindings::gnss_signal_t {
         self.0
     }
 
-    pub fn get_sat(&self) -> u16 {
+    pub fn sat(&self) -> u16 {
         self.0.sat
     }
 
-    pub fn get_code(&self) -> Code {
+    pub fn code(&self) -> Code {
         Code::from_code_t(self.0.code).unwrap()
     }
 
