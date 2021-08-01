@@ -46,7 +46,7 @@ impl NavigationMeasurement {
     }
 
     /// Gets the pseudorange measurement, if a valid one has been set
-    pub fn get_pseudorange(&self) -> Option<f64> {
+    pub fn pseudorange(&self) -> Option<f64> {
         if self.0.flags & NAV_MEAS_FLAG_CODE_VALID != 0 {
             Some(self.0.pseudorange)
         } else {
@@ -68,7 +68,7 @@ impl NavigationMeasurement {
     }
 
     /// Gets the measured doppler measurement, if a valid one has been set
-    pub fn get_measured_doppler(&self) -> Option<f64> {
+    pub fn measured_doppler(&self) -> Option<f64> {
         if self.0.flags & NAV_MEAS_FLAG_MEAS_DOPPLER_VALID != 0 {
             Some(self.0.measured_doppler)
         } else {
@@ -101,7 +101,7 @@ impl NavigationMeasurement {
     }
 
     /// Gets the signal CN0 measurement, if a valid one has been set
-    pub fn get_cn0(&self) -> Option<f64> {
+    pub fn cn0(&self) -> Option<f64> {
         if self.0.flags & NAV_MEAS_FLAG_CN0_VALID != 0 {
             Some(self.0.cn0)
         } else {
@@ -121,7 +121,7 @@ impl NavigationMeasurement {
         self.0.lock_time = value.as_secs_f64();
     }
 
-    pub fn get_lock_time(&self) -> Duration {
+    pub fn lock_time(&self) -> Duration {
         Duration::from_secs_f64(self.0.lock_time)
     }
 
@@ -130,7 +130,7 @@ impl NavigationMeasurement {
         self.0.sid = value.to_gnss_signal_t();
     }
 
-    pub fn get_sid(&self) -> GnssSignal {
+    pub fn sid(&self) -> GnssSignal {
         GnssSignal::from_gnss_signal_t(self.0.sid).unwrap()
     }
 
@@ -139,7 +139,7 @@ impl NavigationMeasurement {
         self.0.flags = flags;
     }
 
-    pub fn get_flags(&self) -> u16 {
+    pub fn flags(&self) -> u16 {
         self.0.flags
     }
 
