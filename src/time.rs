@@ -424,9 +424,6 @@ impl UtcTime {
             self.seconds()
         )
     }
-
-    // TODO: We could easily add conversions to other UTC representations
-    //  for interoperability, but which time crates to support?
 }
 
 impl Default for UtcTime {
