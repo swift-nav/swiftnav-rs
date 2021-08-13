@@ -10,7 +10,8 @@ fn main() {
     if !cfg!(feature = "testcpp") {
         cmake
             .define("libswiftnav_ENABLE_TESTS", "OFF")
-            .define("libswiftnav_ENABLE_TEST_LIBS", "OFF");
+            .define("libswiftnav_ENABLE_TEST_LIBS", "OFF")
+            .define("disable_tests", "OFF");
     }
 
     cmake
