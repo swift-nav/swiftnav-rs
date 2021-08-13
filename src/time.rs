@@ -1244,7 +1244,13 @@ mod tests {
         use chrono::prelude::*;
         let epsilon = std::time::Duration::from_secs_f64(1e-6);
         let swift_date = UtcTime::from_date(2021, 8, 1, 00, 11, 0.0);
-        let expected_utc = DateTime::<Utc>::from_utc(NaiveDateTime::new(NaiveDate::from_ymd(2021, 8, 1), NaiveTime::from_hms_nano(00, 11, 0, 0)), Utc);
+        let expected_utc = DateTime::<Utc>::from_utc(
+            NaiveDateTime::new(
+                NaiveDate::from_ymd(2021, 8, 1),
+                NaiveTime::from_hms_nano(00, 11, 0, 0),
+            ),
+            Utc,
+        );
 
         let converted: DateTime<Utc> = swift_date.clone().into();
         assert!((converted - expected_utc).to_std().unwrap() < epsilon);
