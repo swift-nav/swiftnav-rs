@@ -16,6 +16,5 @@ bindgen = "0.59"
 cmake = "0.1"
 
 [features]
-default = ["testcpp"]
 testcpp = []
 chrono-support = ["chrono"]
