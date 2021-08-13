@@ -276,9 +276,7 @@ impl Code {
             c_bindings::code_e_CODE_AUX_GAL => Ok(Code::AuxGal),
             c_bindings::code_e_CODE_AUX_QZS => Ok(Code::AuxQzs),
             c_bindings::code_e_CODE_AUX_BDS => Ok(Code::AuxBds),
-            _ => {
-                Err(InvalidCode(value))
-            }
+            _ => Err(InvalidCode(value)),
         }
     }
 
