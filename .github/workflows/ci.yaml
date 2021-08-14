@@ -37,7 +37,6 @@ jobs:
         with:
           toolchain: stable-${{ matrix.binary_target }}
           profile: minimal
-          override: true
 
       - name: Set up Makefile.toml
         run: |
