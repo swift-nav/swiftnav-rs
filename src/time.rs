@@ -121,7 +121,7 @@ impl GpsTime {
     /// seconds.
     ///
     /// Note: The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use `GpsTime::to_utc()` with the newest set of UTC parameters
+    /// preferable to use [`GpsTime::to_utc()`] with the newest set of UTC parameters
     pub fn to_utc_hardcoded(self) -> UtcTime {
         let mut utc = UtcTime::default();
         unsafe {
@@ -139,7 +139,7 @@ impl GpsTime {
     /// list of leap seconds
     ///
     /// Note: The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use `GpsTime::utc_offset_hardcoded()` with the newest set
+    /// preferable to use [`GpsTime::utc_offset_hardcoded()`] with the newest set
     /// of UTC parameters
     pub fn utc_offset_hardcoded(&self) -> f64 {
         unsafe { c_bindings::get_gps_utc_offset(self.c_ptr(), std::ptr::null()) }
@@ -154,7 +154,7 @@ impl GpsTime {
     /// hardcoded list of leap seconds
     ///
     /// Note: The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use `GpsTime::is_leap_second_event_hardcoded()` with the newest
+    /// preferable to use [`GpsTime::is_leap_second_event_hardcoded()`] with the newest
     /// set of UTC parameters
     pub fn is_leap_second_event_hardcoded(&self) -> bool {
         unsafe { c_bindings::is_leap_second_event(self.c_ptr(), std::ptr::null()) }
@@ -168,6 +168,39 @@ impl GpsTime {
     /// Gets the GPS time of the previous solution epoch
     pub fn floor_to_epoch(&self, soln_freq: f64) -> GpsTime {
         GpsTime(unsafe { c_bindings::floor_to_epoch(self.c_ptr(), soln_freq) })
+    }
+
+    pub fn to_gal(self) -> GalTime {
+        GalTime {
+            wn: self.wn() - c_bindings::GAL_WEEK_TO_GPS_WEEK as i16,
+            tow: self.tow(),
+        }
+    }
+
+    pub fn to_bds(self) -> BdsTime {
+        let bds = GpsTime::new_unchecked(
+            self.wn() - c_bindings::BDS_WEEK_TO_GPS_WEEK as i16,
+            self.tow(),
+        );
+        let bds = bds - Duration::from_secs(c_bindings::BDS_SECOND_TO_GPS_SECOND as u64);
+        BdsTime {
+            wn: bds.wn(),
+            tow: bds.tow(),
+        }
+    }
+
+    /// Converts a GPS time into a Glonass time
+    pub fn to_glo(self, utc_params: &UtcParams) -> GloTime {
+        GloTime(unsafe { c_bindings::gps2glo(self.c_ptr(), utc_params.c_ptr()) })
+    }
+
+    /// Converts a GPS time into a Glonass time using the hardcoded list of leap
+    /// seconds.
+    ///
+    /// Note: The hard coded list of leap seconds will get out of date, it is
+    /// preferable to use [`GpsTime::to_glo_hardcoded()`] with the newest set of UTC parameters
+    pub fn to_glo_hardcoded(self) -> GloTime {
+        GloTime(unsafe { c_bindings::gps2glo(self.c_ptr(), std::ptr::null()) })
     }
 }
 
@@ -242,6 +275,156 @@ impl Sub<Duration> for GpsTime {
 impl SubAssign<Duration> for GpsTime {
     fn sub_assign(&mut self, rhs: Duration) {
         self.subtract_duration(&rhs);
+    }
+}
+
+impl From<GalTime> for GpsTime {
+    fn from(gal: GalTime) -> Self {
+        gal.to_gps()
+    }
+}
+
+impl From<BdsTime> for GpsTime {
+    fn from(bds: BdsTime) -> Self {
+        bds.to_gps()
+    }
+}
+
+/// Representation of Galileo Time
+#[derive(Debug, Copy, Clone)]
+pub struct GalTime {
+    wn: i16,
+    tow: f64,
+}
+
+impl GalTime {
+    pub fn wn(&self) -> i16 {
+        self.wn
+    }
+
+    pub fn tow(&self) -> f64 {
+        self.tow
+    }
+
+    pub fn to_gps(self) -> GpsTime {
+        GpsTime::new_unchecked(self.wn + c_bindings::GAL_WEEK_TO_GPS_WEEK as i16, self.tow)
+    }
+
+    pub fn to_bds(self) -> BdsTime {
+        self.to_gps().to_bds()
+    }
+}
+
+impl From<GpsTime> for GalTime {
+    fn from(gps: GpsTime) -> Self {
+        gps.to_gal()
+    }
+}
+
+impl From<BdsTime> for GalTime {
+    fn from(bds: BdsTime) -> Self {
+        bds.to_gal()
+    }
+}
+
+/// Representation of Beidou Time
+#[derive(Debug, Copy, Clone)]
+pub struct BdsTime {
+    wn: i16,
+    tow: f64,
+}
+
+impl BdsTime {
+    pub fn wn(&self) -> i16 {
+        self.wn
+    }
+
+    pub fn tow(&self) -> f64 {
+        self.tow
+    }
+
+    pub fn to_gps(self) -> GpsTime {
+        let gps = GpsTime::new_unchecked(
+            self.wn() + c_bindings::BDS_WEEK_TO_GPS_WEEK as i16,
+            self.tow(),
+        );
+        gps + Duration::from_secs(c_bindings::BDS_SECOND_TO_GPS_SECOND as u64)
+    }
+
+    pub fn to_gal(self) -> GalTime {
+        self.to_gps().to_gal()
+    }
+}
+
+impl From<GpsTime> for BdsTime {
+    fn from(gps: GpsTime) -> Self {
+        gps.to_bds()
+    }
+}
+
+impl From<GalTime> for BdsTime {
+    fn from(gal: GalTime) -> Self {
+        gal.to_bds()
+    }
+}
+
+/// Representation of Glonass Time
+#[derive(Copy, Clone)]
+pub struct GloTime(c_bindings::glo_time_t);
+
+impl GloTime {
+    pub(crate) fn c_ptr(&self) -> *const c_bindings::glo_time_t {
+        &self.0
+    }
+
+    /// Creates a new GloTime
+    /// nt - Day number within the four-year interval [1-1461].
+    ///      Comes from the field NT in the GLO string 4.
+    ///
+    /// n4 - Four-year interval number starting from 1996 [1- ].
+    ///      Comes from the field N4 in the GLO string 5.
+    ///
+    /// h/m/s come either from the field tb in the GLO string 2
+    ///      or the field tk in the GLO string 1
+    /// h - Hours [0-24]
+    /// m - Minutes [0-59]
+    /// s - Seconds [0-60]
+    pub fn new(nt: u16, n4: u8, h: u8, m: u8, s: f64) -> GloTime {
+        GloTime(c_bindings::glo_time_t { nt, n4, h, m, s })
+    }
+
+    pub fn nt(&self) -> u16 {
+        self.0.nt
+    }
+
+    pub fn n4(&self) -> u8 {
+        self.0.n4
+    }
+
+    pub fn h(&self) -> u8 {
+        self.0.h
+    }
+
+    pub fn m(&self) -> u8 {
+        self.0.m
+    }
+
+    pub fn s(&self) -> f64 {
+        self.0.s
+    }
+
+    /// Converts a Glonass time into a GPS time
+    pub fn to_gps(self, utc_params: &UtcParams) -> GpsTime {
+        GpsTime(unsafe { c_bindings::glo2gps(self.c_ptr(), utc_params.c_ptr()) })
+    }
+
+    /// Converts a Glonass time into a GPS time using the hardcoded list of leap
+    /// seconds.
+    ///
+    /// Note: The hard coded list of leap seconds will get out of date, it is
+    /// preferable to use [`GloTime::to_gps()`] with the newest set of UTC parameters
+    pub fn to_gps_hardcoded(self) -> GpsTime {
+        GpsTime(unsafe { c_bindings::glo2gps(self.c_ptr(), std::ptr::null()) })
     }
 }
 
