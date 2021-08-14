@@ -87,6 +87,8 @@ fn main() {
         .allowlist_var("BDS_WEEK_TO_GPS_WEEK")
         .allowlist_var("BDS_SECOND_TO_GPS_SECOND")
         .allowlist_var("GAL_WEEK_TO_GPS_WEEK")
+        .allowlist_var("GLO_EPOCH_WN")
+        .allowlist_var("GLO_EPOCH_TOW")
         .allowlist_type("constellation_t")
         .allowlist_type("code_t")
         .allowlist_type("gnss_signal_t")

@@ -1444,4 +1444,44 @@ mod tests {
         assert_eq!(converted.minute(), swift_date.minute() as u32);
         assert_eq!(converted.second(), swift_date.seconds() as u32);
     }
+
+    #[test]
+    fn gps_to_gal() {
+        let gps = GpsTime::new_unchecked(c_bindings::GAL_WEEK_TO_GPS_WEEK as i16, 0.0);
+        let gal = gps.to_gal();
+        assert_eq!(gal.wn(), 0);
+        assert!(gal.tow().abs() < 1e-9);
+        let gps = gal.to_gps();
+        assert_eq!(gps.wn(), c_bindings::GAL_WEEK_TO_GPS_WEEK as i16);
+        assert!(gps.tow().abs() < 1e-9);
+    }
+
+    #[test]
+    fn gps_to_bds() {
+        let gps = GpsTime::new_unchecked(
+            c_bindings::BDS_WEEK_TO_GPS_WEEK as i16,
+            c_bindings::BDS_SECOND_TO_GPS_SECOND as f64,
+        );
+        let bds = gps.to_bds();
+        assert_eq!(bds.wn(), 0);
+        assert!(bds.tow().abs() < 1e-9);
+        let gps = bds.to_gps();
+        assert_eq!(gps.wn(), c_bindings::BDS_WEEK_TO_GPS_WEEK as i16);
+        assert!((gps.tow() - c_bindings::BDS_SECOND_TO_GPS_SECOND as f64).abs() < 1e-9);
+    }
+
+    #[test]
+    fn gps_to_glo() {
+        let gps =
+            GpsTime::new_unchecked(c_bindings::GLO_EPOCH_WN as i16, c_bindings::GLO_EPOCH_TOW);
+        let glo = gps.to_glo_hardcoded();
+        assert_eq!(glo.nt(), 1);
+        assert_eq!(glo.n4(), 1);
+        assert_eq!(glo.h(), 0);
+        assert_eq!(glo.m(), 0);
+        assert!(glo.s().abs() < 1e-9);
+        let gps = glo.to_gps_hardcoded();
+        assert_eq!(gps.wn(), c_bindings::GLO_EPOCH_WN as i16);
+        assert!((gps.tow() - c_bindings::GLO_EPOCH_TOW as f64).abs() < 1e-9);
+    }
 }
