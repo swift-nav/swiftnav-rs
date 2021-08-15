@@ -298,6 +298,16 @@ pub struct GalTime {
 }
 
 impl GalTime {
+    pub fn new(wn: i16, tow: f64) -> Result<GalTime, InvalidGpsTime> {
+        if wn < -(c_bindings::GAL_WEEK_TO_GPS_WEEK as i16) {
+            Err(InvalidGpsTime::InvalidWN(wn))
+        } else if !tow.is_finite() || tow < 0. || tow >= WEEK.as_secs_f64() {
+            Err(InvalidGpsTime::InvalidTOW(tow))
+        } else {
+            Ok(GalTime { wn, tow })
+        }
+    }
+
     pub fn wn(&self) -> i16 {
         self.wn
     }
@@ -335,6 +345,16 @@ pub struct BdsTime {
 }
 
 impl BdsTime {
+    pub fn new(wn: i16, tow: f64) -> Result<BdsTime, InvalidGpsTime> {
+        if wn < -(c_bindings::BDS_WEEK_TO_GPS_WEEK as i16) {
+            Err(InvalidGpsTime::InvalidWN(wn))
+        } else if !tow.is_finite() || tow < 0. || tow >= WEEK.as_secs_f64() {
+            Err(InvalidGpsTime::InvalidTOW(tow))
+        } else {
+            Ok(BdsTime { wn, tow })
+        }
+    }
+
     pub fn wn(&self) -> i16 {
         self.wn
     }
@@ -1454,6 +1474,12 @@ mod tests {
         let gps = gal.to_gps();
         assert_eq!(gps.wn(), c_bindings::GAL_WEEK_TO_GPS_WEEK as i16);
         assert!(gps.tow().abs() < 1e-9);
+
+        assert!(GalTime::new(-1, 0.0).is_ok());
+        assert!(GalTime::new(-(c_bindings::GAL_WEEK_TO_GPS_WEEK as i16), 0.0).is_ok());
+        assert!(GalTime::new(-(c_bindings::GAL_WEEK_TO_GPS_WEEK as i16) - 1, 0.0).is_err());
+        assert!(GalTime::new(0, -1.0).is_err());
+        assert!(GalTime::new(0, c_bindings::WEEK_SECS as f64 + 1.0).is_err());
     }
 
     #[test]
@@ -1468,6 +1494,12 @@ mod tests {
         let gps = bds.to_gps();
         assert_eq!(gps.wn(), c_bindings::BDS_WEEK_TO_GPS_WEEK as i16);
         assert!((gps.tow() - c_bindings::BDS_SECOND_TO_GPS_SECOND as f64).abs() < 1e-9);
+
+        assert!(BdsTime::new(-1, 0.0).is_ok());
+        assert!(BdsTime::new(-(c_bindings::BDS_WEEK_TO_GPS_WEEK as i16), 0.0).is_ok());
+        assert!(BdsTime::new(-(c_bindings::BDS_WEEK_TO_GPS_WEEK as i16) - 1, 0.0).is_err());
+        assert!(BdsTime::new(0, -1.0).is_err());
+        assert!(BdsTime::new(0, c_bindings::WEEK_SECS as f64 + 1.0).is_err());
     }
 
     #[test]
