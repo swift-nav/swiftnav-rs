@@ -22,8 +22,11 @@ pub const WEEK: Duration = Duration::from_secs(c_bindings::WEEK_SECS as u64);
 #[derive(Copy, Clone)]
 pub struct GpsTime(c_bindings::gps_time_t);
 
+/// GPS timestamp of the start of Galileo time
 pub const GAL_TIME_START: GpsTime = GpsTime::new_unchecked(c_bindings::GAL_WEEK_TO_GPS_WEEK as i16, 0.0);
+/// GPS timestamp of the start of Beidou time
 pub const BDS_TIME_START: GpsTime = GpsTime::new_unchecked(c_bindings::BDS_WEEK_TO_GPS_WEEK as i16, c_bindings::BDS_SECOND_TO_GPS_SECOND as f64);
+/// GPS timestamp of the start of Glonass time
 pub const GLO_TIME_START: GpsTime = GpsTime::new_unchecked(c_bindings::GLO_EPOCH_WN as i16, c_bindings::GLO_EPOCH_TOW);
 
 #[derive(Debug, Copy, Clone, PartialOrd, PartialEq)]
@@ -174,6 +177,11 @@ impl GpsTime {
         GpsTime(unsafe { c_bindings::floor_to_epoch(self.c_ptr(), soln_freq) })
     }
 
+    /// Converts the GPS time into Galileo time
+    ///
+    /// # Panics
+    /// This function will panic if the GPS time is before the start of Galileo
+    /// time, i.e. [`GAL_TIME_START`]
     pub fn to_gal(self) -> GalTime {
         assert!(self.is_valid());
         assert!(self >= GAL_TIME_START);
@@ -183,6 +191,11 @@ impl GpsTime {
         }
     }
 
+    /// Converts the GPS time into Beidou time
+    ///
+    /// # Panics
+    /// This function will panic if the GPS time is before the start of Beidou
+    /// time, i.e. [`BDS_TIME_START`]
     pub fn to_bds(self) -> BdsTime {
         assert!(self.is_valid());
         assert!(self >= BDS_TIME_START);
@@ -198,6 +211,10 @@ impl GpsTime {
     }
 
     /// Converts a GPS time into a Glonass time
+    ///
+    /// # Panics
+    /// This function will panic if the GPS time is before the start of Glonass
+    /// time, i.e. [`GLO_TIME_START`]
     pub fn to_glo(self, utc_params: &UtcParams) -> GloTime {
         assert!(self.is_valid());
         assert!(self >= GLO_TIME_START);
@@ -209,6 +226,10 @@ impl GpsTime {
     ///
     /// Note: The hard coded list of leap seconds will get out of date, it is
     /// preferable to use [`GpsTime::to_glo()`] with the newest set of UTC parameters
+    ///
+    /// # Panics
+    /// This function will panic if the GPS time is before the start of Glonass
+    /// time, i.e. [`GLO_TIME_START`]
     pub fn to_glo_hardcoded(self) -> GloTime {
         assert!(self.is_valid());
         assert!(self >= GLO_TIME_START);
