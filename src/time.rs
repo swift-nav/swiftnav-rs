@@ -23,11 +23,16 @@ pub const WEEK: Duration = Duration::from_secs(c_bindings::WEEK_SECS as u64);
 pub struct GpsTime(c_bindings::gps_time_t);
 
 /// GPS timestamp of the start of Galileo time
-pub const GAL_TIME_START: GpsTime = GpsTime::new_unchecked(c_bindings::GAL_WEEK_TO_GPS_WEEK as i16, 0.0);
+pub const GAL_TIME_START: GpsTime =
+    GpsTime::new_unchecked(c_bindings::GAL_WEEK_TO_GPS_WEEK as i16, 0.0);
 /// GPS timestamp of the start of Beidou time
-pub const BDS_TIME_START: GpsTime = GpsTime::new_unchecked(c_bindings::BDS_WEEK_TO_GPS_WEEK as i16, c_bindings::BDS_SECOND_TO_GPS_SECOND as f64);
+pub const BDS_TIME_START: GpsTime = GpsTime::new_unchecked(
+    c_bindings::BDS_WEEK_TO_GPS_WEEK as i16,
+    c_bindings::BDS_SECOND_TO_GPS_SECOND as f64,
+);
 /// GPS timestamp of the start of Glonass time
-pub const GLO_TIME_START: GpsTime = GpsTime::new_unchecked(c_bindings::GLO_EPOCH_WN as i16, c_bindings::GLO_EPOCH_TOW);
+pub const GLO_TIME_START: GpsTime =
+    GpsTime::new_unchecked(c_bindings::GLO_EPOCH_WN as i16, c_bindings::GLO_EPOCH_TOW);
 
 #[derive(Debug, Copy, Clone, PartialOrd, PartialEq)]
 pub enum InvalidGpsTime {
