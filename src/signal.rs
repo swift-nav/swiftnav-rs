@@ -349,7 +349,7 @@ impl Code {
         }
     }
 
-    /// Attempts to make a `Code` from a string
+    /// Attempts to make a [`Code`] from a string
     pub fn from_c_str(s: &ffi::CStr) -> Result<Code, InvalidCode> {
         Self::from_code_t(unsafe { c_bindings::code_string_to_enum(s.as_ptr()) })
     }
@@ -359,7 +359,7 @@ impl Code {
         c_str.to_string_lossy()
     }
 
-    /// Gets  the corresponding `Constellation`
+    /// Gets  the corresponding [`Constellation`]
     pub fn to_constellation(&self) -> Constellation {
         Constellation::from_constellation_t(unsafe {
             c_bindings::code_to_constellation(self.to_code_t())
@@ -418,7 +418,7 @@ impl std::convert::TryFrom<u8> for Code {
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub struct GnssSignal(c_bindings::gnss_signal_t);
 
-/// Invalid values when creating a `GnssSignal` object
+/// Invalid values when creating a [`GnssSignal`] object
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 pub enum InvalidGnssSignal {
     /// The code integer value was invalid

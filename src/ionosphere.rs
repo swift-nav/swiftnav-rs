@@ -13,8 +13,7 @@
 //! parameters are broadcast by the GPS constellation. A function to decode the
 //! parameters from the raw subframe is provided.
 //!
-//! --------
-//! References:
+//! # References
 //!  * IS-GPS-200H, Section 20.3.3.5.2.5 and Figure 20-4
 
 use crate::{c_bindings, time::GpsTime};
@@ -75,9 +74,8 @@ impl Ionosphere {
     ///
     /// In inputs are the word values from Subframe 4 page 18.
     ///
-    /// --------
-    /// References:
-    /// * IS-GPS-200H, Section 20.3.3.5.1.7
+    /// # References
+    ///   * IS-GPS-200H, Section 20.3.3.5.1.7
     pub fn decode_parameters(words: &[u32; 8]) -> Result<Ionosphere, IonoDecodeFailure> {
         let mut iono = Ionosphere(c_bindings::ionosphere_t {
             toa: GpsTime::unknown(),

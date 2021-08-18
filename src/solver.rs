@@ -83,7 +83,6 @@ impl GnssSolution {
     /// in x, y, z (all receiver clock covariance terms are ignored).
     ///
     /// Index 6 is the GDOP.
-    ///
     pub fn err_cov(&self) -> Option<&[f64; 7]> {
         if self.pos_valid() {
             Some(&self.0.err_cov)

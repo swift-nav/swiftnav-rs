@@ -558,8 +558,8 @@ impl UtcParams {
     /// Note: Fills out the full time of week from current gps week cycle. Also
     /// sets t_lse to the exact GPS time at the start of the leap second event.
     ///
-    /// References:
-    /// -# IS-GPS-200H, Section 20.3.3.5.1.6
+    /// # References
+    ///   * IS-GPS-200H, Section 20.3.3.5.1.6
     pub fn decode(words: &[u32; 8]) -> Option<Self> {
         let mut params = UtcParams::default();
         let result = unsafe { c_bindings::decode_utc_parameters(words, params.mut_c_ptr()) };
