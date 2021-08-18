@@ -22,6 +22,18 @@ pub const WEEK: Duration = Duration::from_secs(c_bindings::WEEK_SECS as u64);
 #[derive(Copy, Clone)]
 pub struct GpsTime(c_bindings::gps_time_t);
 
+/// GPS timestamp of the start of Galileo time
+pub const GAL_TIME_START: GpsTime =
+    GpsTime::new_unchecked(c_bindings::GAL_WEEK_TO_GPS_WEEK as i16, 0.0);
+/// GPS timestamp of the start of Beidou time
+pub const BDS_TIME_START: GpsTime = GpsTime::new_unchecked(
+    c_bindings::BDS_WEEK_TO_GPS_WEEK as i16,
+    c_bindings::BDS_SECOND_TO_GPS_SECOND as f64,
+);
+/// GPS timestamp of the start of Glonass time
+pub const GLO_TIME_START: GpsTime =
+    GpsTime::new_unchecked(c_bindings::GLO_EPOCH_WN as i16, c_bindings::GLO_EPOCH_TOW);
+
 #[derive(Debug, Copy, Clone, PartialOrd, PartialEq)]
 pub enum InvalidGpsTime {
     InvalidWN(i16),
@@ -58,7 +70,7 @@ impl GpsTime {
 
     /// Makes a new GPS time object without checking the validity of the given
     /// values.
-    pub(crate) fn new_unchecked(wn: i16, tow: f64) -> GpsTime {
+    pub(crate) const fn new_unchecked(wn: i16, tow: f64) -> GpsTime {
         GpsTime(c_bindings::gps_time_t { wn, tow })
     }
 
@@ -121,7 +133,7 @@ impl GpsTime {
     /// seconds.
     ///
     /// Note: The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use `GpsTime::to_utc()` with the newest set of UTC parameters
+    /// preferable to use [`GpsTime::to_utc()`] with the newest set of UTC parameters
     pub fn to_utc_hardcoded(self) -> UtcTime {
         let mut utc = UtcTime::default();
         unsafe {
@@ -139,7 +151,7 @@ impl GpsTime {
     /// list of leap seconds
     ///
     /// Note: The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use `GpsTime::utc_offset_hardcoded()` with the newest set
+    /// preferable to use [`GpsTime::utc_offset_hardcoded()`] with the newest set
     /// of UTC parameters
     pub fn utc_offset_hardcoded(&self) -> f64 {
         unsafe { c_bindings::get_gps_utc_offset(self.c_ptr(), std::ptr::null()) }
@@ -154,7 +166,7 @@ impl GpsTime {
     /// hardcoded list of leap seconds
     ///
     /// Note: The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use `GpsTime::is_leap_second_event_hardcoded()` with the newest
+    /// preferable to use [`GpsTime::is_leap_second_event_hardcoded()`] with the newest
     /// set of UTC parameters
     pub fn is_leap_second_event_hardcoded(&self) -> bool {
         unsafe { c_bindings::is_leap_second_event(self.c_ptr(), std::ptr::null()) }
@@ -168,6 +180,65 @@ impl GpsTime {
     /// Gets the GPS time of the previous solution epoch
     pub fn floor_to_epoch(&self, soln_freq: f64) -> GpsTime {
         GpsTime(unsafe { c_bindings::floor_to_epoch(self.c_ptr(), soln_freq) })
+    }
+
+    /// Converts the GPS time into Galileo time
+    ///
+    /// # Panics
+    /// This function will panic if the GPS time is before the start of Galileo
+    /// time, i.e. [`GAL_TIME_START`]
+    pub fn to_gal(self) -> GalTime {
+        assert!(self.is_valid());
+        assert!(self >= GAL_TIME_START);
+        GalTime {
+            wn: self.wn() - c_bindings::GAL_WEEK_TO_GPS_WEEK as i16,
+            tow: self.tow(),
+        }
+    }
+
+    /// Converts the GPS time into Beidou time
+    ///
+    /// # Panics
+    /// This function will panic if the GPS time is before the start of Beidou
+    /// time, i.e. [`BDS_TIME_START`]
+    pub fn to_bds(self) -> BdsTime {
+        assert!(self.is_valid());
+        assert!(self >= BDS_TIME_START);
+        let bds = GpsTime::new_unchecked(
+            self.wn() - c_bindings::BDS_WEEK_TO_GPS_WEEK as i16,
+            self.tow(),
+        );
+        let bds = bds - Duration::from_secs(c_bindings::BDS_SECOND_TO_GPS_SECOND as u64);
+        BdsTime {
+            wn: bds.wn(),
+            tow: bds.tow(),
+        }
+    }
+
+    /// Converts a GPS time into a Glonass time
+    ///
+    /// # Panics
+    /// This function will panic if the GPS time is before the start of Glonass
+    /// time, i.e. [`GLO_TIME_START`]
+    pub fn to_glo(self, utc_params: &UtcParams) -> GloTime {
+        assert!(self.is_valid());
+        assert!(self >= GLO_TIME_START);
+        GloTime(unsafe { c_bindings::gps2glo(self.c_ptr(), utc_params.c_ptr()) })
+    }
+
+    /// Converts a GPS time into a Glonass time using the hardcoded list of leap
+    /// seconds.
+    ///
+    /// Note: The hard coded list of leap seconds will get out of date, it is
+    /// preferable to use [`GpsTime::to_glo()`] with the newest set of UTC parameters
+    ///
+    /// # Panics
+    /// This function will panic if the GPS time is before the start of Glonass
+    /// time, i.e. [`GLO_TIME_START`]
+    pub fn to_glo_hardcoded(self) -> GloTime {
+        assert!(self.is_valid());
+        assert!(self >= GLO_TIME_START);
+        GloTime(unsafe { c_bindings::gps2glo(self.c_ptr(), std::ptr::null()) })
     }
 }
 
@@ -242,6 +313,176 @@ impl Sub<Duration> for GpsTime {
 impl SubAssign<Duration> for GpsTime {
     fn sub_assign(&mut self, rhs: Duration) {
         self.subtract_duration(&rhs);
+    }
+}
+
+impl From<GalTime> for GpsTime {
+    fn from(gal: GalTime) -> Self {
+        gal.to_gps()
+    }
+}
+
+impl From<BdsTime> for GpsTime {
+    fn from(bds: BdsTime) -> Self {
+        bds.to_gps()
+    }
+}
+
+/// Representation of Galileo Time
+#[derive(Debug, Copy, Clone)]
+pub struct GalTime {
+    wn: i16,
+    tow: f64,
+}
+
+impl GalTime {
+    pub fn new(wn: i16, tow: f64) -> Result<GalTime, InvalidGpsTime> {
+        if wn < 0 {
+            Err(InvalidGpsTime::InvalidWN(wn))
+        } else if !tow.is_finite() || tow < 0. || tow >= WEEK.as_secs_f64() {
+            Err(InvalidGpsTime::InvalidTOW(tow))
+        } else {
+            Ok(GalTime { wn, tow })
+        }
+    }
+
+    pub fn wn(&self) -> i16 {
+        self.wn
+    }
+
+    pub fn tow(&self) -> f64 {
+        self.tow
+    }
+
+    pub fn to_gps(self) -> GpsTime {
+        GpsTime::new_unchecked(self.wn + c_bindings::GAL_WEEK_TO_GPS_WEEK as i16, self.tow)
+    }
+
+    pub fn to_bds(self) -> BdsTime {
+        self.to_gps().to_bds()
+    }
+}
+
+impl From<GpsTime> for GalTime {
+    fn from(gps: GpsTime) -> Self {
+        gps.to_gal()
+    }
+}
+
+impl From<BdsTime> for GalTime {
+    fn from(bds: BdsTime) -> Self {
+        bds.to_gal()
+    }
+}
+
+/// Representation of Beidou Time
+#[derive(Debug, Copy, Clone)]
+pub struct BdsTime {
+    wn: i16,
+    tow: f64,
+}
+
+impl BdsTime {
+    pub fn new(wn: i16, tow: f64) -> Result<BdsTime, InvalidGpsTime> {
+        if wn < 0 {
+            Err(InvalidGpsTime::InvalidWN(wn))
+        } else if !tow.is_finite() || tow < 0. || tow >= WEEK.as_secs_f64() {
+            Err(InvalidGpsTime::InvalidTOW(tow))
+        } else {
+            Ok(BdsTime { wn, tow })
+        }
+    }
+
+    pub fn wn(&self) -> i16 {
+        self.wn
+    }
+
+    pub fn tow(&self) -> f64 {
+        self.tow
+    }
+
+    pub fn to_gps(self) -> GpsTime {
+        let gps = GpsTime::new_unchecked(
+            self.wn() + c_bindings::BDS_WEEK_TO_GPS_WEEK as i16,
+            self.tow(),
+        );
+        gps + Duration::from_secs(c_bindings::BDS_SECOND_TO_GPS_SECOND as u64)
+    }
+
+    pub fn to_gal(self) -> GalTime {
+        self.to_gps().to_gal()
+    }
+}
+
+impl From<GpsTime> for BdsTime {
+    fn from(gps: GpsTime) -> Self {
+        gps.to_bds()
+    }
+}
+
+impl From<GalTime> for BdsTime {
+    fn from(gal: GalTime) -> Self {
+        gal.to_bds()
+    }
+}
+
+/// Representation of Glonass Time
+#[derive(Copy, Clone)]
+pub struct GloTime(c_bindings::glo_time_t);
+
+impl GloTime {
+    pub(crate) fn c_ptr(&self) -> *const c_bindings::glo_time_t {
+        &self.0
+    }
+
+    /// Creates a new GloTime
+    /// nt - Day number within the four-year interval [1-1461].
+    ///      Comes from the field NT in the GLO string 4.
+    ///
+    /// n4 - Four-year interval number starting from 1996 [1- ].
+    ///      Comes from the field N4 in the GLO string 5.
+    ///
+    /// h/m/s come either from the field tb in the GLO string 2
+    ///      or the field tk in the GLO string 1
+    /// h - Hours [0-24]
+    /// m - Minutes [0-59]
+    /// s - Seconds [0-60]
+    pub fn new(nt: u16, n4: u8, h: u8, m: u8, s: f64) -> GloTime {
+        GloTime(c_bindings::glo_time_t { nt, n4, h, m, s })
+    }
+
+    pub fn nt(&self) -> u16 {
+        self.0.nt
+    }
+
+    pub fn n4(&self) -> u8 {
+        self.0.n4
+    }
+
+    pub fn h(&self) -> u8 {
+        self.0.h
+    }
+
+    pub fn m(&self) -> u8 {
+        self.0.m
+    }
+
+    pub fn s(&self) -> f64 {
+        self.0.s
+    }
+
+    /// Converts a Glonass time into a GPS time
+    pub fn to_gps(self, utc_params: &UtcParams) -> GpsTime {
+        GpsTime(unsafe { c_bindings::glo2gps(self.c_ptr(), utc_params.c_ptr()) })
+    }
+
+    /// Converts a Glonass time into a GPS time using the hardcoded list of leap
+    /// seconds.
+    ///
+    /// Note: The hard coded list of leap seconds will get out of date, it is
+    /// preferable to use [`GloTime::to_gps()`] with the newest set of UTC parameters
+    pub fn to_gps_hardcoded(self) -> GpsTime {
+        GpsTime(unsafe { c_bindings::glo2gps(self.c_ptr(), std::ptr::null()) })
     }
 }
 
@@ -1260,5 +1501,46 @@ mod tests {
         assert_eq!(converted.hour(), swift_date.hour() as u32);
         assert_eq!(converted.minute(), swift_date.minute() as u32);
         assert_eq!(converted.second(), swift_date.seconds() as u32);
+    }
+
+    #[test]
+    fn gps_to_gal() {
+        let gal = GAL_TIME_START.to_gal();
+        assert_eq!(gal.wn(), 0);
+        assert!(gal.tow().abs() < 1e-9);
+        let gps = gal.to_gps();
+        assert_eq!(gps.wn(), c_bindings::GAL_WEEK_TO_GPS_WEEK as i16);
+        assert!(gps.tow().abs() < 1e-9);
+
+        assert!(GalTime::new(-1, 0.0).is_err());
+        assert!(GalTime::new(0, -1.0).is_err());
+        assert!(GalTime::new(0, c_bindings::WEEK_SECS as f64 + 1.0).is_err());
+    }
+
+    #[test]
+    fn gps_to_bds() {
+        let bds = BDS_TIME_START.to_bds();
+        assert_eq!(bds.wn(), 0);
+        assert!(bds.tow().abs() < 1e-9);
+        let gps = bds.to_gps();
+        assert_eq!(gps.wn(), c_bindings::BDS_WEEK_TO_GPS_WEEK as i16);
+        assert!((gps.tow() - c_bindings::BDS_SECOND_TO_GPS_SECOND as f64).abs() < 1e-9);
+
+        assert!(BdsTime::new(-1, 0.0).is_err());
+        assert!(BdsTime::new(0, -1.0).is_err());
+        assert!(BdsTime::new(0, c_bindings::WEEK_SECS as f64 + 1.0).is_err());
+    }
+
+    #[test]
+    fn gps_to_glo() {
+        let glo = GLO_TIME_START.to_glo_hardcoded();
+        assert_eq!(glo.nt(), 1);
+        assert_eq!(glo.n4(), 1);
+        assert_eq!(glo.h(), 0);
+        assert_eq!(glo.m(), 0);
+        assert!(glo.s().abs() < 1e-9);
+        let gps = glo.to_gps_hardcoded();
+        assert_eq!(gps.wn(), c_bindings::GLO_EPOCH_WN as i16);
+        assert!((gps.tow() - c_bindings::GLO_EPOCH_TOW as f64).abs() < 1e-9);
     }
 }
