@@ -6,6 +6,43 @@
 //! weeks since the start of GPS time, and a time of week counting the number of
 //! seconds since the beginning of the week. In GPS time the week begins at
 //! midnight on Sunday.
+//!
+//! [`GpsTime`] is the primary representation used in swiftnav-rs. Other time bases
+//! are available, such as [`Utctime`], [`GalTime`], [`BdsTime`], and [`GloTime`]
+//! along with conversions for all of these to and from [`GpsTime`].
+//! Not all functionality is available in these other representations, so it's
+//! intended that all times are to converted to [`GpsTime`] before use with
+//! swiftnav-rs.
+//!
+//! # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
+//! UTC time occasinally adds additional seconds to keep it synchronized with the
+//! slowly changing spin of the earth. This complicates time keeping, so most
+//! GNSS time bases ignore leap seconds and thus slowly grow out of sync with UTC.
+//! This is fine when dealing with GNSS data, but it's common that people want time
+//! to be represented as a UTC time since that's what people are more familiar with.
+//! swiftnav-rs provides ways to convert to and from UTC synchronized time bases
+//! and is able to correctly compensate for leap seconds in two ways.
+//!
+//! The first is by using the UTC conversion parameters broadcast by GNSS systems
+//! that receivers can decode. [`UtcParams`] is how swiftnav-rs represents this
+//! information, and [`UtcParams::decode()`] is provided for decoding the raw GPS
+//! navigation subframe with this information. This is the prefered method since it
+//! is usually available when processing raw GNSS data and ensures that the right
+//! offset is applied at the right time.
+//!
+//! The second way is to use a table of historical leap seconds that is compiled
+//! in to swftnav-rs. This list is kept up to date in the source code as new leap
+//! seconds are announced, but once the code is compiled there is no way to update
+//! this table with new leap seconds. This obviously means that sooner or later
+//! the hard coded leap second information will become out of date and the
+//! converted times will be inaccurate. This is fine if you are processing
+//! historical data, but processing live data runs the risk of an incorrect time
+//! conversion.
+//!
+//! When converting to or from a time base that uses leap seconds (i.e. [`UtcTime`]
+//! and [`GloTime`]) two functions are always provided, one which takes a
+//! [`UtcParams`] object to handle the leap second conversion and one which doesn't
+//! take a [`UtcParams`] object but has `_hardcoded` appended to the function name.
 
 use crate::c_bindings;
 use std::error::Error;
@@ -34,9 +71,12 @@ pub const BDS_TIME_START: GpsTime = GpsTime::new_unchecked(
 pub const GLO_TIME_START: GpsTime =
     GpsTime::new_unchecked(c_bindings::GLO_EPOCH_WN as i16, c_bindings::GLO_EPOCH_TOW);
 
+/// Error type when a given GPS time is not valid
 #[derive(Debug, Copy, Clone, PartialOrd, PartialEq)]
 pub enum InvalidGpsTime {
+    /// Indicates an invalid week number was given, with the invalid value returned
     InvalidWN(i16),
+    /// Indicates an invalid time of week was given, with the invalid value returned
     InvalidTOW(f64),
 }
 
@@ -121,7 +161,12 @@ impl GpsTime {
     }
 
     /// Converts the GPS time into UTC time
+    ///
+    /// # Panics
+    /// This function will panic if the GPS time is not valid
     pub fn to_utc(self, utc_params: &UtcParams) -> UtcTime {
+        assert!(self.is_valid());
+
         let mut utc = UtcTime::default();
         unsafe {
             c_bindings::gps2utc(self.c_ptr(), utc.mut_c_ptr(), utc_params.c_ptr());
@@ -132,9 +177,15 @@ impl GpsTime {
     /// Converts the GPS time into UTC time using the hardcoded list of leap
     /// seconds.
     ///
-    /// Note: The hard coded list of leap seconds will get out of date, it is
+    /// # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
+    /// The hard coded list of leap seconds will get out of date, it is
     /// preferable to use [`GpsTime::to_utc()`] with the newest set of UTC parameters
+    ///
+    /// # Panics
+    /// This function will panic if the GPS time is not valid
     pub fn to_utc_hardcoded(self) -> UtcTime {
+        assert!(self.is_valid());
+
         let mut utc = UtcTime::default();
         unsafe {
             c_bindings::gps2utc(self.c_ptr(), utc.mut_c_ptr(), std::ptr::null());
@@ -150,8 +201,9 @@ impl GpsTime {
     /// Gets the number of seconds difference between GPS and UTC using the hardcoded
     /// list of leap seconds
     ///
-    /// Note: The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use [`GpsTime::utc_offset_hardcoded()`] with the newest set
+    /// # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
+    /// The hard coded list of leap seconds will get out of date, it is
+    /// preferable to use [`GpsTime::utc_offset()`] with the newest set
     /// of UTC parameters
     pub fn utc_offset_hardcoded(&self) -> f64 {
         unsafe { c_bindings::get_gps_utc_offset(self.c_ptr(), std::ptr::null()) }
@@ -165,8 +217,9 @@ impl GpsTime {
     /// Checks to see if this point in time is a UTC leap second event using the
     /// hardcoded list of leap seconds
     ///
-    /// Note: The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use [`GpsTime::is_leap_second_event_hardcoded()`] with the newest
+    /// # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
+    /// The hard coded list of leap seconds will get out of date, it is
+    /// preferable to use [`GpsTime::is_leap_second_event()`] with the newest
     /// set of UTC parameters
     pub fn is_leap_second_event_hardcoded(&self) -> bool {
         unsafe { c_bindings::is_leap_second_event(self.c_ptr(), std::ptr::null()) }
@@ -229,7 +282,8 @@ impl GpsTime {
     /// Converts a GPS time into a Glonass time using the hardcoded list of leap
     /// seconds.
     ///
-    /// Note: The hard coded list of leap seconds will get out of date, it is
+    /// # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
+    /// The hard coded list of leap seconds will get out of date, it is
     /// preferable to use [`GpsTime::to_glo()`] with the newest set of UTC parameters
     ///
     /// # Panics
@@ -486,7 +540,7 @@ impl GloTime {
     }
 }
 
-/// Structure containing GPS UTC correction parameters
+/// GPS UTC correction parameters
 #[derive(Clone)]
 pub struct UtcParams(c_bindings::utc_params_t);
 
@@ -499,7 +553,7 @@ impl UtcParams {
         &self.0
     }
 
-    /// Decodes UTC parameters from GLS LNAV message subframe 4 words 6-10.
+    /// Decodes UTC parameters from GPS LNAV message subframe 4 words 6-10.
     ///
     /// Note: Fills out the full time of week from current gps week cycle. Also
     /// sets t_lse to the exact GPS time at the start of the leap second event.
@@ -518,6 +572,9 @@ impl UtcParams {
     }
 
     /// Build the UTC parameters from the already decoded parameters
+    ///
+    /// # Panics
+    /// This function will panic if either `tot` or `t_lse` are not valid
     pub fn from_components(
         a0: f64,
         a1: f64,
@@ -527,6 +584,8 @@ impl UtcParams {
         dt_ls: i8,
         dt_lsf: i8,
     ) -> UtcParams {
+        assert!(tot.is_valid() && t_lse.is_valid());
+
         let tot = tot.to_gps_time_t();
         let t_lse = t_lse.to_gps_time_t();
         UtcParams(c_bindings::utc_params_t {
@@ -576,7 +635,7 @@ impl Default for UtcParams {
     }
 }
 
-/// Structure representing UTC time
+/// Representation of UTC time
 ///
 /// Note: This implementation does not aim to be able to represent arbitrary dates and times.
 /// It is only meant to represent dates and times over the period that GNSS systems have been
@@ -722,7 +781,7 @@ impl<Tz: chrono::offset::TimeZone> From<chrono::DateTime<Tz>> for UtcTime {
     }
 }
 
-/// Structure representing a modified julian date (MJD)
+/// Representation of modified julian dates (MJD)
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
 pub struct MJD(f64);
 
