@@ -262,8 +262,8 @@ impl Ephemeris {
     ///
     /// `tot_tow` Is the time of transmission
     ///
-    /// References:
-    ///   -# IS-GPS-200D, Section 20.3.2 and Figure 20-1
+    /// # References
+    ///   * IS-GPS-200D, Section 20.3.2 and Figure 20-1
     pub fn decode_gps(frame_words: &[[u32; 8]; 3], tot_tow: f64) -> Ephemeris {
         let mut e = Ephemeris::default();
         unsafe {

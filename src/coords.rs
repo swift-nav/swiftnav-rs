@@ -40,7 +40,7 @@
 //! convergence rates compared to the quadratic rate of convergence seen with
 //! the more common algortihms based on the Newton-Raphson method.
 //!
-//! References:
+//! # References
 //!   * "A comparison of methods used in rectangular to Geodetic Coordinates
 //!      Transformations", Burtch R. R. (2006), American Congress for Surveying
 //!      and Mapping Annual Conference. Orlando, Florida.

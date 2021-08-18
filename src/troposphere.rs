@@ -12,8 +12,7 @@
 //! Tropospheric delays are typically modeled with the UNM3m model. The model
 //! parameters are hardcoded into the library, unlike the ionosphere model.
 //!
-//! -----------
-//! References:
+//! # References
 //!   * UNB Neutral Atmosphere Models: Development and Performance. R Leandro,
 //!      M Santos, and R B Langley
 use crate::{c_bindings, coords::ECEF, navmeas::NavigationMeasurement, time::GpsTime};
