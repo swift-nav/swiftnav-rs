@@ -6,7 +6,7 @@ use std::path::PathBuf;
 fn main() {
     println!("cargo:rerun-if-changed=build.rs");
 
-    let mut cmake = cmake::Config::new("../third-party/libswiftnav/");
+    let mut cmake = cmake::Config::new("src/libswiftnav/");
     let out_dir = env::var("OUT_DIR").unwrap();
 
     if !cfg!(feature = "testcpp") {
