@@ -10,7 +10,7 @@ license = "LGPL-3.0"
 
 [dependencies]
 chrono = { version = "0.4", optional = true }
-swiftnav-sys = { version = "^0.6.0", path = "../swiftnav-sys/" }
+swiftnav-sys = { version = "^0.6.1-alpha.0", path = "../swiftnav-sys/" }
 
 [features]
 chrono-support = ["chrono"]
