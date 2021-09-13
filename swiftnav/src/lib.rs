@@ -58,7 +58,6 @@
 //! This can be used to seed your own position estimation algorithm with a rough
 //! starting location.
 
-mod c_bindings;
 pub mod coords;
 pub mod edc;
 pub mod ephemeris;

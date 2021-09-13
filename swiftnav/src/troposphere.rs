@@ -15,24 +15,24 @@
 //! # References
 //!   * UNB Neutral Atmosphere Models: Development and Performance. R Leandro,
 //!      M Santos, and R B Langley
-use crate::{c_bindings, coords::ECEF, navmeas::NavigationMeasurement, time::GpsTime};
+use crate::{coords::ECEF, navmeas::NavigationMeasurement, time::GpsTime};
 
 ///  Calculate tropospheric delay using UNM3m model.
 ///
 /// Requires the time of the delay, the latitude (rad) and height (m) of the
 /// receiver, and the elevation of the satellite (rad)
 pub fn calc_delay(t: &GpsTime, lat: f64, h: f64, el: f64) -> f64 {
-    unsafe { c_bindings::calc_troposphere(t.c_ptr(), lat, h, el) }
+    unsafe { swiftnav_sys::calc_troposphere(t.c_ptr(), lat, h, el) }
 }
 
 /// Apply troposphere corrections to a set of measurements
 pub fn correct_measurements(pos: ECEF, measurements: &mut [NavigationMeasurement]) {
     assert!(measurements.len() <= std::u8::MAX as usize);
     unsafe {
-        c_bindings::correct_tropo(
+        swiftnav_sys::correct_tropo(
             pos.as_single_ptr(),
             measurements.len() as u8,
-            measurements.as_mut_ptr() as *mut c_bindings::navigation_measurement_t,
+            measurements.as_mut_ptr() as *mut swiftnav_sys::navigation_measurement_t,
         );
     }
 }

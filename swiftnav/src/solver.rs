@@ -13,7 +13,6 @@
 //! same point in time can be processed to get an estimated PVT (position,
 //! velocity, and time) solution.
 
-use crate::c_bindings;
 use crate::coords::{LLHRadians, ECEF, NED};
 use crate::navmeas::NavigationMeasurement;
 use crate::signal::GnssSignal;
@@ -24,7 +23,7 @@ use std::fmt;
 
 /// A position velocity and time solution
 #[derive(Debug, Clone, PartialOrd, PartialEq)]
-pub struct GnssSolution(c_bindings::gnss_solution);
+pub struct GnssSolution(swiftnav_sys::gnss_solution);
 
 impl GnssSolution {
     fn new() -> GnssSolution {
@@ -143,7 +142,7 @@ impl GnssSolution {
 /// DOP is a measurement of how the satellite geometry impacts the precision of
 /// the solution
 #[derive(Debug, Clone, PartialOrd, PartialEq)]
-pub struct Dops(c_bindings::dops_t);
+pub struct Dops(swiftnav_sys::dops_t);
 
 impl Dops {
     fn new() -> Dops {
@@ -186,16 +185,16 @@ pub enum ProcessingStrategy {
 }
 
 impl ProcessingStrategy {
-    pub(crate) fn to_processing_strategy_t(self) -> c_bindings::processing_strategy_t {
+    pub(crate) fn to_processing_strategy_t(self) -> swiftnav_sys::processing_strategy_t {
         match self {
-            ProcessingStrategy::GpsOnly => c_bindings::processing_strategy_t_GPS_ONLY,
+            ProcessingStrategy::GpsOnly => swiftnav_sys::processing_strategy_t_GPS_ONLY,
             ProcessingStrategy::AllConstellations => {
-                c_bindings::processing_strategy_t_ALL_CONSTELLATIONS
+                swiftnav_sys::processing_strategy_t_ALL_CONSTELLATIONS
             }
             ProcessingStrategy::GpsL1caWhenPossible => {
-                c_bindings::processing_strategy_t_GPS_L1CA_WHEN_POSSIBLE
+                swiftnav_sys::processing_strategy_t_GPS_L1CA_WHEN_POSSIBLE
             }
-            ProcessingStrategy::L1Only => c_bindings::processing_strategy_t_L1_ONLY,
+            ProcessingStrategy::L1Only => swiftnav_sys::processing_strategy_t_L1_ONLY,
         }
     }
 }
@@ -285,31 +284,31 @@ impl Default for PvtSettings {
 
 /// Set of signals used in calculating a GNSS solution
 #[derive(Clone)]
-pub struct SidSet(c_bindings::gnss_sid_set_t);
+pub struct SidSet(swiftnav_sys::gnss_sid_set_t);
 
 impl SidSet {
     /// Makes an empty set
     pub fn new() -> SidSet {
         unsafe {
             let mut ss = std::mem::zeroed::<SidSet>();
-            c_bindings::sid_set_init(&mut ss.0);
+            swiftnav_sys::sid_set_init(&mut ss.0);
             ss
         }
     }
 
     /// Gets the number of satellites in the set
     pub fn sat_count(&self) -> u32 {
-        unsafe { c_bindings::sid_set_get_sat_count(&self.0) }
+        unsafe { swiftnav_sys::sid_set_get_sat_count(&self.0) }
     }
 
     /// Gets the number of signals in the set
     pub fn sig_count(&self) -> u32 {
-        unsafe { c_bindings::sid_set_get_sig_count(&self.0) }
+        unsafe { swiftnav_sys::sid_set_get_sig_count(&self.0) }
     }
 
     /// Checks to see if a signal is present within the set
     pub fn contains(&self, sid: GnssSignal) -> bool {
-        unsafe { c_bindings::sid_set_contains(&self.0, sid.to_gnss_signal_t()) }
+        unsafe { swiftnav_sys::sid_set_contains(&self.0, sid.to_gnss_signal_t()) }
     }
 }
 
@@ -355,7 +354,7 @@ impl PvtError {
     pub fn as_string_lossy(&self) -> Cow<'static, str> {
         let index = *self as usize;
         unsafe {
-            let c_char_ptr = c_bindings::pvt_err_msg[index];
+            let c_char_ptr = swiftnav_sys::pvt_err_msg[index];
             ffi::CStr::from_ptr(c_char_ptr).to_string_lossy()
         }
     }
@@ -405,8 +404,8 @@ pub fn calc_pvt(
 
     let result = unsafe {
         let meas_ptr =
-            measurements.as_ptr() as *const [c_bindings::navigation_measurement_t; 0usize];
-        c_bindings::calc_PVT(
+            measurements.as_ptr() as *const [swiftnav_sys::navigation_measurement_t; 0usize];
+        swiftnav_sys::calc_PVT(
             measurements.len() as u8,
             meas_ptr,
             tor.c_ptr(),
@@ -1229,7 +1228,7 @@ mod tests {
 
     #[test]
     fn dops() {
-        let truedops = Dops(c_bindings::dops_t {
+        let truedops = Dops(swiftnav_sys::dops_t {
             pdop: 2.69955,
             gdop: 3.07696,
             tdop: 1.47652,

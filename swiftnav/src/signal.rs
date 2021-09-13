@@ -13,7 +13,6 @@
 //! identified by it's assigned number and the constellation it belongs to. Each
 //! satellite can send out multiple signals.
 
-use crate::c_bindings;
 use std::borrow::Cow;
 use std::error::Error;
 use std::ffi;
@@ -38,7 +37,7 @@ pub enum Constellation {
 
 /// Invalid constellation integer value
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct InvalidConstellation(c_bindings::constellation_t);
+pub struct InvalidConstellation(swiftnav_sys::constellation_t);
 
 impl fmt::Display for InvalidConstellation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -50,38 +49,38 @@ impl Error for InvalidConstellation {}
 
 impl Constellation {
     fn from_constellation_t(
-        value: c_bindings::constellation_t,
+        value: swiftnav_sys::constellation_t,
     ) -> Result<Constellation, InvalidConstellation> {
         match value {
-            c_bindings::constellation_e_CONSTELLATION_GPS => Ok(Constellation::Gps),
-            c_bindings::constellation_e_CONSTELLATION_SBAS => Ok(Constellation::Sbas),
-            c_bindings::constellation_e_CONSTELLATION_GLO => Ok(Constellation::Glo),
-            c_bindings::constellation_e_CONSTELLATION_BDS => Ok(Constellation::Bds),
-            c_bindings::constellation_e_CONSTELLATION_QZS => Ok(Constellation::Qzs),
-            c_bindings::constellation_e_CONSTELLATION_GAL => Ok(Constellation::Gal),
+            swiftnav_sys::constellation_e_CONSTELLATION_GPS => Ok(Constellation::Gps),
+            swiftnav_sys::constellation_e_CONSTELLATION_SBAS => Ok(Constellation::Sbas),
+            swiftnav_sys::constellation_e_CONSTELLATION_GLO => Ok(Constellation::Glo),
+            swiftnav_sys::constellation_e_CONSTELLATION_BDS => Ok(Constellation::Bds),
+            swiftnav_sys::constellation_e_CONSTELLATION_QZS => Ok(Constellation::Qzs),
+            swiftnav_sys::constellation_e_CONSTELLATION_GAL => Ok(Constellation::Gal),
             _ => Err(InvalidConstellation(value)),
         }
     }
 
-    pub(crate) fn to_constellation_t(self) -> c_bindings::constellation_t {
+    pub(crate) fn to_constellation_t(self) -> swiftnav_sys::constellation_t {
         match self {
-            Constellation::Gps => c_bindings::constellation_e_CONSTELLATION_GPS,
-            Constellation::Sbas => c_bindings::constellation_e_CONSTELLATION_SBAS,
-            Constellation::Glo => c_bindings::constellation_e_CONSTELLATION_GLO,
-            Constellation::Bds => c_bindings::constellation_e_CONSTELLATION_BDS,
-            Constellation::Qzs => c_bindings::constellation_e_CONSTELLATION_QZS,
-            Constellation::Gal => c_bindings::constellation_e_CONSTELLATION_GAL,
+            Constellation::Gps => swiftnav_sys::constellation_e_CONSTELLATION_GPS,
+            Constellation::Sbas => swiftnav_sys::constellation_e_CONSTELLATION_SBAS,
+            Constellation::Glo => swiftnav_sys::constellation_e_CONSTELLATION_GLO,
+            Constellation::Bds => swiftnav_sys::constellation_e_CONSTELLATION_BDS,
+            Constellation::Qzs => swiftnav_sys::constellation_e_CONSTELLATION_QZS,
+            Constellation::Gal => swiftnav_sys::constellation_e_CONSTELLATION_GAL,
         }
     }
 
     /// Gets the specified maximum number of active satellites for the constellation
     pub fn sat_count(&self) -> u16 {
-        unsafe { c_bindings::constellation_to_sat_count(*self as c_bindings::constellation_t) }
+        unsafe { swiftnav_sys::constellation_to_sat_count(*self as swiftnav_sys::constellation_t) }
     }
 
     pub fn to_str(&self) -> Cow<'static, str> {
         let c_str = unsafe {
-            ffi::CStr::from_ptr(c_bindings::constellation_to_string(
+            ffi::CStr::from_ptr(swiftnav_sys::constellation_to_string(
                 self.to_constellation_t(),
             ))
         };
@@ -92,7 +91,7 @@ impl Constellation {
 impl std::convert::TryFrom<u8> for Constellation {
     type Error = InvalidConstellation;
     fn try_from(value: u8) -> Result<Constellation, InvalidConstellation> {
-        Self::from_constellation_t(value as c_bindings::constellation_t)
+        Self::from_constellation_t(value as swiftnav_sys::constellation_t)
     }
 }
 
@@ -199,7 +198,7 @@ pub enum Code {
 
 /// Invalid code integer value
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct InvalidCode(c_bindings::code_t);
+pub struct InvalidCode(swiftnav_sys::code_t);
 
 impl fmt::Display for InvalidCode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -210,213 +209,213 @@ impl fmt::Display for InvalidCode {
 impl Error for InvalidCode {}
 
 impl Code {
-    pub(crate) fn from_code_t(value: c_bindings::code_t) -> Result<Code, InvalidCode> {
+    pub(crate) fn from_code_t(value: swiftnav_sys::code_t) -> Result<Code, InvalidCode> {
         match value {
-            c_bindings::code_e_CODE_GPS_L1CA => Ok(Code::GpsL1ca),
-            c_bindings::code_e_CODE_GPS_L2CM => Ok(Code::GpsL2cm),
-            c_bindings::code_e_CODE_SBAS_L1CA => Ok(Code::SbasL1ca),
-            c_bindings::code_e_CODE_GLO_L1OF => Ok(Code::GloL1of),
-            c_bindings::code_e_CODE_GLO_L2OF => Ok(Code::GloL2of),
-            c_bindings::code_e_CODE_GPS_L1P => Ok(Code::GpsL1p),
-            c_bindings::code_e_CODE_GPS_L2P => Ok(Code::GpsL2p),
-            c_bindings::code_e_CODE_GPS_L2CL => Ok(Code::GpsL2cl),
-            c_bindings::code_e_CODE_GPS_L2CX => Ok(Code::GpsL2cx),
-            c_bindings::code_e_CODE_GPS_L5I => Ok(Code::GpsL5i),
-            c_bindings::code_e_CODE_GPS_L5Q => Ok(Code::GpsL5q),
-            c_bindings::code_e_CODE_GPS_L5X => Ok(Code::GpsL5x),
-            c_bindings::code_e_CODE_BDS2_B1 => Ok(Code::Bds2B1),
-            c_bindings::code_e_CODE_BDS2_B2 => Ok(Code::Bds2B2),
-            c_bindings::code_e_CODE_GAL_E1B => Ok(Code::GalE1b),
-            c_bindings::code_e_CODE_GAL_E1C => Ok(Code::GalE1c),
-            c_bindings::code_e_CODE_GAL_E1X => Ok(Code::GalE1x),
-            c_bindings::code_e_CODE_GAL_E6B => Ok(Code::GalE6b),
-            c_bindings::code_e_CODE_GAL_E6C => Ok(Code::GalE6c),
-            c_bindings::code_e_CODE_GAL_E6X => Ok(Code::GalE6x),
-            c_bindings::code_e_CODE_GAL_E7I => Ok(Code::GalE7i),
-            c_bindings::code_e_CODE_GAL_E7Q => Ok(Code::GalE7q),
-            c_bindings::code_e_CODE_GAL_E7X => Ok(Code::GalE7x),
-            c_bindings::code_e_CODE_GAL_E8I => Ok(Code::GalE8i),
-            c_bindings::code_e_CODE_GAL_E8Q => Ok(Code::GalE8q),
-            c_bindings::code_e_CODE_GAL_E8X => Ok(Code::GalE8x),
-            c_bindings::code_e_CODE_GAL_E5I => Ok(Code::GalE5i),
-            c_bindings::code_e_CODE_GAL_E5Q => Ok(Code::GalE5q),
-            c_bindings::code_e_CODE_GAL_E5X => Ok(Code::GalE5x),
-            c_bindings::code_e_CODE_GLO_L1P => Ok(Code::GloL1p),
-            c_bindings::code_e_CODE_GLO_L2P => Ok(Code::GloL2p),
-            c_bindings::code_e_CODE_QZS_L1CA => Ok(Code::QzsL1ca),
-            c_bindings::code_e_CODE_QZS_L1CI => Ok(Code::QzsL1ci),
-            c_bindings::code_e_CODE_QZS_L1CQ => Ok(Code::QzsL1cq),
-            c_bindings::code_e_CODE_QZS_L1CX => Ok(Code::QzsL1cx),
-            c_bindings::code_e_CODE_QZS_L2CM => Ok(Code::QzsL2cm),
-            c_bindings::code_e_CODE_QZS_L2CL => Ok(Code::QzsL2cl),
-            c_bindings::code_e_CODE_QZS_L2CX => Ok(Code::QzsL2cx),
-            c_bindings::code_e_CODE_QZS_L5I => Ok(Code::QzsL5i),
-            c_bindings::code_e_CODE_QZS_L5Q => Ok(Code::QzsL5q),
-            c_bindings::code_e_CODE_QZS_L5X => Ok(Code::QzsL5x),
-            c_bindings::code_e_CODE_SBAS_L5I => Ok(Code::SbasL5i),
-            c_bindings::code_e_CODE_SBAS_L5Q => Ok(Code::SbasL5q),
-            c_bindings::code_e_CODE_SBAS_L5X => Ok(Code::SbasL5x),
-            c_bindings::code_e_CODE_BDS3_B1CI => Ok(Code::Bds3B1ci),
-            c_bindings::code_e_CODE_BDS3_B1CQ => Ok(Code::Bds3B1cq),
-            c_bindings::code_e_CODE_BDS3_B1CX => Ok(Code::Bds3B1cx),
-            c_bindings::code_e_CODE_BDS3_B5I => Ok(Code::Bds3B5i),
-            c_bindings::code_e_CODE_BDS3_B5Q => Ok(Code::Bds3B5q),
-            c_bindings::code_e_CODE_BDS3_B5X => Ok(Code::Bds3B5x),
-            c_bindings::code_e_CODE_BDS3_B7I => Ok(Code::Bds3B7i),
-            c_bindings::code_e_CODE_BDS3_B7Q => Ok(Code::Bds3B7q),
-            c_bindings::code_e_CODE_BDS3_B7X => Ok(Code::Bds3B7x),
-            c_bindings::code_e_CODE_BDS3_B3I => Ok(Code::Bds3B3i),
-            c_bindings::code_e_CODE_BDS3_B3Q => Ok(Code::Bds3B3q),
-            c_bindings::code_e_CODE_BDS3_B3X => Ok(Code::Bds3B3x),
-            c_bindings::code_e_CODE_GPS_L1CI => Ok(Code::GpsL1ci),
-            c_bindings::code_e_CODE_GPS_L1CQ => Ok(Code::GpsL1cq),
-            c_bindings::code_e_CODE_GPS_L1CX => Ok(Code::GpsL1cx),
-            c_bindings::code_e_CODE_AUX_GPS => Ok(Code::AuxGps),
-            c_bindings::code_e_CODE_AUX_SBAS => Ok(Code::AuxSbas),
-            c_bindings::code_e_CODE_AUX_GAL => Ok(Code::AuxGal),
-            c_bindings::code_e_CODE_AUX_QZS => Ok(Code::AuxQzs),
-            c_bindings::code_e_CODE_AUX_BDS => Ok(Code::AuxBds),
+            swiftnav_sys::code_e_CODE_GPS_L1CA => Ok(Code::GpsL1ca),
+            swiftnav_sys::code_e_CODE_GPS_L2CM => Ok(Code::GpsL2cm),
+            swiftnav_sys::code_e_CODE_SBAS_L1CA => Ok(Code::SbasL1ca),
+            swiftnav_sys::code_e_CODE_GLO_L1OF => Ok(Code::GloL1of),
+            swiftnav_sys::code_e_CODE_GLO_L2OF => Ok(Code::GloL2of),
+            swiftnav_sys::code_e_CODE_GPS_L1P => Ok(Code::GpsL1p),
+            swiftnav_sys::code_e_CODE_GPS_L2P => Ok(Code::GpsL2p),
+            swiftnav_sys::code_e_CODE_GPS_L2CL => Ok(Code::GpsL2cl),
+            swiftnav_sys::code_e_CODE_GPS_L2CX => Ok(Code::GpsL2cx),
+            swiftnav_sys::code_e_CODE_GPS_L5I => Ok(Code::GpsL5i),
+            swiftnav_sys::code_e_CODE_GPS_L5Q => Ok(Code::GpsL5q),
+            swiftnav_sys::code_e_CODE_GPS_L5X => Ok(Code::GpsL5x),
+            swiftnav_sys::code_e_CODE_BDS2_B1 => Ok(Code::Bds2B1),
+            swiftnav_sys::code_e_CODE_BDS2_B2 => Ok(Code::Bds2B2),
+            swiftnav_sys::code_e_CODE_GAL_E1B => Ok(Code::GalE1b),
+            swiftnav_sys::code_e_CODE_GAL_E1C => Ok(Code::GalE1c),
+            swiftnav_sys::code_e_CODE_GAL_E1X => Ok(Code::GalE1x),
+            swiftnav_sys::code_e_CODE_GAL_E6B => Ok(Code::GalE6b),
+            swiftnav_sys::code_e_CODE_GAL_E6C => Ok(Code::GalE6c),
+            swiftnav_sys::code_e_CODE_GAL_E6X => Ok(Code::GalE6x),
+            swiftnav_sys::code_e_CODE_GAL_E7I => Ok(Code::GalE7i),
+            swiftnav_sys::code_e_CODE_GAL_E7Q => Ok(Code::GalE7q),
+            swiftnav_sys::code_e_CODE_GAL_E7X => Ok(Code::GalE7x),
+            swiftnav_sys::code_e_CODE_GAL_E8I => Ok(Code::GalE8i),
+            swiftnav_sys::code_e_CODE_GAL_E8Q => Ok(Code::GalE8q),
+            swiftnav_sys::code_e_CODE_GAL_E8X => Ok(Code::GalE8x),
+            swiftnav_sys::code_e_CODE_GAL_E5I => Ok(Code::GalE5i),
+            swiftnav_sys::code_e_CODE_GAL_E5Q => Ok(Code::GalE5q),
+            swiftnav_sys::code_e_CODE_GAL_E5X => Ok(Code::GalE5x),
+            swiftnav_sys::code_e_CODE_GLO_L1P => Ok(Code::GloL1p),
+            swiftnav_sys::code_e_CODE_GLO_L2P => Ok(Code::GloL2p),
+            swiftnav_sys::code_e_CODE_QZS_L1CA => Ok(Code::QzsL1ca),
+            swiftnav_sys::code_e_CODE_QZS_L1CI => Ok(Code::QzsL1ci),
+            swiftnav_sys::code_e_CODE_QZS_L1CQ => Ok(Code::QzsL1cq),
+            swiftnav_sys::code_e_CODE_QZS_L1CX => Ok(Code::QzsL1cx),
+            swiftnav_sys::code_e_CODE_QZS_L2CM => Ok(Code::QzsL2cm),
+            swiftnav_sys::code_e_CODE_QZS_L2CL => Ok(Code::QzsL2cl),
+            swiftnav_sys::code_e_CODE_QZS_L2CX => Ok(Code::QzsL2cx),
+            swiftnav_sys::code_e_CODE_QZS_L5I => Ok(Code::QzsL5i),
+            swiftnav_sys::code_e_CODE_QZS_L5Q => Ok(Code::QzsL5q),
+            swiftnav_sys::code_e_CODE_QZS_L5X => Ok(Code::QzsL5x),
+            swiftnav_sys::code_e_CODE_SBAS_L5I => Ok(Code::SbasL5i),
+            swiftnav_sys::code_e_CODE_SBAS_L5Q => Ok(Code::SbasL5q),
+            swiftnav_sys::code_e_CODE_SBAS_L5X => Ok(Code::SbasL5x),
+            swiftnav_sys::code_e_CODE_BDS3_B1CI => Ok(Code::Bds3B1ci),
+            swiftnav_sys::code_e_CODE_BDS3_B1CQ => Ok(Code::Bds3B1cq),
+            swiftnav_sys::code_e_CODE_BDS3_B1CX => Ok(Code::Bds3B1cx),
+            swiftnav_sys::code_e_CODE_BDS3_B5I => Ok(Code::Bds3B5i),
+            swiftnav_sys::code_e_CODE_BDS3_B5Q => Ok(Code::Bds3B5q),
+            swiftnav_sys::code_e_CODE_BDS3_B5X => Ok(Code::Bds3B5x),
+            swiftnav_sys::code_e_CODE_BDS3_B7I => Ok(Code::Bds3B7i),
+            swiftnav_sys::code_e_CODE_BDS3_B7Q => Ok(Code::Bds3B7q),
+            swiftnav_sys::code_e_CODE_BDS3_B7X => Ok(Code::Bds3B7x),
+            swiftnav_sys::code_e_CODE_BDS3_B3I => Ok(Code::Bds3B3i),
+            swiftnav_sys::code_e_CODE_BDS3_B3Q => Ok(Code::Bds3B3q),
+            swiftnav_sys::code_e_CODE_BDS3_B3X => Ok(Code::Bds3B3x),
+            swiftnav_sys::code_e_CODE_GPS_L1CI => Ok(Code::GpsL1ci),
+            swiftnav_sys::code_e_CODE_GPS_L1CQ => Ok(Code::GpsL1cq),
+            swiftnav_sys::code_e_CODE_GPS_L1CX => Ok(Code::GpsL1cx),
+            swiftnav_sys::code_e_CODE_AUX_GPS => Ok(Code::AuxGps),
+            swiftnav_sys::code_e_CODE_AUX_SBAS => Ok(Code::AuxSbas),
+            swiftnav_sys::code_e_CODE_AUX_GAL => Ok(Code::AuxGal),
+            swiftnav_sys::code_e_CODE_AUX_QZS => Ok(Code::AuxQzs),
+            swiftnav_sys::code_e_CODE_AUX_BDS => Ok(Code::AuxBds),
             _ => Err(InvalidCode(value)),
         }
     }
 
-    pub(crate) fn to_code_t(self) -> c_bindings::code_t {
+    pub(crate) fn to_code_t(self) -> swiftnav_sys::code_t {
         match self {
-            Code::GpsL1ca => c_bindings::code_e_CODE_GPS_L1CA,
-            Code::GpsL2cm => c_bindings::code_e_CODE_GPS_L2CM,
-            Code::SbasL1ca => c_bindings::code_e_CODE_SBAS_L1CA,
-            Code::GloL1of => c_bindings::code_e_CODE_GLO_L1OF,
-            Code::GloL2of => c_bindings::code_e_CODE_GLO_L2OF,
-            Code::GpsL1p => c_bindings::code_e_CODE_GPS_L1P,
-            Code::GpsL2p => c_bindings::code_e_CODE_GPS_L2P,
-            Code::GpsL2cl => c_bindings::code_e_CODE_GPS_L2CL,
-            Code::GpsL2cx => c_bindings::code_e_CODE_GPS_L2CX,
-            Code::GpsL5i => c_bindings::code_e_CODE_GPS_L5I,
-            Code::GpsL5q => c_bindings::code_e_CODE_GPS_L5Q,
-            Code::GpsL5x => c_bindings::code_e_CODE_GPS_L5X,
-            Code::Bds2B1 => c_bindings::code_e_CODE_BDS2_B1,
-            Code::Bds2B2 => c_bindings::code_e_CODE_BDS2_B2,
-            Code::GalE1b => c_bindings::code_e_CODE_GAL_E1B,
-            Code::GalE1c => c_bindings::code_e_CODE_GAL_E1C,
-            Code::GalE1x => c_bindings::code_e_CODE_GAL_E1X,
-            Code::GalE6b => c_bindings::code_e_CODE_GAL_E6B,
-            Code::GalE6c => c_bindings::code_e_CODE_GAL_E6C,
-            Code::GalE6x => c_bindings::code_e_CODE_GAL_E6X,
-            Code::GalE7i => c_bindings::code_e_CODE_GAL_E7I,
-            Code::GalE7q => c_bindings::code_e_CODE_GAL_E7Q,
-            Code::GalE7x => c_bindings::code_e_CODE_GAL_E7X,
-            Code::GalE8i => c_bindings::code_e_CODE_GAL_E8I,
-            Code::GalE8q => c_bindings::code_e_CODE_GAL_E8Q,
-            Code::GalE8x => c_bindings::code_e_CODE_GAL_E8X,
-            Code::GalE5i => c_bindings::code_e_CODE_GAL_E5I,
-            Code::GalE5q => c_bindings::code_e_CODE_GAL_E5Q,
-            Code::GalE5x => c_bindings::code_e_CODE_GAL_E5X,
-            Code::GloL1p => c_bindings::code_e_CODE_GLO_L1P,
-            Code::GloL2p => c_bindings::code_e_CODE_GLO_L2P,
-            Code::QzsL1ca => c_bindings::code_e_CODE_QZS_L1CA,
-            Code::QzsL1ci => c_bindings::code_e_CODE_QZS_L1CI,
-            Code::QzsL1cq => c_bindings::code_e_CODE_QZS_L1CQ,
-            Code::QzsL1cx => c_bindings::code_e_CODE_QZS_L1CX,
-            Code::QzsL2cm => c_bindings::code_e_CODE_QZS_L2CM,
-            Code::QzsL2cl => c_bindings::code_e_CODE_QZS_L2CL,
-            Code::QzsL2cx => c_bindings::code_e_CODE_QZS_L2CX,
-            Code::QzsL5i => c_bindings::code_e_CODE_QZS_L5I,
-            Code::QzsL5q => c_bindings::code_e_CODE_QZS_L5Q,
-            Code::QzsL5x => c_bindings::code_e_CODE_QZS_L5X,
-            Code::SbasL5i => c_bindings::code_e_CODE_SBAS_L5I,
-            Code::SbasL5q => c_bindings::code_e_CODE_SBAS_L5Q,
-            Code::SbasL5x => c_bindings::code_e_CODE_SBAS_L5X,
-            Code::Bds3B1ci => c_bindings::code_e_CODE_BDS3_B1CI,
-            Code::Bds3B1cq => c_bindings::code_e_CODE_BDS3_B1CQ,
-            Code::Bds3B1cx => c_bindings::code_e_CODE_BDS3_B1CX,
-            Code::Bds3B5i => c_bindings::code_e_CODE_BDS3_B5I,
-            Code::Bds3B5q => c_bindings::code_e_CODE_BDS3_B5Q,
-            Code::Bds3B5x => c_bindings::code_e_CODE_BDS3_B5X,
-            Code::Bds3B7i => c_bindings::code_e_CODE_BDS3_B7I,
-            Code::Bds3B7q => c_bindings::code_e_CODE_BDS3_B7Q,
-            Code::Bds3B7x => c_bindings::code_e_CODE_BDS3_B7X,
-            Code::Bds3B3i => c_bindings::code_e_CODE_BDS3_B3I,
-            Code::Bds3B3q => c_bindings::code_e_CODE_BDS3_B3Q,
-            Code::Bds3B3x => c_bindings::code_e_CODE_BDS3_B3X,
-            Code::GpsL1ci => c_bindings::code_e_CODE_GPS_L1CI,
-            Code::GpsL1cq => c_bindings::code_e_CODE_GPS_L1CQ,
-            Code::GpsL1cx => c_bindings::code_e_CODE_GPS_L1CX,
-            Code::AuxGps => c_bindings::code_e_CODE_AUX_GPS,
-            Code::AuxSbas => c_bindings::code_e_CODE_AUX_SBAS,
-            Code::AuxGal => c_bindings::code_e_CODE_AUX_GAL,
-            Code::AuxQzs => c_bindings::code_e_CODE_AUX_QZS,
-            Code::AuxBds => c_bindings::code_e_CODE_AUX_BDS,
+            Code::GpsL1ca => swiftnav_sys::code_e_CODE_GPS_L1CA,
+            Code::GpsL2cm => swiftnav_sys::code_e_CODE_GPS_L2CM,
+            Code::SbasL1ca => swiftnav_sys::code_e_CODE_SBAS_L1CA,
+            Code::GloL1of => swiftnav_sys::code_e_CODE_GLO_L1OF,
+            Code::GloL2of => swiftnav_sys::code_e_CODE_GLO_L2OF,
+            Code::GpsL1p => swiftnav_sys::code_e_CODE_GPS_L1P,
+            Code::GpsL2p => swiftnav_sys::code_e_CODE_GPS_L2P,
+            Code::GpsL2cl => swiftnav_sys::code_e_CODE_GPS_L2CL,
+            Code::GpsL2cx => swiftnav_sys::code_e_CODE_GPS_L2CX,
+            Code::GpsL5i => swiftnav_sys::code_e_CODE_GPS_L5I,
+            Code::GpsL5q => swiftnav_sys::code_e_CODE_GPS_L5Q,
+            Code::GpsL5x => swiftnav_sys::code_e_CODE_GPS_L5X,
+            Code::Bds2B1 => swiftnav_sys::code_e_CODE_BDS2_B1,
+            Code::Bds2B2 => swiftnav_sys::code_e_CODE_BDS2_B2,
+            Code::GalE1b => swiftnav_sys::code_e_CODE_GAL_E1B,
+            Code::GalE1c => swiftnav_sys::code_e_CODE_GAL_E1C,
+            Code::GalE1x => swiftnav_sys::code_e_CODE_GAL_E1X,
+            Code::GalE6b => swiftnav_sys::code_e_CODE_GAL_E6B,
+            Code::GalE6c => swiftnav_sys::code_e_CODE_GAL_E6C,
+            Code::GalE6x => swiftnav_sys::code_e_CODE_GAL_E6X,
+            Code::GalE7i => swiftnav_sys::code_e_CODE_GAL_E7I,
+            Code::GalE7q => swiftnav_sys::code_e_CODE_GAL_E7Q,
+            Code::GalE7x => swiftnav_sys::code_e_CODE_GAL_E7X,
+            Code::GalE8i => swiftnav_sys::code_e_CODE_GAL_E8I,
+            Code::GalE8q => swiftnav_sys::code_e_CODE_GAL_E8Q,
+            Code::GalE8x => swiftnav_sys::code_e_CODE_GAL_E8X,
+            Code::GalE5i => swiftnav_sys::code_e_CODE_GAL_E5I,
+            Code::GalE5q => swiftnav_sys::code_e_CODE_GAL_E5Q,
+            Code::GalE5x => swiftnav_sys::code_e_CODE_GAL_E5X,
+            Code::GloL1p => swiftnav_sys::code_e_CODE_GLO_L1P,
+            Code::GloL2p => swiftnav_sys::code_e_CODE_GLO_L2P,
+            Code::QzsL1ca => swiftnav_sys::code_e_CODE_QZS_L1CA,
+            Code::QzsL1ci => swiftnav_sys::code_e_CODE_QZS_L1CI,
+            Code::QzsL1cq => swiftnav_sys::code_e_CODE_QZS_L1CQ,
+            Code::QzsL1cx => swiftnav_sys::code_e_CODE_QZS_L1CX,
+            Code::QzsL2cm => swiftnav_sys::code_e_CODE_QZS_L2CM,
+            Code::QzsL2cl => swiftnav_sys::code_e_CODE_QZS_L2CL,
+            Code::QzsL2cx => swiftnav_sys::code_e_CODE_QZS_L2CX,
+            Code::QzsL5i => swiftnav_sys::code_e_CODE_QZS_L5I,
+            Code::QzsL5q => swiftnav_sys::code_e_CODE_QZS_L5Q,
+            Code::QzsL5x => swiftnav_sys::code_e_CODE_QZS_L5X,
+            Code::SbasL5i => swiftnav_sys::code_e_CODE_SBAS_L5I,
+            Code::SbasL5q => swiftnav_sys::code_e_CODE_SBAS_L5Q,
+            Code::SbasL5x => swiftnav_sys::code_e_CODE_SBAS_L5X,
+            Code::Bds3B1ci => swiftnav_sys::code_e_CODE_BDS3_B1CI,
+            Code::Bds3B1cq => swiftnav_sys::code_e_CODE_BDS3_B1CQ,
+            Code::Bds3B1cx => swiftnav_sys::code_e_CODE_BDS3_B1CX,
+            Code::Bds3B5i => swiftnav_sys::code_e_CODE_BDS3_B5I,
+            Code::Bds3B5q => swiftnav_sys::code_e_CODE_BDS3_B5Q,
+            Code::Bds3B5x => swiftnav_sys::code_e_CODE_BDS3_B5X,
+            Code::Bds3B7i => swiftnav_sys::code_e_CODE_BDS3_B7I,
+            Code::Bds3B7q => swiftnav_sys::code_e_CODE_BDS3_B7Q,
+            Code::Bds3B7x => swiftnav_sys::code_e_CODE_BDS3_B7X,
+            Code::Bds3B3i => swiftnav_sys::code_e_CODE_BDS3_B3I,
+            Code::Bds3B3q => swiftnav_sys::code_e_CODE_BDS3_B3Q,
+            Code::Bds3B3x => swiftnav_sys::code_e_CODE_BDS3_B3X,
+            Code::GpsL1ci => swiftnav_sys::code_e_CODE_GPS_L1CI,
+            Code::GpsL1cq => swiftnav_sys::code_e_CODE_GPS_L1CQ,
+            Code::GpsL1cx => swiftnav_sys::code_e_CODE_GPS_L1CX,
+            Code::AuxGps => swiftnav_sys::code_e_CODE_AUX_GPS,
+            Code::AuxSbas => swiftnav_sys::code_e_CODE_AUX_SBAS,
+            Code::AuxGal => swiftnav_sys::code_e_CODE_AUX_GAL,
+            Code::AuxQzs => swiftnav_sys::code_e_CODE_AUX_QZS,
+            Code::AuxBds => swiftnav_sys::code_e_CODE_AUX_BDS,
         }
     }
 
     /// Attempts to make a [`Code`] from a string
     pub fn from_c_str(s: &ffi::CStr) -> Result<Code, InvalidCode> {
-        Self::from_code_t(unsafe { c_bindings::code_string_to_enum(s.as_ptr()) })
+        Self::from_code_t(unsafe { swiftnav_sys::code_string_to_enum(s.as_ptr()) })
     }
 
     pub fn to_str(&self) -> Cow<'static, str> {
-        let c_str = unsafe { ffi::CStr::from_ptr(c_bindings::code_to_string(self.to_code_t())) };
+        let c_str = unsafe { ffi::CStr::from_ptr(swiftnav_sys::code_to_string(self.to_code_t())) };
         c_str.to_string_lossy()
     }
 
     /// Gets  the corresponding [`Constellation`]
     pub fn to_constellation(&self) -> Constellation {
         Constellation::from_constellation_t(unsafe {
-            c_bindings::code_to_constellation(self.to_code_t())
+            swiftnav_sys::code_to_constellation(self.to_code_t())
         })
         .unwrap()
     }
 
     /// Get the number of signals for a code
     pub fn sig_count(&self) -> u16 {
-        unsafe { c_bindings::code_to_sig_count(self.to_code_t()) }
+        unsafe { swiftnav_sys::code_to_sig_count(self.to_code_t()) }
     }
 
     /// Get the chips count of a code
     pub fn chip_count(&self) -> u32 {
-        unsafe { c_bindings::code_to_chip_count(self.to_code_t()) }
+        unsafe { swiftnav_sys::code_to_chip_count(self.to_code_t()) }
     }
 
     /// Get the chips rate of a code
     pub fn chip_rate(&self) -> f64 {
-        unsafe { c_bindings::code_to_chip_rate(self.to_code_t()) }
+        unsafe { swiftnav_sys::code_to_chip_rate(self.to_code_t()) }
     }
 
     pub fn is_gps(&self) -> bool {
-        unsafe { c_bindings::is_gps(self.to_code_t()) }
+        unsafe { swiftnav_sys::is_gps(self.to_code_t()) }
     }
 
     pub fn is_sbas(&self) -> bool {
-        unsafe { c_bindings::is_sbas(self.to_code_t()) }
+        unsafe { swiftnav_sys::is_sbas(self.to_code_t()) }
     }
 
     pub fn is_glo(&self) -> bool {
-        unsafe { c_bindings::is_glo(self.to_code_t()) }
+        unsafe { swiftnav_sys::is_glo(self.to_code_t()) }
     }
 
     pub fn is_bds2(&self) -> bool {
-        unsafe { c_bindings::is_bds2(self.to_code_t()) }
+        unsafe { swiftnav_sys::is_bds2(self.to_code_t()) }
     }
 
     pub fn is_gal(&self) -> bool {
-        unsafe { c_bindings::is_gal(self.to_code_t()) }
+        unsafe { swiftnav_sys::is_gal(self.to_code_t()) }
     }
 
     pub fn is_qzss(&self) -> bool {
-        unsafe { c_bindings::is_qzss(self.to_code_t()) }
+        unsafe { swiftnav_sys::is_qzss(self.to_code_t()) }
     }
 }
 
 impl std::convert::TryFrom<u8> for Code {
     type Error = InvalidCode;
     fn try_from(value: u8) -> Result<Code, InvalidCode> {
-        Self::from_code_t(value as c_bindings::code_t)
+        Self::from_code_t(value as swiftnav_sys::code_t)
     }
 }
 
 /// GNSS Signal identifier
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct GnssSignal(c_bindings::gnss_signal_t);
+pub struct GnssSignal(swiftnav_sys::gnss_signal_t);
 
 /// Invalid values when creating a [`GnssSignal`] object
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
@@ -449,8 +448,8 @@ impl From<InvalidCode> for InvalidGnssSignal {
 impl GnssSignal {
     pub fn new(sat: u16, code: Code) -> Result<GnssSignal, InvalidGnssSignal> {
         let code = code.to_code_t();
-        let sid = c_bindings::gnss_signal_t { sat, code };
-        let sid_is_valid = unsafe { c_bindings::sid_valid(sid) };
+        let sid = swiftnav_sys::gnss_signal_t { sat, code };
+        let sid_is_valid = unsafe { swiftnav_sys::sid_valid(sid) };
         if sid_is_valid {
             Ok(GnssSignal(sid))
         } else {
@@ -459,12 +458,12 @@ impl GnssSignal {
     }
 
     pub(crate) fn from_gnss_signal_t(
-        sid: c_bindings::gnss_signal_t,
+        sid: swiftnav_sys::gnss_signal_t,
     ) -> Result<GnssSignal, InvalidGnssSignal> {
         GnssSignal::new(sid.sat, Code::from_code_t(sid.code)?)
     }
 
-    pub(crate) fn to_gnss_signal_t(self) -> c_bindings::gnss_signal_t {
+    pub(crate) fn to_gnss_signal_t(self) -> swiftnav_sys::gnss_signal_t {
         self.0
     }
 
@@ -478,13 +477,13 @@ impl GnssSignal {
 
     /// Get the constellation of the signal
     pub fn to_constellation(&self) -> Constellation {
-        Constellation::from_constellation_t(unsafe { c_bindings::sid_to_constellation(self.0) })
+        Constellation::from_constellation_t(unsafe { swiftnav_sys::sid_to_constellation(self.0) })
             .unwrap()
     }
 
     /// Get the carrier frequency of the signal
     pub fn carrier_frequency(&self) -> f64 {
-        unsafe { c_bindings::sid_to_carr_freq(self.0) }
+        unsafe { swiftnav_sys::sid_to_carr_freq(self.0) }
     }
 }
 
@@ -906,8 +905,8 @@ mod tests {
 
     #[test]
     fn invalid_sats() {
-        let first = c_bindings::GPS_FIRST_PRN;
-        let last = c_bindings::GPS_FIRST_PRN + c_bindings::NUM_SATS_GPS;
+        let first = swiftnav_sys::GPS_FIRST_PRN;
+        let last = swiftnav_sys::GPS_FIRST_PRN + swiftnav_sys::NUM_SATS_GPS;
         for sat in (first - 1)..(last + 2) {
             let result = GnssSignal::new(sat as u16, Code::GpsL1ca);
             if sat < first || sat >= last {
@@ -921,8 +920,8 @@ mod tests {
             }
         }
 
-        let first = c_bindings::SBAS_FIRST_PRN;
-        let last = c_bindings::SBAS_FIRST_PRN + c_bindings::NUM_SATS_SBAS;
+        let first = swiftnav_sys::SBAS_FIRST_PRN;
+        let last = swiftnav_sys::SBAS_FIRST_PRN + swiftnav_sys::NUM_SATS_SBAS;
         for sat in (first - 1)..(last + 2) {
             let result = GnssSignal::new(sat as u16, Code::SbasL1ca);
             if sat < first || sat >= last {
@@ -936,8 +935,8 @@ mod tests {
             }
         }
 
-        let first = c_bindings::GLO_FIRST_PRN;
-        let last = c_bindings::GLO_FIRST_PRN + c_bindings::NUM_SATS_GLO;
+        let first = swiftnav_sys::GLO_FIRST_PRN;
+        let last = swiftnav_sys::GLO_FIRST_PRN + swiftnav_sys::NUM_SATS_GLO;
         for sat in (first - 1)..(last + 2) {
             let result = GnssSignal::new(sat as u16, Code::GloL1of);
             if sat < first || sat >= last {
@@ -951,8 +950,8 @@ mod tests {
             }
         }
 
-        let first = c_bindings::BDS_FIRST_PRN;
-        let last = c_bindings::BDS_FIRST_PRN + c_bindings::NUM_SATS_BDS;
+        let first = swiftnav_sys::BDS_FIRST_PRN;
+        let last = swiftnav_sys::BDS_FIRST_PRN + swiftnav_sys::NUM_SATS_BDS;
         for sat in (first - 1)..(last + 2) {
             let result = GnssSignal::new(sat as u16, Code::Bds2B1);
             if sat < first || sat >= last {
@@ -966,8 +965,8 @@ mod tests {
             }
         }
 
-        let first = c_bindings::GAL_FIRST_PRN;
-        let last = c_bindings::GAL_FIRST_PRN + c_bindings::NUM_SATS_GAL;
+        let first = swiftnav_sys::GAL_FIRST_PRN;
+        let last = swiftnav_sys::GAL_FIRST_PRN + swiftnav_sys::NUM_SATS_GAL;
         for sat in (first - 1)..(last + 2) {
             let result = GnssSignal::new(sat as u16, Code::GalE1b);
             if sat < first || sat >= last {
@@ -981,8 +980,8 @@ mod tests {
             }
         }
 
-        let first = c_bindings::QZS_FIRST_PRN;
-        let last = c_bindings::QZS_FIRST_PRN + c_bindings::NUM_SATS_QZS;
+        let first = swiftnav_sys::QZS_FIRST_PRN;
+        let last = swiftnav_sys::QZS_FIRST_PRN + swiftnav_sys::NUM_SATS_QZS;
         for sat in (first - 1)..(last + 2) {
             let result = GnssSignal::new(sat as u16, Code::QzsL1ca);
             if sat < first || sat >= last {

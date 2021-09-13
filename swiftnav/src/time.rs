@@ -44,32 +44,33 @@
 //! [`UtcParams`] object to handle the leap second conversion and one which doesn't
 //! take a [`UtcParams`] object but has `_hardcoded` appended to the function name.
 
-use crate::c_bindings;
 use std::error::Error;
 use std::fmt;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::time::Duration;
 
-pub const MINUTE: Duration = Duration::from_secs(c_bindings::MINUTE_SECS as u64);
-pub const HOUR: Duration = Duration::from_secs(c_bindings::HOUR_SECS as u64);
-pub const DAY: Duration = Duration::from_secs(c_bindings::DAY_SECS as u64);
-pub const WEEK: Duration = Duration::from_secs(c_bindings::WEEK_SECS as u64);
+pub const MINUTE: Duration = Duration::from_secs(swiftnav_sys::MINUTE_SECS as u64);
+pub const HOUR: Duration = Duration::from_secs(swiftnav_sys::HOUR_SECS as u64);
+pub const DAY: Duration = Duration::from_secs(swiftnav_sys::DAY_SECS as u64);
+pub const WEEK: Duration = Duration::from_secs(swiftnav_sys::WEEK_SECS as u64);
 
 /// Representation of GPS Time
 #[derive(Copy, Clone)]
-pub struct GpsTime(c_bindings::gps_time_t);
+pub struct GpsTime(swiftnav_sys::gps_time_t);
 
 /// GPS timestamp of the start of Galileo time
 pub const GAL_TIME_START: GpsTime =
-    GpsTime::new_unchecked(c_bindings::GAL_WEEK_TO_GPS_WEEK as i16, 0.0);
+    GpsTime::new_unchecked(swiftnav_sys::GAL_WEEK_TO_GPS_WEEK as i16, 0.0);
 /// GPS timestamp of the start of Beidou time
 pub const BDS_TIME_START: GpsTime = GpsTime::new_unchecked(
-    c_bindings::BDS_WEEK_TO_GPS_WEEK as i16,
-    c_bindings::BDS_SECOND_TO_GPS_SECOND as f64,
+    swiftnav_sys::BDS_WEEK_TO_GPS_WEEK as i16,
+    swiftnav_sys::BDS_SECOND_TO_GPS_SECOND as f64,
 );
 /// GPS timestamp of the start of Glonass time
-pub const GLO_TIME_START: GpsTime =
-    GpsTime::new_unchecked(c_bindings::GLO_EPOCH_WN as i16, c_bindings::GLO_EPOCH_TOW);
+pub const GLO_TIME_START: GpsTime = GpsTime::new_unchecked(
+    swiftnav_sys::GLO_EPOCH_WN as i16,
+    swiftnav_sys::GLO_EPOCH_TOW,
+);
 
 /// Error type when a given GPS time is not valid
 #[derive(Debug, Copy, Clone, PartialOrd, PartialEq)]
@@ -92,7 +93,7 @@ impl fmt::Display for InvalidGpsTime {
 impl Error for InvalidGpsTime {}
 
 impl GpsTime {
-    const JIFFY: f64 = c_bindings::FLOAT_EQUALITY_EPS;
+    const JIFFY: f64 = swiftnav_sys::FLOAT_EQUALITY_EPS;
 
     /// Makes a new GPS time object and checks the validity of the given values.
     ///
@@ -111,19 +112,19 @@ impl GpsTime {
     /// Makes a new GPS time object without checking the validity of the given
     /// values.
     pub(crate) const fn new_unchecked(wn: i16, tow: f64) -> GpsTime {
-        GpsTime(c_bindings::gps_time_t { wn, tow })
+        GpsTime(swiftnav_sys::gps_time_t { wn, tow })
     }
 
-    pub(crate) fn to_gps_time_t(self) -> c_bindings::gps_time_t {
+    pub(crate) fn to_gps_time_t(self) -> swiftnav_sys::gps_time_t {
         self.0
     }
 
-    pub(crate) fn c_ptr(&self) -> *const c_bindings::gps_time_t {
+    pub(crate) fn c_ptr(&self) -> *const swiftnav_sys::gps_time_t {
         &self.0
     }
 
-    pub(crate) fn unknown() -> c_bindings::gps_time_t {
-        c_bindings::gps_time_t { tow: -1.0, wn: -1 }
+    pub(crate) fn unknown() -> swiftnav_sys::gps_time_t {
+        swiftnav_sys::gps_time_t { tow: -1.0, wn: -1 }
     }
 
     /// Gets the week number
@@ -138,26 +139,26 @@ impl GpsTime {
 
     /// Checks if the stored time is valid
     pub fn is_valid(&self) -> bool {
-        unsafe { c_bindings::gps_time_valid(&self.0) }
+        unsafe { swiftnav_sys::gps_time_valid(&self.0) }
     }
 
     /// Adds a duration to the time
     pub fn add_duration(&mut self, duration: &Duration) {
         unsafe {
-            c_bindings::add_secs(&mut self.0, duration.as_secs_f64());
+            swiftnav_sys::add_secs(&mut self.0, duration.as_secs_f64());
         }
     }
 
     /// Subtracts a duration from the time
     pub fn subtract_duration(&mut self, duration: &Duration) {
         unsafe {
-            c_bindings::add_secs(&mut self.0, -duration.as_secs_f64());
+            swiftnav_sys::add_secs(&mut self.0, -duration.as_secs_f64());
         }
     }
 
     /// Gets the difference between this and another time value in seconds
     pub fn diff(&self, other: &Self) -> f64 {
-        unsafe { c_bindings::gpsdifftime(&self.0, &other.0) }
+        unsafe { swiftnav_sys::gpsdifftime(&self.0, &other.0) }
     }
 
     /// Converts the GPS time into UTC time
@@ -169,7 +170,7 @@ impl GpsTime {
 
         let mut utc = UtcTime::default();
         unsafe {
-            c_bindings::gps2utc(self.c_ptr(), utc.mut_c_ptr(), utc_params.c_ptr());
+            swiftnav_sys::gps2utc(self.c_ptr(), utc.mut_c_ptr(), utc_params.c_ptr());
         }
         utc
     }
@@ -188,14 +189,14 @@ impl GpsTime {
 
         let mut utc = UtcTime::default();
         unsafe {
-            c_bindings::gps2utc(self.c_ptr(), utc.mut_c_ptr(), std::ptr::null());
+            swiftnav_sys::gps2utc(self.c_ptr(), utc.mut_c_ptr(), std::ptr::null());
         }
         utc
     }
 
     /// Gets the number of seconds difference between GPS and UTC times
     pub fn utc_offset(&self, utc_params: &UtcParams) -> f64 {
-        unsafe { c_bindings::get_gps_utc_offset(self.c_ptr(), utc_params.c_ptr()) }
+        unsafe { swiftnav_sys::get_gps_utc_offset(self.c_ptr(), utc_params.c_ptr()) }
     }
 
     /// Gets the number of seconds difference between GPS and UTC using the hardcoded
@@ -206,12 +207,12 @@ impl GpsTime {
     /// preferable to use [`GpsTime::utc_offset()`] with the newest set
     /// of UTC parameters
     pub fn utc_offset_hardcoded(&self) -> f64 {
-        unsafe { c_bindings::get_gps_utc_offset(self.c_ptr(), std::ptr::null()) }
+        unsafe { swiftnav_sys::get_gps_utc_offset(self.c_ptr(), std::ptr::null()) }
     }
 
     /// Checks to see if this point in time is a UTC leap second event
     pub fn is_leap_second_event(&self, utc_params: &UtcParams) -> bool {
-        unsafe { c_bindings::is_leap_second_event(self.c_ptr(), utc_params.c_ptr()) }
+        unsafe { swiftnav_sys::is_leap_second_event(self.c_ptr(), utc_params.c_ptr()) }
     }
 
     /// Checks to see if this point in time is a UTC leap second event using the
@@ -222,17 +223,17 @@ impl GpsTime {
     /// preferable to use [`GpsTime::is_leap_second_event()`] with the newest
     /// set of UTC parameters
     pub fn is_leap_second_event_hardcoded(&self) -> bool {
-        unsafe { c_bindings::is_leap_second_event(self.c_ptr(), std::ptr::null()) }
+        unsafe { swiftnav_sys::is_leap_second_event(self.c_ptr(), std::ptr::null()) }
     }
 
     /// Gets the GPS time of the nearest solution epoch
     pub fn round_to_epoch(&self, soln_freq: f64) -> GpsTime {
-        GpsTime(unsafe { c_bindings::round_to_epoch(self.c_ptr(), soln_freq) })
+        GpsTime(unsafe { swiftnav_sys::round_to_epoch(self.c_ptr(), soln_freq) })
     }
 
     /// Gets the GPS time of the previous solution epoch
     pub fn floor_to_epoch(&self, soln_freq: f64) -> GpsTime {
-        GpsTime(unsafe { c_bindings::floor_to_epoch(self.c_ptr(), soln_freq) })
+        GpsTime(unsafe { swiftnav_sys::floor_to_epoch(self.c_ptr(), soln_freq) })
     }
 
     /// Converts the GPS time into Galileo time
@@ -244,7 +245,7 @@ impl GpsTime {
         assert!(self.is_valid());
         assert!(self >= GAL_TIME_START);
         GalTime {
-            wn: self.wn() - c_bindings::GAL_WEEK_TO_GPS_WEEK as i16,
+            wn: self.wn() - swiftnav_sys::GAL_WEEK_TO_GPS_WEEK as i16,
             tow: self.tow(),
         }
     }
@@ -258,10 +259,10 @@ impl GpsTime {
         assert!(self.is_valid());
         assert!(self >= BDS_TIME_START);
         let bds = GpsTime::new_unchecked(
-            self.wn() - c_bindings::BDS_WEEK_TO_GPS_WEEK as i16,
+            self.wn() - swiftnav_sys::BDS_WEEK_TO_GPS_WEEK as i16,
             self.tow(),
         );
-        let bds = bds - Duration::from_secs(c_bindings::BDS_SECOND_TO_GPS_SECOND as u64);
+        let bds = bds - Duration::from_secs(swiftnav_sys::BDS_SECOND_TO_GPS_SECOND as u64);
         BdsTime {
             wn: bds.wn(),
             tow: bds.tow(),
@@ -276,7 +277,7 @@ impl GpsTime {
     pub fn to_glo(self, utc_params: &UtcParams) -> GloTime {
         assert!(self.is_valid());
         assert!(self >= GLO_TIME_START);
-        GloTime(unsafe { c_bindings::gps2glo(self.c_ptr(), utc_params.c_ptr()) })
+        GloTime(unsafe { swiftnav_sys::gps2glo(self.c_ptr(), utc_params.c_ptr()) })
     }
 
     /// Converts a GPS time into a Glonass time using the hardcoded list of leap
@@ -292,7 +293,7 @@ impl GpsTime {
     pub fn to_glo_hardcoded(self) -> GloTime {
         assert!(self.is_valid());
         assert!(self >= GLO_TIME_START);
-        GloTime(unsafe { c_bindings::gps2glo(self.c_ptr(), std::ptr::null()) })
+        GloTime(unsafe { swiftnav_sys::gps2glo(self.c_ptr(), std::ptr::null()) })
     }
 }
 
@@ -409,7 +410,10 @@ impl GalTime {
     }
 
     pub fn to_gps(self) -> GpsTime {
-        GpsTime::new_unchecked(self.wn + c_bindings::GAL_WEEK_TO_GPS_WEEK as i16, self.tow)
+        GpsTime::new_unchecked(
+            self.wn + swiftnav_sys::GAL_WEEK_TO_GPS_WEEK as i16,
+            self.tow,
+        )
     }
 
     pub fn to_bds(self) -> BdsTime {
@@ -457,10 +461,10 @@ impl BdsTime {
 
     pub fn to_gps(self) -> GpsTime {
         let gps = GpsTime::new_unchecked(
-            self.wn() + c_bindings::BDS_WEEK_TO_GPS_WEEK as i16,
+            self.wn() + swiftnav_sys::BDS_WEEK_TO_GPS_WEEK as i16,
             self.tow(),
         );
-        gps + Duration::from_secs(c_bindings::BDS_SECOND_TO_GPS_SECOND as u64)
+        gps + Duration::from_secs(swiftnav_sys::BDS_SECOND_TO_GPS_SECOND as u64)
     }
 
     pub fn to_gal(self) -> GalTime {
@@ -482,10 +486,10 @@ impl From<GalTime> for BdsTime {
 
 /// Representation of Glonass Time
 #[derive(Copy, Clone)]
-pub struct GloTime(c_bindings::glo_time_t);
+pub struct GloTime(swiftnav_sys::glo_time_t);
 
 impl GloTime {
-    pub(crate) fn c_ptr(&self) -> *const c_bindings::glo_time_t {
+    pub(crate) fn c_ptr(&self) -> *const swiftnav_sys::glo_time_t {
         &self.0
     }
 
@@ -502,7 +506,7 @@ impl GloTime {
     /// m - Minutes [0-59]
     /// s - Seconds [0-60]
     pub fn new(nt: u16, n4: u8, h: u8, m: u8, s: f64) -> GloTime {
-        GloTime(c_bindings::glo_time_t { nt, n4, h, m, s })
+        GloTime(swiftnav_sys::glo_time_t { nt, n4, h, m, s })
     }
 
     pub fn nt(&self) -> u16 {
@@ -527,7 +531,7 @@ impl GloTime {
 
     /// Converts a Glonass time into a GPS time
     pub fn to_gps(self, utc_params: &UtcParams) -> GpsTime {
-        GpsTime(unsafe { c_bindings::glo2gps(self.c_ptr(), utc_params.c_ptr()) })
+        GpsTime(unsafe { swiftnav_sys::glo2gps(self.c_ptr(), utc_params.c_ptr()) })
     }
 
     /// Converts a Glonass time into a GPS time using the hardcoded list of leap
@@ -536,20 +540,20 @@ impl GloTime {
     /// Note: The hard coded list of leap seconds will get out of date, it is
     /// preferable to use [`GloTime::to_gps()`] with the newest set of UTC parameters
     pub fn to_gps_hardcoded(self) -> GpsTime {
-        GpsTime(unsafe { c_bindings::glo2gps(self.c_ptr(), std::ptr::null()) })
+        GpsTime(unsafe { swiftnav_sys::glo2gps(self.c_ptr(), std::ptr::null()) })
     }
 }
 
 /// GPS UTC correction parameters
 #[derive(Clone)]
-pub struct UtcParams(c_bindings::utc_params_t);
+pub struct UtcParams(swiftnav_sys::utc_params_t);
 
 impl UtcParams {
-    pub(crate) fn mut_c_ptr(&mut self) -> *mut c_bindings::utc_params_t {
+    pub(crate) fn mut_c_ptr(&mut self) -> *mut swiftnav_sys::utc_params_t {
         &mut self.0
     }
 
-    pub(crate) fn c_ptr(&self) -> *const c_bindings::utc_params_t {
+    pub(crate) fn c_ptr(&self) -> *const swiftnav_sys::utc_params_t {
         &self.0
     }
 
@@ -562,7 +566,7 @@ impl UtcParams {
     ///   * IS-GPS-200H, Section 20.3.3.5.1.6
     pub fn decode(words: &[u32; 8]) -> Option<Self> {
         let mut params = UtcParams::default();
-        let result = unsafe { c_bindings::decode_utc_parameters(words, params.mut_c_ptr()) };
+        let result = unsafe { swiftnav_sys::decode_utc_parameters(words, params.mut_c_ptr()) };
 
         if result {
             Some(params)
@@ -588,7 +592,7 @@ impl UtcParams {
 
         let tot = tot.to_gps_time_t();
         let t_lse = t_lse.to_gps_time_t();
-        UtcParams(c_bindings::utc_params_t {
+        UtcParams(swiftnav_sys::utc_params_t {
             a0,
             a1,
             a2,
@@ -642,21 +646,21 @@ impl Default for UtcParams {
 /// around. Specifically it shouldn't be relied on for dates significantly before January 6th 1980,
 /// the start of GPS time.
 #[derive(Clone)]
-pub struct UtcTime(c_bindings::utc_tm);
+pub struct UtcTime(swiftnav_sys::utc_tm);
 
 impl UtcTime {
-    pub(crate) fn mut_c_ptr(&mut self) -> *mut c_bindings::utc_tm {
+    pub(crate) fn mut_c_ptr(&mut self) -> *mut swiftnav_sys::utc_tm {
         &mut self.0
     }
 
-    pub(crate) fn c_ptr(&self) -> *const c_bindings::utc_tm {
+    pub(crate) fn c_ptr(&self) -> *const swiftnav_sys::utc_tm {
         &self.0
     }
 
     /// Creates a UTC time from its individual components
     pub fn from_date(year: u16, month: u8, day: u8, hour: u8, minute: u8, second: f64) -> UtcTime {
         UtcTime(unsafe {
-            c_bindings::date2utc(
+            swiftnav_sys::date2utc(
                 year as i32,
                 month as i32,
                 day as i32,
@@ -709,7 +713,7 @@ impl UtcTime {
 
     /// Converts the UTC time into a modified julian date
     pub fn to_mjd(&self) -> MJD {
-        MJD(unsafe { c_bindings::utc2mjd(self.c_ptr()) })
+        MJD(unsafe { swiftnav_sys::utc2mjd(self.c_ptr()) })
     }
 
     /// Makes an ISO8601 compatible date time string from the UTC time
@@ -794,7 +798,7 @@ impl MJD {
     /// Creates a modified julian date from a calendar date and time
     pub fn from_date(year: u16, month: u8, day: u8, hour: u8, minute: u8, seconds: f64) -> MJD {
         MJD(unsafe {
-            c_bindings::date2mjd(
+            swiftnav_sys::date2mjd(
                 year as i32,
                 month as i32,
                 day as i32,
@@ -812,7 +816,7 @@ impl MJD {
 
     /// Converts the modified julian date into a UTC time
     pub fn to_utc(&self) -> UtcTime {
-        UtcTime(unsafe { c_bindings::mjd2utc(self.0) })
+        UtcTime(unsafe { swiftnav_sys::mjd2utc(self.0) })
     }
 }
 
@@ -1030,7 +1034,7 @@ mod tests {
             &GpsTime::new_unchecked(2080, 0.0),
             &GpsTime::new_unchecked(
                 2086,
-                259218.0 + 1e-12 * (6.0 * c_bindings::WEEK_SECS as f64 + 259218.0),
+                259218.0 + 1e-12 * (6.0 * swiftnav_sys::WEEK_SECS as f64 + 259218.0),
             ),
             18,
             19,
@@ -1045,7 +1049,7 @@ mod tests {
             &GpsTime::new_unchecked(2080, 0.0),
             &GpsTime::new_unchecked(
                 2086,
-                259218.0 - 1e-12 * (6.0 * c_bindings::WEEK_SECS as f64 + 259218.0),
+                259218.0 - 1e-12 * (6.0 * swiftnav_sys::WEEK_SECS as f64 + 259218.0),
             ),
             18,
             19,
@@ -1568,12 +1572,12 @@ mod tests {
         assert_eq!(gal.wn(), 0);
         assert!(gal.tow().abs() < 1e-9);
         let gps = gal.to_gps();
-        assert_eq!(gps.wn(), c_bindings::GAL_WEEK_TO_GPS_WEEK as i16);
+        assert_eq!(gps.wn(), swiftnav_sys::GAL_WEEK_TO_GPS_WEEK as i16);
         assert!(gps.tow().abs() < 1e-9);
 
         assert!(GalTime::new(-1, 0.0).is_err());
         assert!(GalTime::new(0, -1.0).is_err());
-        assert!(GalTime::new(0, c_bindings::WEEK_SECS as f64 + 1.0).is_err());
+        assert!(GalTime::new(0, swiftnav_sys::WEEK_SECS as f64 + 1.0).is_err());
     }
 
     #[test]
@@ -1582,12 +1586,12 @@ mod tests {
         assert_eq!(bds.wn(), 0);
         assert!(bds.tow().abs() < 1e-9);
         let gps = bds.to_gps();
-        assert_eq!(gps.wn(), c_bindings::BDS_WEEK_TO_GPS_WEEK as i16);
-        assert!((gps.tow() - c_bindings::BDS_SECOND_TO_GPS_SECOND as f64).abs() < 1e-9);
+        assert_eq!(gps.wn(), swiftnav_sys::BDS_WEEK_TO_GPS_WEEK as i16);
+        assert!((gps.tow() - swiftnav_sys::BDS_SECOND_TO_GPS_SECOND as f64).abs() < 1e-9);
 
         assert!(BdsTime::new(-1, 0.0).is_err());
         assert!(BdsTime::new(0, -1.0).is_err());
-        assert!(BdsTime::new(0, c_bindings::WEEK_SECS as f64 + 1.0).is_err());
+        assert!(BdsTime::new(0, swiftnav_sys::WEEK_SECS as f64 + 1.0).is_err());
     }
 
     #[test]
@@ -1599,7 +1603,7 @@ mod tests {
         assert_eq!(glo.m(), 0);
         assert!(glo.s().abs() < 1e-9);
         let gps = glo.to_gps_hardcoded();
-        assert_eq!(gps.wn(), c_bindings::GLO_EPOCH_WN as i16);
-        assert!((gps.tow() - c_bindings::GLO_EPOCH_TOW as f64).abs() < 1e-9);
+        assert_eq!(gps.wn(), swiftnav_sys::GLO_EPOCH_WN as i16);
+        assert!((gps.tow() - swiftnav_sys::GLO_EPOCH_TOW as f64).abs() < 1e-9);
     }
 }

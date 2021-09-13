@@ -18,7 +18,7 @@
 //! and the [PVT solver function](crate::solver::calc_pvt) to get a position,
 //! velocity and time estimate.
 
-use crate::{c_bindings, ephemeris::SatelliteState, signal::GnssSignal};
+use crate::{ephemeris::SatelliteState, signal::GnssSignal};
 use std::time::Duration;
 
 const NAV_MEAS_FLAG_CODE_VALID: u16 = 1 << 0;
@@ -29,7 +29,7 @@ pub const NAV_MEAS_FLAG_RAIM_EXCLUSION: u16 = 1 << 6;
 /// Represents a single raw GNSS measurement
 #[derive(Debug, Clone, PartialOrd, PartialEq)]
 #[repr(transparent)]
-pub struct NavigationMeasurement(c_bindings::navigation_measurement_t);
+pub struct NavigationMeasurement(swiftnav_sys::navigation_measurement_t);
 
 impl NavigationMeasurement {
     /// Makes a navigation measurement with all fields invalidated
@@ -145,12 +145,12 @@ impl NavigationMeasurement {
 
     /// Checks to see if all of the measurement flags marked as valid
     pub fn flags_are_all_valid(&self) -> bool {
-        unsafe { c_bindings::nav_meas_flags_valid(self.0.flags) }
+        unsafe { swiftnav_sys::nav_meas_flags_valid(self.0.flags) }
     }
 
     /// Checks to see if the pseudorange measurement is marked as valid
     pub fn pseudorange_is_valid(&self) -> bool {
-        unsafe { c_bindings::pseudorange_valid(&self.0) }
+        unsafe { swiftnav_sys::pseudorange_valid(&self.0) }
     }
 }
 
@@ -166,7 +166,7 @@ impl Default for NavigationMeasurement {
 /// specification.  Valid values range from 0 to 15 and the most significant
 /// nibble is reserved for future use.
 pub fn encode_lock_time(nav_meas_lock_time: Duration) -> u8 {
-    unsafe { c_bindings::encode_lock_time(nav_meas_lock_time.as_secs_f64()) }
+    unsafe { swiftnav_sys::encode_lock_time(nav_meas_lock_time.as_secs_f64()) }
 }
 
 /// Decodes an SBP lock time value into a [`Duration`]
@@ -175,7 +175,7 @@ pub fn encode_lock_time(nav_meas_lock_time: Duration) -> u8 {
 /// specification.  Valid values range from 0 to 15 and the most significant
 /// nibble is reserved for future use.
 pub fn decode_lock_time(sbp_lock_time: u8) -> Duration {
-    let value = unsafe { c_bindings::decode_lock_time(sbp_lock_time) };
+    let value = unsafe { swiftnav_sys::decode_lock_time(sbp_lock_time) };
     Duration::from_secs_f64(value)
 }
 
