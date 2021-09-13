@@ -1,0 +1,16 @@
+[package]
+name = "swiftnav-sys"
+version = "0.5.2-alpha.0"
+authors = ["Swift Navigation <dev@swiftnav.com>"]
+edition = "2018"
+description = "FFI bindings for libswiftnav"
+readme = "../README.md"
+repository = "https://github.com/swift-nav/swiftnav-rs"
+license = "LGPL-3.0"
+
+[build-dependencies]
+bindgen = "0.59"
+cmake = "0.1"
+
+[features]
+testcpp = []

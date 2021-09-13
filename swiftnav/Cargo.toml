@@ -1,0 +1,16 @@
+[package]
+name = "swiftnav"
+version = "0.5.2-alpha.0"
+authors = ["Swift Navigation <dev@swiftnav.com>"]
+edition = "2018"
+description = "GNSS positioning and related utilities"
+readme = "../README.md"
+repository = "https://github.com/swift-nav/swiftnav-rs"
+license = "LGPL-3.0"
+
+[dependencies]
+chrono = { version = "0.4", optional = true }
+swiftnav-sys = { version = "0.5.2-alpha.0", path = "../swiftnav-sys/" }
+
+[features]
+chrono-support = ["chrono"]

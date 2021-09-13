@@ -18,7 +18,6 @@
 //! always valid when they need to be.
 
 use crate::{
-    c_bindings,
     coords::{AzimuthElevation, ECEF},
     signal::{Code, Constellation, GnssSignal, InvalidGnssSignal},
     time::GpsTime,
@@ -59,23 +58,25 @@ pub enum Status {
 }
 
 impl Status {
-    fn from_ephemeris_status_t(value: c_bindings::ephemeris_status_t) -> Status {
+    fn from_ephemeris_status_t(value: swiftnav_sys::ephemeris_status_t) -> Status {
         match value {
-            c_bindings::ephemeris_status_t_EPH_NULL => Status::Invalid(InvalidEphemeris::Null),
-            c_bindings::ephemeris_status_t_EPH_INVALID => {
+            swiftnav_sys::ephemeris_status_t_EPH_NULL => Status::Invalid(InvalidEphemeris::Null),
+            swiftnav_sys::ephemeris_status_t_EPH_INVALID => {
                 Status::Invalid(InvalidEphemeris::Invalid)
             }
-            c_bindings::ephemeris_status_t_EPH_WN_EQ_0 => {
+            swiftnav_sys::ephemeris_status_t_EPH_WN_EQ_0 => {
                 Status::Invalid(InvalidEphemeris::WnEqualsZero)
             }
-            c_bindings::ephemeris_status_t_EPH_FIT_INTERVAL_EQ_0 => {
+            swiftnav_sys::ephemeris_status_t_EPH_FIT_INTERVAL_EQ_0 => {
                 Status::Invalid(InvalidEphemeris::FitIntervalEqualsZero)
             }
-            c_bindings::ephemeris_status_t_EPH_UNHEALTHY => {
+            swiftnav_sys::ephemeris_status_t_EPH_UNHEALTHY => {
                 Status::Invalid(InvalidEphemeris::Unhealthy)
             }
-            c_bindings::ephemeris_status_t_EPH_TOO_OLD => Status::Invalid(InvalidEphemeris::TooOld),
-            c_bindings::ephemeris_status_t_EPH_VALID => Status::Valid,
+            swiftnav_sys::ephemeris_status_t_EPH_TOO_OLD => {
+                Status::Invalid(InvalidEphemeris::TooOld)
+            }
+            swiftnav_sys::ephemeris_status_t_EPH_VALID => Status::Valid,
             _ => panic!("Invalid ephemeris_status_t value: {}", value),
         }
     }
@@ -96,11 +97,11 @@ impl Status {
 #[derive(Clone)]
 pub enum EphemerisTerms {
     /// GPS, BDS, GAL, and QZSS all broadcast their terms as keplarian elements
-    Kepler(c_bindings::ephemeris_kepler_t),
+    Kepler(swiftnav_sys::ephemeris_kepler_t),
     /// SBAS systems broadcast their terms as simple XYZ terms
-    Xyz(c_bindings::ephemeris_xyz_t),
+    Xyz(swiftnav_sys::ephemeris_xyz_t),
     /// GLONASS broadcast their terms in a unique format and timeframe
-    Glo(c_bindings::ephemeris_glo_t),
+    Glo(swiftnav_sys::ephemeris_glo_t),
 }
 
 impl EphemerisTerms {
@@ -131,12 +132,14 @@ impl EphemerisTerms {
         iodc: u16,
         iode: u16,
     ) -> EphemerisTerms {
-        EphemerisTerms::Kepler(c_bindings::ephemeris_kepler_t {
+        EphemerisTerms::Kepler(swiftnav_sys::ephemeris_kepler_t {
             tgd: match constellation {
-                Constellation::Gps => c_bindings::ephemeris_kepler_t__bindgen_ty_1 { gps_s: tgd },
-                Constellation::Qzs => c_bindings::ephemeris_kepler_t__bindgen_ty_1 { qzss_s: tgd },
-                Constellation::Bds => c_bindings::ephemeris_kepler_t__bindgen_ty_1 { bds_s: tgd },
-                Constellation::Gal => c_bindings::ephemeris_kepler_t__bindgen_ty_1 { gal_s: tgd },
+                Constellation::Gps => swiftnav_sys::ephemeris_kepler_t__bindgen_ty_1 { gps_s: tgd },
+                Constellation::Qzs => {
+                    swiftnav_sys::ephemeris_kepler_t__bindgen_ty_1 { qzss_s: tgd }
+                }
+                Constellation::Bds => swiftnav_sys::ephemeris_kepler_t__bindgen_ty_1 { bds_s: tgd },
+                Constellation::Gal => swiftnav_sys::ephemeris_kepler_t__bindgen_ty_1 { gal_s: tgd },
                 _ => panic!("Invalid constellation for a Kepler ephemeris"),
             },
             crc,
@@ -171,7 +174,7 @@ impl EphemerisTerms {
         a_gf0: f64,
         a_gf1: f64,
     ) -> EphemerisTerms {
-        EphemerisTerms::Xyz(c_bindings::ephemeris_xyz_t {
+        EphemerisTerms::Xyz(swiftnav_sys::ephemeris_xyz_t {
             pos,
             vel,
             acc,
@@ -192,7 +195,7 @@ impl EphemerisTerms {
         fcn: u16,
         iod: u8,
     ) -> EphemerisTerms {
-        EphemerisTerms::Glo(c_bindings::ephemeris_glo_t {
+        EphemerisTerms::Glo(swiftnav_sys::ephemeris_glo_t {
             gamma,
             tau,
             d_tau,
@@ -206,7 +209,7 @@ impl EphemerisTerms {
 }
 
 /// Representation of full ephemeris
-pub struct Ephemeris(c_bindings::ephemeris_t);
+pub struct Ephemeris(swiftnav_sys::ephemeris_t);
 
 impl Ephemeris {
     /// Create new ephemeris from already decoded data
@@ -221,7 +224,7 @@ impl Ephemeris {
         source: u8,
         terms: EphemerisTerms,
     ) -> Ephemeris {
-        Ephemeris(c_bindings::ephemeris_t {
+        Ephemeris(swiftnav_sys::ephemeris_t {
             sid: sid.to_gnss_signal_t(),
             toe: toe.to_gps_time_t(),
             ura,
@@ -238,15 +241,15 @@ impl Ephemeris {
                             | Constellation::Bds
                             | Constellation::Qzs
                     ));
-                    c_bindings::ephemeris_t__bindgen_ty_1 { kepler: c_kepler }
+                    swiftnav_sys::ephemeris_t__bindgen_ty_1 { kepler: c_kepler }
                 }
                 EphemerisTerms::Xyz(c_xyz) => {
                     assert_eq!(sid.to_constellation(), Constellation::Sbas);
-                    c_bindings::ephemeris_t__bindgen_ty_1 { xyz: c_xyz }
+                    swiftnav_sys::ephemeris_t__bindgen_ty_1 { xyz: c_xyz }
                 }
                 EphemerisTerms::Glo(c_glo) => {
                     assert_eq!(sid.to_constellation(), Constellation::Glo);
-                    c_bindings::ephemeris_t__bindgen_ty_1 { glo: c_glo }
+                    swiftnav_sys::ephemeris_t__bindgen_ty_1 { glo: c_glo }
                 }
             },
         })
@@ -267,7 +270,7 @@ impl Ephemeris {
     pub fn decode_gps(frame_words: &[[u32; 8]; 3], tot_tow: f64) -> Ephemeris {
         let mut e = Ephemeris::default();
         unsafe {
-            c_bindings::decode_ephemeris(frame_words, e.mut_c_ptr(), tot_tow);
+            swiftnav_sys::decode_ephemeris(frame_words, e.mut_c_ptr(), tot_tow);
         }
         e
     }
@@ -277,7 +280,7 @@ impl Ephemeris {
     pub fn decode_bds(words: &[[u32; 10]; 3], sid: GnssSignal) -> Ephemeris {
         let mut e = Ephemeris::default();
         unsafe {
-            c_bindings::decode_bds_d1_ephemeris(words, sid.to_gnss_signal_t(), e.mut_c_ptr());
+            swiftnav_sys::decode_bds_d1_ephemeris(words, sid.to_gnss_signal_t(), e.mut_c_ptr());
         }
         e
     }
@@ -288,14 +291,14 @@ impl Ephemeris {
     pub fn decode_gal(page: &[[u8; GAL_INAV_CONTENT_BYTE]; 5]) -> Ephemeris {
         let mut e = Ephemeris::default();
         unsafe {
-            c_bindings::decode_gal_ephemeris(page, e.mut_c_ptr());
+            swiftnav_sys::decode_gal_ephemeris(page, e.mut_c_ptr());
         }
         e
     }
 
     // TODO Add GLONASS decoding, needs UTC params though
 
-    pub(crate) fn mut_c_ptr(&mut self) -> *mut c_bindings::ephemeris_t {
+    pub(crate) fn mut_c_ptr(&mut self) -> *mut swiftnav_sys::ephemeris_t {
         &mut self.0
     }
 
@@ -315,7 +318,7 @@ impl Ephemeris {
         };
 
         let result = unsafe {
-            c_bindings::calc_sat_state(
+            swiftnav_sys::calc_sat_state(
                 &self.0,
                 t.c_ptr(),
                 sat.pos.as_mut_array_ref(),
@@ -343,11 +346,11 @@ impl Ephemeris {
         let mut sat = AzimuthElevation::default();
 
         let result = unsafe {
-            c_bindings::calc_sat_az_el(
+            swiftnav_sys::calc_sat_az_el(
                 &self.0,
                 t.c_ptr(),
                 pos.as_array_ref(),
-                c_bindings::satellite_orbit_type_t_MEO,
+                swiftnav_sys::satellite_orbit_type_t_MEO,
                 &mut sat.az,
                 &mut sat.el,
                 true,
@@ -372,12 +375,12 @@ impl Ephemeris {
         let mut doppler = 0.0;
 
         let result = unsafe {
-            c_bindings::calc_sat_doppler(
+            swiftnav_sys::calc_sat_doppler(
                 &self.0,
                 t.c_ptr(),
                 pos.as_array_ref(),
                 vel.as_array_ref(),
-                c_bindings::satellite_orbit_type_t_MEO,
+                swiftnav_sys::satellite_orbit_type_t_MEO,
                 &mut doppler,
             )
         };
@@ -393,30 +396,30 @@ impl Ephemeris {
     /// Gets the status of an ephemeris - is the ephemeris invalid, unhealthy,
     /// or has some other condition which makes it unusable?
     pub fn status(&self) -> Status {
-        Status::from_ephemeris_status_t(unsafe { c_bindings::get_ephemeris_status_t(&self.0) })
+        Status::from_ephemeris_status_t(unsafe { swiftnav_sys::get_ephemeris_status_t(&self.0) })
     }
 
     pub fn detailed_status(&self, t: GpsTime) -> Status {
         Status::from_ephemeris_status_t(unsafe {
-            c_bindings::ephemeris_valid_detailed(&self.0, t.c_ptr())
+            swiftnav_sys::ephemeris_valid_detailed(&self.0, t.c_ptr())
         })
     }
 
     /// Is this ephemeris usable?
     pub fn is_valid_at_time(&self, t: GpsTime) -> bool {
-        let result = unsafe { c_bindings::ephemeris_valid(&self.0, t.c_ptr()) };
+        let result = unsafe { swiftnav_sys::ephemeris_valid(&self.0, t.c_ptr()) };
         result == 1
     }
 
     /// Check if this this ephemeris is healthy
     pub fn is_healthy(&self, code: &Code) -> bool {
-        unsafe { c_bindings::ephemeris_healthy(&self.0, code.to_code_t()) }
+        unsafe { swiftnav_sys::ephemeris_healthy(&self.0, code.to_code_t()) }
     }
 }
 
 impl PartialEq for Ephemeris {
     fn eq(&self, other: &Self) -> bool {
-        unsafe { c_bindings::ephemeris_equal(&self.0, &other.0) }
+        unsafe { swiftnav_sys::ephemeris_equal(&self.0, &other.0) }
     }
 }
 

@@ -46,7 +46,6 @@
 //!      and Mapping Annual Conference. Orlando, Florida.
 //!   * "Transformation from Cartesian to Geodetic Coordinates Accelerated by
 //!      Halley’s Method", T. Fukushima (2006), Journal of Geodesy.
-use crate::c_bindings;
 
 /// WGS84 geodetic coordinates (Latitude, Longitude, Height)
 ///
@@ -95,7 +94,7 @@ impl LLHDegrees {
     /// just the representation of the angular values.
     pub fn to_radians(&self) -> LLHRadians {
         let mut rad = LLHRadians::default();
-        unsafe { c_bindings::llhdeg2rad(self.as_ptr(), rad.as_mut_ptr()) };
+        unsafe { swiftnav_sys::llhdeg2rad(self.as_ptr(), rad.as_mut_ptr()) };
         rad
     }
 
@@ -184,7 +183,7 @@ impl LLHRadians {
     /// just the representation of the angular values.
     pub fn to_degrees(&self) -> LLHDegrees {
         let mut deg = LLHDegrees::default();
-        unsafe { c_bindings::llhrad2deg(self.as_ptr(), deg.as_mut_ptr()) };
+        unsafe { swiftnav_sys::llhrad2deg(self.as_ptr(), deg.as_mut_ptr()) };
         deg
     }
 
@@ -193,7 +192,7 @@ impl LLHRadians {
     /// (X, Y and Z).
     pub fn to_ecef(&self) -> ECEF {
         let mut ecef = ECEF::default();
-        unsafe { c_bindings::wgsllh2ecef(self.as_ptr(), ecef.as_mut_ptr()) };
+        unsafe { swiftnav_sys::wgsllh2ecef(self.as_ptr(), ecef.as_mut_ptr()) };
         ecef
     }
 }
@@ -280,7 +279,7 @@ impl ECEF {
     /// longitude and height).
     pub fn to_llh(&self) -> LLHRadians {
         let mut llh = LLHRadians::from_array(&[0.0; 3]);
-        unsafe { c_bindings::wgsecef2llh(self.as_ptr(), llh.as_mut_ptr()) };
+        unsafe { swiftnav_sys::wgsecef2llh(self.as_ptr(), llh.as_mut_ptr()) };
         llh
     }
 
@@ -294,7 +293,7 @@ impl ECEF {
     pub fn azel_of(&self, point: &ECEF) -> AzimuthElevation {
         let mut azel = AzimuthElevation::new(0.0, 0.0);
         unsafe {
-            c_bindings::wgsecef2azel(point.as_ptr(), self.as_ptr(), &mut azel.az, &mut azel.el)
+            swiftnav_sys::wgsecef2azel(point.as_ptr(), self.as_ptr(), &mut azel.az, &mut azel.el)
         };
         azel
     }
