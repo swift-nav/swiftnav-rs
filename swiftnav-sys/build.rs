@@ -23,6 +23,7 @@ fn main() {
     let dst = cmake.build();
 
     println!("cargo:rustc-link-search=native={}/lib/", dst.display());
+    println!("cargo:rustc-link-search=native={}/lib64/", dst.display());
     println!("cargo:rustc-link-lib=static=swiftnav");
 
     let include_args = vec![
