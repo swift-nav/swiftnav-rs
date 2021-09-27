@@ -742,7 +742,7 @@ impl From<MJD> for UtcTime {
     }
 }
 
-#[cfg(feature = "chrono-support")]
+#[cfg(feature = "chrono")]
 impl From<UtcTime> for chrono::DateTime<chrono::offset::Utc> {
     fn from(utc: UtcTime) -> chrono::DateTime<chrono::offset::Utc> {
         use chrono::prelude::*;
@@ -766,7 +766,7 @@ impl From<UtcTime> for chrono::DateTime<chrono::offset::Utc> {
     }
 }
 
-#[cfg(feature = "chrono-support")]
+#[cfg(feature = "chrono")]
 impl<Tz: chrono::offset::TimeZone> From<chrono::DateTime<Tz>> for UtcTime {
     fn from(chrono: chrono::DateTime<Tz>) -> UtcTime {
         use chrono::prelude::*;
