@@ -8,7 +8,7 @@
 //! midnight on Sunday.
 //!
 //! [`GpsTime`] is the primary representation used in swiftnav-rs. Other time bases
-//! are available, such as [`Utctime`], [`GalTime`], [`BdsTime`], and [`GloTime`]
+//! are available, such as [`UtcTime`], [`GalTime`], [`BdsTime`], and [`GloTime`]
 //! along with conversions for all of these to and from [`GpsTime`].
 //! Not all functionality is available in these other representations, so it's
 //! intended that all times are to converted to [`GpsTime`] before use with
@@ -603,15 +603,15 @@ impl UtcParams {
         })
     }
 
-    /// Modulo 1 sec offset from GPS to UTC [s]
+    /// Modulo 1 sec offset from GPS to UTC \[s\]
     pub fn a0(&self) -> f64 {
         self.0.a0
     }
-    /// Drift of time offset from GPS to UTC [s/s]
+    /// Drift of time offset from GPS to UTC \[s/s\]
     pub fn a1(&self) -> f64 {
         self.0.a1
     }
-    /// Drift rate correction from GPS to UTC [s/s]
+    /// Drift rate correction from GPS to UTC \[s/s\]
     pub fn a2(&self) -> f64 {
         self.0.a2
     }
@@ -623,11 +623,11 @@ impl UtcParams {
     pub fn t_lse(&self) -> GpsTime {
         GpsTime(self.0.t_lse)
     }
-    /// Leap second delta from GPS to UTC before LS event [s]
+    /// Leap second delta from GPS to UTC before LS event \[s\]
     pub fn dt_ls(&self) -> i8 {
         self.0.dt_ls
     }
-    /// Leap second delta from GPS to UTC after LS event [s]
+    /// Leap second delta from GPS to UTC after LS event \[s\]
     pub fn dt_lsf(&self) -> i8 {
         self.0.dt_lsf
     }

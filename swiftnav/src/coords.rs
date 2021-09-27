@@ -10,10 +10,10 @@
 //! Coordinates and conversions
 //!
 //! These four primary coordinates types are defined:
-//!  * [LLH](LLH) - Geodetic coordinates, Latitude Lontitude Height
-//!  * [ECEF](ECEF) - Cartesian coordinates, Earth Centered, Earth Fixed
-//!  * NED - Relative direction coordinates, North East Down
-//!  * [AzEl](AzEl) - Relative direction coordinates, Azimith Elevation
+//!  * [LLHDegrees]/[LLHRadians] - Geodetic coordinates, Latitude Lontitude Height
+//!  * [ECEF] - Cartesian coordinates, Earth Centered, Earth Fixed
+//!  * [NED] - Relative direction coordinates, North East Down
+//!  * [AzimuthElevation] - Relative direction coordinates, Azimith Elevation
 //!
 //! --------
 //! Conversion from geodetic coordinates latitude, longitude and height

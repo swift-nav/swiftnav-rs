@@ -100,13 +100,13 @@ impl Ionosphere {
     /// Calculate ionospheric delay using Klobuchar model.
     ///
     /// \param t_gps GPS time at which to calculate the ionospheric delay
-    /// \param lat_u Latitude of the receiver [rad]
-    /// \param lon_u Longitude of the receiver [rad]
-    /// \param a Azimuth of the satellite, clockwise positive from North [rad]
-    /// \param e Elevation of the satellite [rad]
+    /// \param lat_u Latitude of the receiver \[rad\]
+    /// \param lon_u Longitude of the receiver \[rad\]
+    /// \param a Azimuth of the satellite, clockwise positive from North \[rad\]
+    /// \param e Elevation of the satellite \[rad\]
     /// \param i Ionosphere parameters struct from GPS NAV data
     ///
-    /// \return Ionospheric delay distance for GPS L1 frequency [m]
+    /// \return Ionospheric delay distance for GPS L1 frequency \[m\]
     pub fn calc_delay(&self, t: &GpsTime, lat_u: f64, lon_u: f64, a: f64, e: f64) -> f64 {
         unsafe { swiftnav_sys::calc_ionosphere(t.c_ptr(), lat_u, lon_u, a, e, &self.0) }
     }
