@@ -7,12 +7,12 @@
 //! seconds since the beginning of the week. In GPS time the week begins at
 //! midnight on Sunday.
 //!
-//! [`GpsTime`] is the primary representation used in swiftnav-rs. Other time bases
+//! [`GpsTime`] is the primary representation used in swiftnav. Other time bases
 //! are available, such as [`UtcTime`], [`GalTime`], [`BdsTime`], and [`GloTime`]
 //! along with conversions for all of these to and from [`GpsTime`].
 //! Not all functionality is available in these other representations, so it's
 //! intended that all times are to converted to [`GpsTime`] before use with
-//! swiftnav-rs.
+//! swiftnav.
 //!
 //! # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
 //! UTC time occasinally adds additional seconds to keep it synchronized with the
@@ -20,11 +20,11 @@
 //! GNSS time bases ignore leap seconds and thus slowly grow out of sync with UTC.
 //! This is fine when dealing with GNSS data, but it's common that people want time
 //! to be represented as a UTC time since that's what people are more familiar with.
-//! swiftnav-rs provides ways to convert to and from UTC synchronized time bases
+//! swiftnav provides ways to convert to and from UTC synchronized time bases
 //! and is able to correctly compensate for leap seconds in two ways.
 //!
 //! The first is by using the UTC conversion parameters broadcast by GNSS systems
-//! that receivers can decode. [`UtcParams`] is how swiftnav-rs represents this
+//! that receivers can decode. [`UtcParams`] is how swiftnav represents this
 //! information, and [`UtcParams::decode()`] is provided for decoding the raw GPS
 //! navigation subframe with this information. This is the prefered method since it
 //! is usually available when processing raw GNSS data and ensures that the right
