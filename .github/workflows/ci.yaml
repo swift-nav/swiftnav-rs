@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - "master"
-env:
-  LIBCLANG_PATH_WIN: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/x64/bin"
 jobs:
   ci:
     name: Format, lint, and test
@@ -42,7 +40,7 @@ jobs:
 
       - name: Set env vars for Windows
         run: |
-          echo "LIBCLANG_PATH=${LIBCLANG_PATH_WIN}" >> $GITHUB_ENV
+          echo "LIBCLANG_PATH='C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/x64/bin'" >> $GITHUB_ENV
         if: matrix.os == 'windows-2019'
 
       - uses: actions-rs/cargo@v1
