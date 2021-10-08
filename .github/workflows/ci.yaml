@@ -40,9 +40,12 @@ jobs:
           toolchain: stable-${{ matrix.binary_target }}
           profile: minimal
 
+      - name: Set env vars for Windows
+        run: |
+          echo "LIBCLANG_PATH=${LIBCLANG_PATH_WIN}" >> $GITHUB_ENV
+        if: matrix.os == 'windows-2019'
+
       - uses: actions-rs/cargo@v1
-        env:
-          LIBCLANG_PATH: ${{ env.LIBCLANG_PATH_WIN }}
         with:
           command: make
           args: --makefile ci-makefile.toml --no-workspace workspace-ci-flow
