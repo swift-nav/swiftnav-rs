@@ -41,8 +41,8 @@ jobs:
       - name: Set env vars for Windows
         run: |
           echo "LIBCLANG_PATH='C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/x64/lib'" >> $GITHUB_ENV
-          ls C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/x64/lib
-          treeC:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/x64/
+          ls "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/x64/lib"
+          tree "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Tools/Llvm/x64/"
         if: matrix.os == 'windows-2019'
 
       - uses: actions-rs/cargo@v1
