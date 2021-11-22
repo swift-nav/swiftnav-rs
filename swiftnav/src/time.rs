@@ -728,6 +728,21 @@ impl UtcTime {
             self.seconds()
         )
     }
+
+    pub fn to_gps_hardcoded(&self) -> GpsTime {
+        let is_lse = self.seconds() >= 60.0;
+        let mjd = self.to_mjd();
+        let gps = unsafe { swiftnav_sys::mjd2gps(mjd.0) };
+        let gps = GpsTime(gps);
+
+        // During a leap second event the MJD is wrong by a second, so remove the
+        // erroneous second here
+        if is_lse {
+            gps - std::time::Duration::from_secs(1)
+        } else {
+            gps
+        }
+    }
 }
 
 impl Default for UtcTime {

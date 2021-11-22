@@ -83,6 +83,7 @@ fn main() {
         .allowlist_function("floor_to_epoch")
         .allowlist_function("glo2gps")
         .allowlist_function("gps2glo")
+        .allowlist_function("mjd2gps")
         .allowlist_var("FLOAT_EQUALITY_EPS")
         .allowlist_var("MINUTE_SECS")
         .allowlist_var("HOUR_SECS")
