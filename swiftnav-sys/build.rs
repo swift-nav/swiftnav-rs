@@ -45,6 +45,7 @@ fn main() {
         .header(format!("{}/include/swiftnav/gnss_time.h", dst.display()))
         .header(format!("{}/include/swiftnav/coord_system.h", dst.display()))
         .header(format!("{}/include/swiftnav/ionosphere.h", dst.display()))
+        .header(format!("{}/include/swiftnav/geoid_model.h", dst.display()))
         .header(format!("{}/include/swiftnav/troposphere.h", dst.display()))
         .header(format!("{}/include/swiftnav/ephemeris.h", dst.display()))
         .header(format!("{}/include/swiftnav/edc.h", dst.display()))
@@ -163,6 +164,7 @@ fn main() {
         .allowlist_var("pvt_err_msg")
         .allowlist_function("correct_iono")
         .allowlist_function("correct_tropo")
+        .allowlist_function("get_geoid_offset")
         // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.
