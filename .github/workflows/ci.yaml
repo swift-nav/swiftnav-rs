@@ -37,6 +37,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         with:
           version: "10.0"
+          directory: ${{ runner.temp }}/llvm-10.0/
 
       - name: Install rust ${{ matrix.binary_target }}
         uses: actions-rs/toolchain@v1
