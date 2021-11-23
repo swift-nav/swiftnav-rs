@@ -18,7 +18,7 @@ jobs:
             binary_target: x86_64-unknown-linux-gnu
           - os: macos-10.15
             binary_target: x86_64-apple-darwin
-          - os: windows-2019
+          - os: windows-latest
             binary_target: x86_64-pc-windows-msvc
     steps:
       - uses: actions/checkout@v2
@@ -34,9 +34,10 @@ jobs:
 
       - name: Install LLVM and Clang # required for bindgen on Windows
         uses: KyleMayes/install-llvm-action@v1
-        if: matrix.os == 'windows-2019'
+        if: matrix.os == 'windows-latest'
         with:
           version: "10.0"
+          directory: ${{ runner.temp }}/llvm-10.0/
 
       - name: Install rust ${{ matrix.binary_target }}
         uses: actions-rs/toolchain@v1
