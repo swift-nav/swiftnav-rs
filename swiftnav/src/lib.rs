@@ -7,9 +7,9 @@
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
 // EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
-//! `swiftnav-rs` is a library that implements GNSS utility functions to perform
-//! position estimations. The data used by `swiftnav-rs` typically comes from GNSS
-//! receiver chips as raw observation and ephemeris data. `swiftnav-rs` is more of
+//! `swiftnav` is a library that implements GNSS utility functions to perform
+//! position estimations. The data used by `swiftnav` typically comes from GNSS
+//! receiver chips as raw observation and ephemeris data. `swiftnav` is more of
 //! a "bring your own algorithm" library, it provides a bunch of functionality that
 //! is useful when processing raw GNSS data, but it provides only limited position
 //! estimation capabilities. Each module encompasses a single set of functionality,
@@ -23,13 +23,13 @@
 //! transmission and the delays of the messages the receiver is able to determine
 //! the location of itself in relation to the satellites.
 //!
-//! `swiftnav-rs` does not provide any functionality for communicating with
+//! `swiftnav` does not provide any functionality for communicating with
 //! receivers made by Swift Navigation, or any manufacturer.
 //! [libsbp](https://github.com/swift-nav/libsbp) is the library to use if you
 //! want to communicate with receivers using Swift Binary Protocol (SBP).
 //!
 //! ## Time
-//! Time is a very important aspect of GNSS. `swiftnav-rs` defaults to representing
+//! Time is a very important aspect of GNSS. `swiftnav` defaults to representing
 //! all times as GPS times. It provides the ability to manipulate GPS time stamps,
 //! as well as means to convert a GPS time stamp into various other time bases
 //! (GLONASS time, UTC, MJD).
@@ -47,7 +47,7 @@
 //!
 //! ## Troposphere and Ionosphere
 //! Two major sources of signal error in GNSS are the troposphere and ionosphere.
-//! `swiftnav-rs` provides the ability to decode and use the broadcast Klobuchar
+//! `swiftnav` provides the ability to decode and use the broadcast Klobuchar
 //! ionosphere model. An implementation of the UNM3m troposphere model is also
 //! provided.
 //!
