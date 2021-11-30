@@ -41,6 +41,7 @@ fn main() {
         .derive_eq(true)
         // The input header we would like to generate
         // bindings for.
+        .header(format!("{}/include/swiftnav/almanac.h", dst.display()))
         .header(format!("{}/include/swiftnav/signal.h", dst.display()))
         .header(format!("{}/include/swiftnav/gnss_time.h", dst.display()))
         .header(format!("{}/include/swiftnav/coord_system.h", dst.display()))
@@ -172,6 +173,13 @@ fn main() {
         .allowlist_type("geoid_model_t")
         .allowlist_function("get_geoid_offset")
         .allowlist_function("get_geoid_model")
+        .allowlist_type("almanac_t")
+        .allowlist_function("calc_sat_state_almanac")
+        .allowlist_function("calc_sat_az_el_almanac")
+        .allowlist_function("calc_sat_doppler_almanac")
+        .allowlist_function("almanac_valid")
+        .allowlist_function("almanac_healthy")
+        .allowlist_function("almanac_decode")
         // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.

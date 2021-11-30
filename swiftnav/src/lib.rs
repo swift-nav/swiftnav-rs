@@ -58,6 +58,7 @@
 //! This can be used to seed your own position estimation algorithm with a rough
 //! starting location.
 
+pub mod almanac;
 pub mod coords;
 pub mod edc;
 pub mod ephemeris;
