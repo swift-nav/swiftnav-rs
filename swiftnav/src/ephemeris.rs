@@ -232,7 +232,7 @@ impl Ephemeris {
             valid,
             health_bits,
             source,
-            __bindgen_anon_1: match terms {
+            data: match terms {
                 EphemerisTerms::Kepler(c_kepler) => {
                     assert!(matches!(
                         sid.to_constellation(),
