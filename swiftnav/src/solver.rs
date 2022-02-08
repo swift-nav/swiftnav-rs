@@ -688,6 +688,46 @@ mod tests {
         nm
     }
 
+    // Note this is a copy of GPS nm1 but set to code GAL_E1B, do not combine
+    // them in the same test case
+    fn make_gal_nm1() -> NavigationMeasurement {
+        let mut nm = NavigationMeasurement::new();
+        nm.set_sid(GnssSignal::new(9, Code::GalE1b).unwrap());
+        nm.set_pseudorange(23946993.888943646);
+        nm.set_satellite_state(&SatelliteState {
+            pos: ECEF::new(-19477278.087422125, -7649508.9457812719, 16674633.163554827),
+            vel: ECEF::new(0.0, 0.0, 0.0),
+            acc: ECEF::new(0.0, 0.0, 0.0),
+            clock_err: 0.0,
+            clock_rate_err: 0.0,
+            iodc: 0,
+            iode: 0,
+        });
+        nm.set_lock_time(Duration::from_secs_f64(5.0));
+        nm.set_measured_doppler(0.);
+        nm
+    }
+
+    // Note this is a copy of GPS nm2 but set to code GAL_E1B, do not combine
+    // them in the same test case
+    fn make_gal_nm2() -> NavigationMeasurement {
+        let mut nm = NavigationMeasurement::new();
+        nm.set_sid(GnssSignal::new(1, Code::GalE1b).unwrap());
+        nm.set_pseudorange(22932174.156858064);
+        nm.set_satellite_state(&SatelliteState {
+            pos: ECEF::new(-9680013.5408340245, -15286326.354385279, 19429449.383770257),
+            vel: ECEF::new(0.0, 0.0, 0.0),
+            acc: ECEF::new(0.0, 0.0, 0.0),
+            clock_err: 0.0,
+            clock_rate_err: 0.0,
+            iodc: 0,
+            iode: 0,
+        });
+        nm.set_lock_time(Duration::from_secs_f64(5.0));
+        nm.set_measured_doppler(0.);
+        nm
+    }
+
     #[test]
     fn pvt_failed_repair() {
         let nms = [make_nm1(), make_nm2(), make_nm3(), make_nm4(), make_nm5()];
@@ -944,9 +984,6 @@ mod tests {
 
     #[test]
     fn pvt_outlier_gps_l1ca_only() {
-        /* 9 L1CA signals and 1 (broken) L2CM signal */
-        let expected_removed_sid = GnssSignal::new(8, Code::GpsL2cm).unwrap();
-
         let nms = [
             make_nm2(),
             make_nm3(),
@@ -967,10 +1004,10 @@ mod tests {
         let result = calc_pvt(&nms, make_tor(), settings);
 
         assert!(result.is_ok(), "PVT should succeed");
-        let (pvt_status, soln, _, sid_set) = result.unwrap();
+        let (pvt_status, soln, _, _sid_set) = result.unwrap();
         assert_eq!(
             pvt_status,
-            PvtStatus::RepairedSolution,
+            PvtStatus::RaimPassed,
             "Return code should be pvt repaired. Saw: {:?}",
             pvt_status
         );
@@ -987,10 +1024,6 @@ mod tests {
             "n_sats_used should be {}. Saw: {}",
             nms.len() - 1,
             soln.sats_used()
-        );
-        assert!(
-            sid_set.contains(expected_removed_sid),
-            "Unexpected RAIM removed SID!"
         );
     }
 
@@ -1063,12 +1096,11 @@ mod tests {
 
         let result = calc_pvt(&nms, make_tor(), settings);
 
-        let expected_removed_sid = GnssSignal::new(8, Code::GpsL2cm).unwrap();
         assert!(result.is_ok(), "PVT should succeed");
-        let (pvt_status, soln, _, sid_set) = result.unwrap();
+        let (pvt_status, soln, _, _sid_set) = result.unwrap();
         assert_eq!(
             pvt_status,
-            PvtStatus::RepairedSolution,
+            PvtStatus::RaimPassed,
             "Return code should be repaired solution. Saw: {:?}",
             pvt_status
         );
@@ -1085,10 +1117,6 @@ mod tests {
             "n_sats_used should be {}. Saw: {}",
             nms.len() - 2,
             soln.sats_used()
-        );
-        assert!(
-            sid_set.contains(expected_removed_sid),
-            "Unexpected RAIM removed SID!"
         );
     }
 
@@ -1282,5 +1310,37 @@ mod tests {
             dops.hdop(),
             dops.vdop()
         );
+    }
+
+    #[test]
+    fn test_calc_pvt_exclude_gal() {
+        // u8 n_used = 8;
+        // u8 n_gps_l1ca = 6;
+        // gnss_solution soln;
+        // dops_t dops;
+        // gnss_sid_set_t raim_removed_sids;
+
+        let nms = [
+            make_nm3(),
+            make_gal_nm1(),
+            make_gal_nm2(),
+            make_nm5(),
+            make_nm6(),
+            make_nm7(),
+            make_nm8(),
+            make_nm9(),
+        ];
+        let settings = PvtSettings {
+            strategy: ProcessingStrategy::GpsOnly,
+            disable_raim: false,
+            disable_velocity: false,
+        };
+
+        let result = calc_pvt(&nms, make_tor(), settings);
+
+        assert!(result.is_ok(), "PVT should succeed");
+        let (_, soln, _, _) = result.unwrap();
+        assert_eq!(soln.sats_used(), 6, "Only 6 sats should be used when performing GPS only");
+        assert_eq!(soln.signals_used(), 6, "Only 6 signals should be used when performing GPS only");
     }
 }
