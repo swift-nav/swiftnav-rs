@@ -1340,7 +1340,15 @@ mod tests {
 
         assert!(result.is_ok(), "PVT should succeed");
         let (_, soln, _, _) = result.unwrap();
-        assert_eq!(soln.sats_used(), 6, "Only 6 sats should be used when performing GPS only");
-        assert_eq!(soln.signals_used(), 6, "Only 6 signals should be used when performing GPS only");
+        assert_eq!(
+            soln.sats_used(),
+            6,
+            "Only 6 sats should be used when performing GPS only"
+        );
+        assert_eq!(
+            soln.signals_used(),
+            6,
+            "Only 6 signals should be used when performing GPS only"
+        );
     }
 }
