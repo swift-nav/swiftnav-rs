@@ -73,6 +73,7 @@ fn main() {
         .allowlist_function("add_secs")
         .allowlist_function("decode_utc_parameters")
         .allowlist_function("gps2utc")
+        .allowlist_function("utc2gps")
         .allowlist_function("date2mjd")
         .allowlist_function("mjd2utc")
         .allowlist_function("utc2mjd")

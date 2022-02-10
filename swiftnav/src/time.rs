@@ -123,6 +123,10 @@ impl GpsTime {
         &self.0
     }
 
+    pub(crate) fn mut_c_ptr(&mut self) -> *mut swiftnav_sys::gps_time_t {
+        &mut self.0
+    }
+
     pub(crate) fn unknown() -> swiftnav_sys::gps_time_t {
         swiftnav_sys::gps_time_t { tow: -1.0, wn: -1 }
     }
@@ -729,19 +733,27 @@ impl UtcTime {
         )
     }
 
-    pub fn to_gps_hardcoded(&self) -> GpsTime {
-        let is_lse = self.seconds() >= 60.0;
-        let mjd = self.to_mjd();
-        let gps = unsafe { swiftnav_sys::mjd2gps(mjd.0) };
-        let gps = GpsTime(gps);
-
-        // During a leap second event the MJD is wrong by a second, so remove the
-        // erroneous second here
-        if is_lse {
-            gps - std::time::Duration::from_secs(1)
-        } else {
-            gps
+    /// Converts the UTC time into GPS time
+    pub fn to_gps(&self, utc_params: &UtcParams) -> GpsTime {
+        let mut gps = GpsTime::new_unchecked(0, 0.0);
+        unsafe {
+            swiftnav_sys::utc2gps(self.c_ptr(), gps.mut_c_ptr(), utc_params.c_ptr());
         }
+        gps
+    }
+
+    /// Converts the UTC time into GPS time using the hardcoded list of leap
+    /// seconds.
+    ///
+    /// # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
+    /// The hard coded list of leap seconds will get out of date, it is
+    /// preferable to use [`UtcTime::to_gps()`] with the newest set of UTC parameters
+    pub fn to_gps_hardcoded(&self) -> GpsTime {
+        let mut gps = GpsTime::new_unchecked(0, 0.0);
+        unsafe {
+            swiftnav_sys::utc2gps(self.c_ptr(), gps.mut_c_ptr(), std::ptr::null());
+        }
+        gps
     }
 }
 
