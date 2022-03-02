@@ -17,6 +17,7 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::ffi;
 use std::fmt;
+use std::str::FromStr;
 
 /// GNSS satellite constellations
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
@@ -87,12 +88,12 @@ impl Constellation {
         };
         c_str.to_string_lossy()
     }
+}
 
-    /// Attempts to make a [`Constellation`] from a string
-    pub fn from_str<T: Into<Vec<u8>>>(s: T) -> Result<Constellation, InvalidConstellation> {
-        let mut vec = s.into();
-        vec.push(0);
-        let c_str = ffi::CString::from_vec_with_nul(vec).unwrap();
+impl FromStr for Constellation {
+    type Err = InvalidConstellation;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let c_str = ffi::CString::new(s).map_err(|_| InvalidConstellation(-1))?;
         let constellation = unsafe { swiftnav_sys::constellation_string_to_enum(c_str.as_ptr()) };
 
         Self::from_constellation_t(constellation)
@@ -365,16 +366,6 @@ impl Code {
         }
     }
 
-    /// Attempts to make a [`Code`] from a string.
-    pub fn from_str<T: Into<Vec<u8>>>(s: T) -> Result<Code, InvalidCode> {
-        let mut vec = s.into();
-        vec.push(0);
-        let c_str = ffi::CString::from_vec_with_nul(vec).unwrap();
-        let code = unsafe { swiftnav_sys::code_string_to_enum(c_str.as_ptr()) };
-
-        Self::from_code_t(code)
-    }
-
     /// Get the human readable name of the code.
     pub fn to_str(&self) -> Cow<'static, str> {
         let c_str = unsafe { ffi::CStr::from_ptr(swiftnav_sys::code_to_string(self.to_code_t())) };
@@ -426,6 +417,16 @@ impl Code {
 
     pub fn is_qzss(&self) -> bool {
         unsafe { swiftnav_sys::is_qzss(self.to_code_t()) }
+    }
+}
+
+impl FromStr for Code {
+    type Err = InvalidCode;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let c_str = ffi::CString::new(s).map_err(|_| InvalidCode(-1))?;
+        let code = unsafe { swiftnav_sys::code_string_to_enum(c_str.as_ptr()) };
+
+        Self::from_code_t(code)
     }
 }
 
@@ -1068,8 +1069,21 @@ mod tests {
         assert_eq!(Constellation::from_str("QZS").unwrap(), Constellation::Qzs);
         assert_eq!(Constellation::from_str("GAL").unwrap(), Constellation::Gal);
 
-        assert!(Constellation::from_str("Bad String").is_err());
-        assert!(Constellation::from_str([1u8, 2, 3]).is_err());
+        {
+            let result = Constellation::from_str("Bad String");
+            assert!(result.is_err());
+            assert_eq!(result.unwrap_err(), InvalidConstellation(-1));
+        }
+        {
+            let result = Constellation::from_str("Nul\0String");
+            assert!(result.is_err());
+            assert_eq!(result.unwrap_err(), InvalidConstellation(-1));
+        }
+        {
+            let result = Constellation::from_str("💩💩💩💩");
+            assert!(result.is_err());
+            assert_eq!(result.unwrap_err(), InvalidConstellation(-1));
+        }
     }
 
     #[test]
@@ -1204,8 +1218,21 @@ mod tests {
         assert_eq!(Code::from_str("QZS AUX").unwrap(), Code::AuxQzs);
         assert_eq!(Code::from_str("BDS AUX").unwrap(), Code::AuxBds);
 
-        assert!(Constellation::from_str("Bad String").is_err());
-        assert!(Constellation::from_str([1u8, 2, 3]).is_err());
+        {
+            let result = Code::from_str("Bad String");
+            assert!(result.is_err());
+            assert_eq!(result.unwrap_err(), InvalidCode(-1));
+        }
+        {
+            let result = Code::from_str("Nul\0String");
+            assert!(result.is_err());
+            assert_eq!(result.unwrap_err(), InvalidCode(-1));
+        }
+        {
+            let result = Code::from_str("💩💩💩💩");
+            assert!(result.is_err());
+            assert_eq!(result.unwrap_err(), InvalidCode(-1));
+        }
     }
 
     #[test]
