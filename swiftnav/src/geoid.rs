@@ -23,10 +23,10 @@ use crate::coords::LLHRadians;
 ///
 /// Currently only one model is compiled into the code at a time
 pub enum GeoidModel {
-    /// The EGM2008 geoid model, down sampled to 1 degree resolution
-    Egm2008_1Deg,
-    /// The EGM2008 geoid model, down sampled to 15 arc minute resolution
-    Egm2008_15Min,
+    /// The EGM96 geoid model
+    Egm96,
+    /// The EGM2008 geoid model
+    Egm2008,
 }
 
 /// Get the offset of the geoid from the WGS84 ellipsoid
@@ -44,5 +44,11 @@ pub fn get_geoid_offset<T: Into<LLHRadians>>(pos: T) -> f32 {
 
 /// Gets the geoid model compiled into the Swiftnav crate
 pub fn get_geoid_model() -> GeoidModel {
-    GeoidModel::Egm2008_1Deg
+    let model = unsafe { swiftnav_sys::get_geoid_model() };
+
+    match model {
+        swiftnav_sys::geoid_model_t_GEOID_MODEL_EGM96 => GeoidModel::Egm96,
+        swiftnav_sys::geoid_model_t_GEOID_MODEL_EGM2008 => GeoidModel::Egm2008,
+        _ => unimplemented!("Unknown geoid model {}", model),
+    }
 }
