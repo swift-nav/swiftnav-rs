@@ -17,6 +17,7 @@ use std::borrow::Cow;
 use std::error::Error;
 use std::ffi;
 use std::fmt;
+use std::str::FromStr;
 
 /// GNSS satellite constellations
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
@@ -78,6 +79,7 @@ impl Constellation {
         unsafe { swiftnav_sys::constellation_to_sat_count(*self as swiftnav_sys::constellation_t) }
     }
 
+    /// Get the human readable name of the constellation.
     pub fn to_str(&self) -> Cow<'static, str> {
         let c_str = unsafe {
             ffi::CStr::from_ptr(swiftnav_sys::constellation_to_string(
@@ -85,6 +87,22 @@ impl Constellation {
             ))
         };
         c_str.to_string_lossy()
+    }
+}
+
+impl FromStr for Constellation {
+    type Err = InvalidConstellation;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let c_str = ffi::CString::new(s).map_err(|_| InvalidConstellation(-1))?;
+        let constellation = unsafe { swiftnav_sys::constellation_string_to_enum(c_str.as_ptr()) };
+
+        Self::from_constellation_t(constellation)
+    }
+}
+
+impl fmt::Display for Constellation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.to_str())
     }
 }
 
@@ -348,17 +366,13 @@ impl Code {
         }
     }
 
-    /// Attempts to make a [`Code`] from a string
-    pub fn from_c_str(s: &ffi::CStr) -> Result<Code, InvalidCode> {
-        Self::from_code_t(unsafe { swiftnav_sys::code_string_to_enum(s.as_ptr()) })
-    }
-
+    /// Get the human readable name of the code.
     pub fn to_str(&self) -> Cow<'static, str> {
         let c_str = unsafe { ffi::CStr::from_ptr(swiftnav_sys::code_to_string(self.to_code_t())) };
         c_str.to_string_lossy()
     }
 
-    /// Gets  the corresponding [`Constellation`]
+    /// Gets the corresponding [`Constellation`]
     pub fn to_constellation(&self) -> Constellation {
         Constellation::from_constellation_t(unsafe {
             swiftnav_sys::code_to_constellation(self.to_code_t())
@@ -403,6 +417,22 @@ impl Code {
 
     pub fn is_qzss(&self) -> bool {
         unsafe { swiftnav_sys::is_qzss(self.to_code_t()) }
+    }
+}
+
+impl FromStr for Code {
+    type Err = InvalidCode;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let c_str = ffi::CString::new(s).map_err(|_| InvalidCode(-1))?;
+        let code = unsafe { swiftnav_sys::code_string_to_enum(c_str.as_ptr()) };
+
+        Self::from_code_t(code)
+    }
+}
+
+impl fmt::Display for Code {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.to_str())
     }
 }
 
@@ -484,6 +514,30 @@ impl GnssSignal {
     /// Get the carrier frequency of the signal
     pub fn carrier_frequency(&self) -> f64 {
         unsafe { swiftnav_sys::sid_to_carr_freq(self.0) }
+    }
+
+    /// Makes the human readable signal name
+    pub fn to_str(&self) -> String {
+        let mut raw_str = [0; swiftnav_sys::SID_STR_LEN_MAX as usize + 1];
+
+        unsafe {
+            let n_bytes = swiftnav_sys::sid_to_string(
+                raw_str.as_mut_ptr(),
+                raw_str.len() as i32 - 1,
+                self.to_gnss_signal_t(),
+            );
+            raw_str[n_bytes as usize] = 0;
+
+            let str = ffi::CStr::from_ptr(raw_str.as_ptr());
+
+            str.to_string_lossy().to_string()
+        }
+    }
+}
+
+impl fmt::Display for GnssSignal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.to_str())
     }
 }
 
@@ -994,5 +1048,218 @@ mod tests {
                 assert!(result.is_ok());
             }
         }
+    }
+
+    #[test]
+    fn constellation_strings() {
+        assert_eq!(Constellation::Gps.to_str(), "GPS");
+        assert_eq!(Constellation::Sbas.to_str(), "SBAS");
+        assert_eq!(Constellation::Glo.to_str(), "GLO");
+        assert_eq!(Constellation::Bds.to_str(), "BDS");
+        assert_eq!(Constellation::Qzs.to_str(), "QZS");
+        assert_eq!(Constellation::Gal.to_str(), "GAL");
+
+        assert_eq!(Constellation::from_str("GPS").unwrap(), Constellation::Gps);
+        assert_eq!(
+            Constellation::from_str("SBAS").unwrap(),
+            Constellation::Sbas
+        );
+        assert_eq!(Constellation::from_str("GLO").unwrap(), Constellation::Glo);
+        assert_eq!(Constellation::from_str("BDS").unwrap(), Constellation::Bds);
+        assert_eq!(Constellation::from_str("QZS").unwrap(), Constellation::Qzs);
+        assert_eq!(Constellation::from_str("GAL").unwrap(), Constellation::Gal);
+
+        {
+            let result = Constellation::from_str("Bad String");
+            assert!(result.is_err());
+            assert_eq!(result.unwrap_err(), InvalidConstellation(-1));
+        }
+        {
+            let result = Constellation::from_str("Nul\0String");
+            assert!(result.is_err());
+            assert_eq!(result.unwrap_err(), InvalidConstellation(-1));
+        }
+        {
+            let result = Constellation::from_str("💩💩💩💩");
+            assert!(result.is_err());
+            assert_eq!(result.unwrap_err(), InvalidConstellation(-1));
+        }
+    }
+
+    #[test]
+    fn code_strings() {
+        assert_eq!(Code::GpsL1ca.to_str(), "GPS L1CA");
+        assert_eq!(Code::GpsL2cm.to_str(), "GPS L2CM");
+        assert_eq!(Code::SbasL1ca.to_str(), "SBAS L1");
+        assert_eq!(Code::GloL1of.to_str(), "GLO L1OF");
+        assert_eq!(Code::GloL2of.to_str(), "GLO L2OF");
+        assert_eq!(Code::GpsL1p.to_str(), "GPS L1P");
+        assert_eq!(Code::GpsL2p.to_str(), "GPS L2P");
+        assert_eq!(Code::GpsL2cl.to_str(), "GPS L2CL");
+        assert_eq!(Code::GpsL2cx.to_str(), "GPS L2C");
+        assert_eq!(Code::GpsL5i.to_str(), "GPS L5I");
+        assert_eq!(Code::GpsL5q.to_str(), "GPS L5Q");
+        assert_eq!(Code::GpsL5x.to_str(), "GPS L5");
+        assert_eq!(Code::Bds2B1.to_str(), "BDS B1");
+        assert_eq!(Code::Bds2B2.to_str(), "BDS B2");
+        assert_eq!(Code::GalE1b.to_str(), "GAL E1B");
+        assert_eq!(Code::GalE1c.to_str(), "GAL E1C");
+        assert_eq!(Code::GalE1x.to_str(), "GAL E1");
+        assert_eq!(Code::GalE6b.to_str(), "GAL E6B");
+        assert_eq!(Code::GalE6c.to_str(), "GAL E6C");
+        assert_eq!(Code::GalE6x.to_str(), "GAL E6");
+        assert_eq!(Code::GalE7i.to_str(), "GAL E5bI");
+        assert_eq!(Code::GalE7q.to_str(), "GAL E5bQ");
+        assert_eq!(Code::GalE7x.to_str(), "GAL E5b");
+        assert_eq!(Code::GalE8i.to_str(), "GAL E8I");
+        assert_eq!(Code::GalE8q.to_str(), "GAL E8Q");
+        assert_eq!(Code::GalE8x.to_str(), "GAL E8");
+        assert_eq!(Code::GalE5i.to_str(), "GAL E5aI");
+        assert_eq!(Code::GalE5q.to_str(), "GAL E5aQ");
+        assert_eq!(Code::GalE5x.to_str(), "GAL E5a");
+        assert_eq!(Code::GloL1p.to_str(), "GLO L1P");
+        assert_eq!(Code::GloL2p.to_str(), "GLO L2P");
+        assert_eq!(Code::QzsL1ca.to_str(), "QZS L1CA");
+        assert_eq!(Code::QzsL1ci.to_str(), "QZS L1CI");
+        assert_eq!(Code::QzsL1cq.to_str(), "QZS L1CQ");
+        assert_eq!(Code::QzsL1cx.to_str(), "QZS L1CX");
+        assert_eq!(Code::QzsL2cm.to_str(), "QZS L2CM");
+        assert_eq!(Code::QzsL2cl.to_str(), "QZS L2CL");
+        assert_eq!(Code::QzsL2cx.to_str(), "QZS L2C");
+        assert_eq!(Code::QzsL5i.to_str(), "QZS L5I");
+        assert_eq!(Code::QzsL5q.to_str(), "QZS L5Q");
+        assert_eq!(Code::QzsL5x.to_str(), "QZS L5");
+        assert_eq!(Code::SbasL5i.to_str(), "SBAS L5I");
+        assert_eq!(Code::SbasL5q.to_str(), "SBAS L5Q");
+        assert_eq!(Code::SbasL5x.to_str(), "SBAS L5");
+        assert_eq!(Code::Bds3B1ci.to_str(), "BDS3 B1CI");
+        assert_eq!(Code::Bds3B1cq.to_str(), "BDS3 B1CQ");
+        assert_eq!(Code::Bds3B1cx.to_str(), "BDS3 B1C");
+        assert_eq!(Code::Bds3B5i.to_str(), "BDS3 B5I");
+        assert_eq!(Code::Bds3B5q.to_str(), "BDS3 B5Q");
+        assert_eq!(Code::Bds3B5x.to_str(), "BDS3 B5");
+        assert_eq!(Code::Bds3B7i.to_str(), "BDS3 B7I");
+        assert_eq!(Code::Bds3B7q.to_str(), "BDS3 B7Q");
+        assert_eq!(Code::Bds3B7x.to_str(), "BDS3 B7");
+        assert_eq!(Code::Bds3B3i.to_str(), "BDS3 B3I");
+        assert_eq!(Code::Bds3B3q.to_str(), "BDS3 B3Q");
+        assert_eq!(Code::Bds3B3x.to_str(), "BDS3 B3");
+        assert_eq!(Code::GpsL1ci.to_str(), "GPS L1CI");
+        assert_eq!(Code::GpsL1cq.to_str(), "GPS L1CQ");
+        assert_eq!(Code::GpsL1cx.to_str(), "GPS L1C");
+        assert_eq!(Code::AuxGps.to_str(), "GPS AUX");
+        assert_eq!(Code::AuxSbas.to_str(), "SBAS AUX");
+        assert_eq!(Code::AuxGal.to_str(), "GAL AUX");
+        assert_eq!(Code::AuxQzs.to_str(), "QZS AUX");
+        assert_eq!(Code::AuxBds.to_str(), "BDS AUX");
+
+        assert_eq!(Code::from_str("GPS L1CA").unwrap(), Code::GpsL1ca);
+        assert_eq!(Code::from_str("GPS L2CM").unwrap(), Code::GpsL2cm);
+        assert_eq!(Code::from_str("SBAS L1").unwrap(), Code::SbasL1ca);
+        assert_eq!(Code::from_str("GLO L1OF").unwrap(), Code::GloL1of);
+        assert_eq!(Code::from_str("GLO L2OF").unwrap(), Code::GloL2of);
+        assert_eq!(Code::from_str("GPS L1P").unwrap(), Code::GpsL1p);
+        assert_eq!(Code::from_str("GPS L2P").unwrap(), Code::GpsL2p);
+        assert_eq!(Code::from_str("GPS L2CL").unwrap(), Code::GpsL2cl);
+        assert_eq!(Code::from_str("GPS L2C").unwrap(), Code::GpsL2cx);
+        assert_eq!(Code::from_str("GPS L5I").unwrap(), Code::GpsL5i);
+        assert_eq!(Code::from_str("GPS L5Q").unwrap(), Code::GpsL5q);
+        assert_eq!(Code::from_str("GPS L5").unwrap(), Code::GpsL5x);
+        assert_eq!(Code::from_str("BDS B1").unwrap(), Code::Bds2B1);
+        assert_eq!(Code::from_str("BDS B2").unwrap(), Code::Bds2B2);
+        assert_eq!(Code::from_str("GAL E1B").unwrap(), Code::GalE1b);
+        assert_eq!(Code::from_str("GAL E1C").unwrap(), Code::GalE1c);
+        assert_eq!(Code::from_str("GAL E1").unwrap(), Code::GalE1x);
+        assert_eq!(Code::from_str("GAL E6B").unwrap(), Code::GalE6b);
+        assert_eq!(Code::from_str("GAL E6C").unwrap(), Code::GalE6c);
+        assert_eq!(Code::from_str("GAL E6").unwrap(), Code::GalE6x);
+        assert_eq!(Code::from_str("GAL E5bI").unwrap(), Code::GalE7i);
+        assert_eq!(Code::from_str("GAL E5bQ").unwrap(), Code::GalE7q);
+        assert_eq!(Code::from_str("GAL E5b").unwrap(), Code::GalE7x);
+        assert_eq!(Code::from_str("GAL E8I").unwrap(), Code::GalE8i);
+        assert_eq!(Code::from_str("GAL E8Q").unwrap(), Code::GalE8q);
+        assert_eq!(Code::from_str("GAL E8").unwrap(), Code::GalE8x);
+        assert_eq!(Code::from_str("GAL E5aI").unwrap(), Code::GalE5i);
+        assert_eq!(Code::from_str("GAL E5aQ").unwrap(), Code::GalE5q);
+        assert_eq!(Code::from_str("GAL E5a").unwrap(), Code::GalE5x);
+        assert_eq!(Code::from_str("GLO L1P").unwrap(), Code::GloL1p);
+        assert_eq!(Code::from_str("GLO L2P").unwrap(), Code::GloL2p);
+        assert_eq!(Code::from_str("QZS L1CA").unwrap(), Code::QzsL1ca);
+        assert_eq!(Code::from_str("QZS L1CI").unwrap(), Code::QzsL1ci);
+        assert_eq!(Code::from_str("QZS L1CQ").unwrap(), Code::QzsL1cq);
+        assert_eq!(Code::from_str("QZS L1CX").unwrap(), Code::QzsL1cx);
+        assert_eq!(Code::from_str("QZS L2CM").unwrap(), Code::QzsL2cm);
+        assert_eq!(Code::from_str("QZS L2CL").unwrap(), Code::QzsL2cl);
+        assert_eq!(Code::from_str("QZS L2C").unwrap(), Code::QzsL2cx);
+        assert_eq!(Code::from_str("QZS L5I").unwrap(), Code::QzsL5i);
+        assert_eq!(Code::from_str("QZS L5Q").unwrap(), Code::QzsL5q);
+        assert_eq!(Code::from_str("QZS L5").unwrap(), Code::QzsL5x);
+        assert_eq!(Code::from_str("SBAS L5I").unwrap(), Code::SbasL5i);
+        assert_eq!(Code::from_str("SBAS L5Q").unwrap(), Code::SbasL5q);
+        assert_eq!(Code::from_str("SBAS L5").unwrap(), Code::SbasL5x);
+        assert_eq!(Code::from_str("BDS3 B1CI").unwrap(), Code::Bds3B1ci);
+        assert_eq!(Code::from_str("BDS3 B1CQ").unwrap(), Code::Bds3B1cq);
+        assert_eq!(Code::from_str("BDS3 B1C").unwrap(), Code::Bds3B1cx);
+        assert_eq!(Code::from_str("BDS3 B5I").unwrap(), Code::Bds3B5i);
+        assert_eq!(Code::from_str("BDS3 B5Q").unwrap(), Code::Bds3B5q);
+        assert_eq!(Code::from_str("BDS3 B5").unwrap(), Code::Bds3B5x);
+        assert_eq!(Code::from_str("BDS3 B7I").unwrap(), Code::Bds3B7i);
+        assert_eq!(Code::from_str("BDS3 B7Q").unwrap(), Code::Bds3B7q);
+        assert_eq!(Code::from_str("BDS3 B7").unwrap(), Code::Bds3B7x);
+        assert_eq!(Code::from_str("BDS3 B3I").unwrap(), Code::Bds3B3i);
+        assert_eq!(Code::from_str("BDS3 B3Q").unwrap(), Code::Bds3B3q);
+        assert_eq!(Code::from_str("BDS3 B3").unwrap(), Code::Bds3B3x);
+        assert_eq!(Code::from_str("GPS L1CI").unwrap(), Code::GpsL1ci);
+        assert_eq!(Code::from_str("GPS L1CQ").unwrap(), Code::GpsL1cq);
+        assert_eq!(Code::from_str("GPS L1C").unwrap(), Code::GpsL1cx);
+        assert_eq!(Code::from_str("GPS AUX").unwrap(), Code::AuxGps);
+        assert_eq!(Code::from_str("SBAS AUX").unwrap(), Code::AuxSbas);
+        assert_eq!(Code::from_str("GAL AUX").unwrap(), Code::AuxGal);
+        assert_eq!(Code::from_str("QZS AUX").unwrap(), Code::AuxQzs);
+        assert_eq!(Code::from_str("BDS AUX").unwrap(), Code::AuxBds);
+
+        {
+            let result = Code::from_str("Bad String");
+            assert!(result.is_err());
+            assert_eq!(result.unwrap_err(), InvalidCode(-1));
+        }
+        {
+            let result = Code::from_str("Nul\0String");
+            assert!(result.is_err());
+            assert_eq!(result.unwrap_err(), InvalidCode(-1));
+        }
+        {
+            let result = Code::from_str("💩💩💩💩");
+            assert!(result.is_err());
+            assert_eq!(result.unwrap_err(), InvalidCode(-1));
+        }
+    }
+
+    #[test]
+    fn signal_strings() {
+        assert_eq!(
+            GnssSignal::new(1, Code::GpsL1ca).unwrap().to_str(),
+            "GPS L1CA 1"
+        );
+        assert_eq!(
+            GnssSignal::new(32, Code::GpsL1ca).unwrap().to_str(),
+            "GPS L1CA 32"
+        );
+        assert_eq!(
+            GnssSignal::new(1, Code::GalE5x).unwrap().to_str(),
+            "GAL E5a 1"
+        );
+        assert_eq!(
+            GnssSignal::new(32, Code::GalE5x).unwrap().to_str(),
+            "GAL E5a 32"
+        );
+        assert_eq!(
+            GnssSignal::new(1, Code::Bds2B1).unwrap().to_str(),
+            "BDS B1 1"
+        );
+        assert_eq!(
+            GnssSignal::new(32, Code::Bds2B1).unwrap().to_str(),
+            "BDS B1 32"
+        );
     }
 }
