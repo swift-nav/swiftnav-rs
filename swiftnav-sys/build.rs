@@ -169,7 +169,9 @@ fn main() {
         .allowlist_var("pvt_err_msg")
         .allowlist_function("correct_iono")
         .allowlist_function("correct_tropo")
+        .allowlist_type("geoid_model_t")
         .allowlist_function("get_geoid_offset")
+        .allowlist_function("get_geoid_model")
         // Finish the builder and generate the bindings.
         .generate()
         // Unwrap the Result and panic on failure.
