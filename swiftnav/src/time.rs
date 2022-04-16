@@ -85,7 +85,7 @@ impl fmt::Display for InvalidGpsTime {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             InvalidGpsTime::InvalidWN(wn) => write!(f, "Invalid Week Number: {}", wn),
-            InvalidGpsTime::InvalidTOW(tow) => write!(f, "Invalid Time of Wee: {}", tow),
+            InvalidGpsTime::InvalidTOW(tow) => write!(f, "Invalid Time of Week: {}", tow),
         }
     }
 }
