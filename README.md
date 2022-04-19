@@ -15,10 +15,26 @@ communicate with receivers using Swift Binary Protocol (SBP).
 
 # Publishing a new release
 
-Use the [`cargo-release`](https://github.com/sunng87/cargo-release) tool:
+Releases are done against the master branch.  Use the
+[`cargo-release`](https://github.com/sunng87/cargo-release) tool.  First
+release the `swiftnav-sys` crate:
 
 ```
-cargo release --skip-publish
+cd swiftnav-sys
+cargo release <major|minor|patch>
+
+# If things look good
+cargo release <major|minor|patch> --execute
+```
+
+Then release the `swiftnav` crate:
+
+```
+cd swiftnav
+cargo release <major|minor|patch>
+
+# If things look good
+cargo release <major|minor|patch> --execute
 ```
 
 # License
