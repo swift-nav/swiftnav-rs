@@ -302,13 +302,7 @@ impl GpsTime {
     }
 
     pub fn total_cmp(&self, other: &GpsTime) -> Ordering {
-        if self == other {
-            Ordering::Equal
-        } else if self > other {
-            Ordering::Greater
-        } else {
-            Ordering::Less
-        }
+        self.tow().total_cmp(&other.tow())
     }
 }
 
