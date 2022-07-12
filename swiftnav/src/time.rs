@@ -44,6 +44,7 @@
 //! [`UtcParams`] object to handle the leap second conversion and one which doesn't
 //! take a [`UtcParams`] object but has `_hardcoded` appended to the function name.
 
+use std::cmp::Ordering;
 use std::error::Error;
 use std::fmt;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
@@ -298,6 +299,16 @@ impl GpsTime {
         assert!(self.is_valid());
         assert!(self >= GLO_TIME_START);
         GloTime(unsafe { swiftnav_sys::gps2glo(self.c_ptr(), std::ptr::null()) })
+    }
+
+    pub fn total_cmp(&self, other: &GpsTime) -> Ordering {
+        if self == other {
+            Ordering::Equal
+        } else if self > other {
+            Ordering::Greater
+        } else {
+            Ordering::Less
+        }
     }
 }
 
