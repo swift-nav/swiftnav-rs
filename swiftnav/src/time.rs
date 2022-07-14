@@ -301,8 +301,20 @@ impl GpsTime {
         GloTime(unsafe { swiftnav_sys::gps2glo(self.c_ptr(), std::ptr::null()) })
     }
 
+    /// Compare between itself and other GpsTime
+    /// Checks whether week number is same which then mirrors [`f64::total_cmp()`]
     pub fn total_cmp(&self, other: &GpsTime) -> Ordering {
-        self.tow().total_cmp(&other.tow())
+        if self.wn() != other.wn() {
+            self.wn().cmp(&other.wn())
+        } else {
+            let mut left = self.tow().to_bits() as i64;
+            let mut right = other.tow().to_bits() as i64;
+
+            left ^= (((left >> 63) as u64) >> 1) as i64;
+            right ^= (((right >> 63) as u64) >> 1) as i64;
+
+            left.cmp(&right)
+        }
     }
 }
 
