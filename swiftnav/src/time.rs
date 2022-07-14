@@ -303,10 +303,13 @@ impl GpsTime {
 
     /// Compare between itself and other GpsTime
     /// Checks whether week number is same which then mirrors [`f64::total_cmp()`]
+    ///
+    /// See: [`https://github.com/rust-lang/rust/blob/481db40311cdd241ae4d33f34f2f75732e44d8e8/library/core/src/num/f64.rs#L1228`]
     pub fn total_cmp(&self, other: &GpsTime) -> Ordering {
         if self.wn() != other.wn() {
             self.wn().cmp(&other.wn())
         } else {
+            //TODO: replace with f64::total_cmp
             let mut left = self.tow().to_bits() as i64;
             let mut right = other.tow().to_bits() as i64;
 
