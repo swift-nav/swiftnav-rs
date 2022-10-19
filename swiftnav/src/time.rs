@@ -44,7 +44,6 @@
 //! [`UtcParams`] object to handle the leap second conversion and one which doesn't
 //! take a [`UtcParams`] object but has `_hardcoded` appended to the function name.
 
-use std::cmp::Ordering;
 use std::error::Error;
 use std::fmt;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
@@ -301,20 +300,16 @@ impl GpsTime {
         GloTime(unsafe { swiftnav_sys::gps2glo(self.c_ptr(), std::ptr::null()) })
     }
 
+    #[rustversion::since(1.62)]
     /// Compare between itself and other GpsTime
-    /// Checks whether week number is same which then mirrors [`https://github.com/rust-lang/rust/blob/481db40311cdd241ae4d33f34f2f75732e44d8e8/library/core/src/num/f64.rs#L1228`](f64::total_cmp())
-    pub fn total_cmp(&self, other: &GpsTime) -> Ordering {
+    /// Checks whether week number is same which then mirrors
+    /// [f64::total_cmp()](https://doc.rust-lang.org/std/primitive.f64.html#method.total_cmp)
+    pub fn total_cmp(&self, other: &GpsTime) -> std::cmp::Ordering {
         if self.wn() != other.wn() {
             self.wn().cmp(&other.wn())
         } else {
-            //TODO: replace with f64::total_cmp
-            let mut left = self.tow().to_bits() as i64;
-            let mut right = other.tow().to_bits() as i64;
-
-            left ^= (((left >> 63) as u64) >> 1) as i64;
-            right ^= (((right >> 63) as u64) >> 1) as i64;
-
-            left.cmp(&right)
+            let other = other.tow();
+            self.tow().total_cmp(&other)
         }
     }
 }
@@ -920,6 +915,26 @@ mod tests {
         assert!(t3 >= t2);
         assert!(t3 <= t3);
         assert!(t3 >= t3);
+    }
+
+    #[rustversion::since(1.62)]
+    #[test]
+    fn total_order() {
+        use std::cmp::Ordering;
+
+        let t1 = GpsTime::new(10, 234.566).unwrap();
+        let t2 = GpsTime::new(10, 234.567).unwrap();
+        let t3 = GpsTime::new(10, 234.568).unwrap();
+
+        assert!(t1.total_cmp(&t2) == Ordering::Less);
+        assert!(t2.total_cmp(&t3) == Ordering::Less);
+        assert!(t1.total_cmp(&t3) == Ordering::Less);
+
+        assert!(t2.total_cmp(&t1) == Ordering::Greater);
+        assert!(t3.total_cmp(&t2) == Ordering::Greater);
+        assert!(t3.total_cmp(&t1) == Ordering::Greater);
+
+        assert!(t1.total_cmp(&t1) == Ordering::Equal);
     }
 
     #[test]

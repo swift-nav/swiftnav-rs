@@ -1,5 +1,6 @@
+---
 name: CI
-on:
+"on":
   pull_request:
   push:
     branches:
@@ -11,15 +12,34 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-18.04
+          # Ubuntus
+          - os: ubuntu-latest
             binary_target: x86_64-unknown-linux-musl
             needs_musl: true
-          - os: ubuntu-18.04
+            toolchain: stable
+          - os: ubuntu-20.04
             binary_target: x86_64-unknown-linux-gnu
-          - os: macos-10.15
+            toolchain: stable
+
+          # MacOS
+          - os: macos-11
             binary_target: x86_64-apple-darwin
+            toolchain: stable
+
+          # Windows
           - os: windows-latest
             binary_target: x86_64-pc-windows-msvc
+            toolchain: stable
+
+          # Nightly Rust
+          - os: ubuntu-latest
+            binary_target: x86_64-unknown-linux-gnu
+            toolchain: nightly
+
+          # MSRV
+          - os: ubuntu-latest
+            binary_target: x86_64-unknown-linux-gnu
+            toolchain: 1.57.0
     steps:
       - uses: actions/checkout@v2
         with:
@@ -32,7 +52,8 @@ jobs:
           sudo apt-get install musl-tools
           sudo ln -s /usr/bin/musl-gcc /usr/bin/musl-g++
 
-      - name: Install LLVM and Clang # required for bindgen on Windows
+      # Required for bindgen on Windows
+      - name: Install LLVM and Clang
         uses: KyleMayes/install-llvm-action@v1
         if: matrix.os == 'windows-latest'
         with:
@@ -49,10 +70,10 @@ jobs:
       - name: Install rust ${{ matrix.binary_target }}
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable-${{ matrix.binary_target }}
+          toolchain: ${{ matrix.toolchain }}-${{ matrix.binary_target }}
           profile: minimal
 
       - uses: actions-rs/cargo@v1
         with:
           command: make
-          args: --makefile ci-makefile.toml --no-workspace workspace-ci-flow
+          args: --no-workspace workspace-ci-flow

@@ -4,6 +4,7 @@ CARGO_MAKE_EXTEND_WORKSPACE_MAKEFILE = true
 CARGO_MAKE_RUN_CLIPPY = true
 CARGO_MAKE_CLIPPY_ARGS = "--all-features -- -D warnings"
 CARGO_MAKE_RUN_CHECK_FORMAT = true
+CARGO_MAKE_CARGO_VERBOSE_FLAGS = "-vv"
 RUSTFLAGS="-D warnings"
 
 [tasks.check-format-ci-flow]
