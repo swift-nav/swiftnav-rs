@@ -9,7 +9,7 @@ repository = "https://github.com/swift-nav/swiftnav-rs"
 license = "LGPL-3.0"
 
 [build-dependencies]
-bindgen = "0.60"
+bindgen = "0.61"
 cmake = "0.1.46"
 
 [features]
