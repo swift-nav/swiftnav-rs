@@ -7,6 +7,7 @@ description = "FFI bindings for libswiftnav"
 readme = "../README.md"
 repository = "https://github.com/swift-nav/swiftnav-rs"
 license = "LGPL-3.0"
+rust-version = "1.56.1"
 
 [build-dependencies]
 bindgen = "0.59"
