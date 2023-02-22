@@ -787,20 +787,22 @@ impl From<UtcTime> for chrono::DateTime<chrono::offset::Utc> {
     fn from(utc: UtcTime) -> chrono::DateTime<chrono::offset::Utc> {
         use chrono::prelude::*;
 
-        let date = NaiveDate::from_ymd(
+        let date = NaiveDate::from_ymd_opt(
             utc.year() as i32,
             utc.month() as u32,
             utc.day_of_month() as u32,
-        );
+        )
+        .unwrap();
         let whole_seconds = utc.seconds().floor() as u32;
         let frac_seconds = utc.seconds().fract();
         let nanoseconds = (frac_seconds * 1_000_000_000.0).round() as u32;
-        let time = NaiveTime::from_hms_nano(
+        let time = NaiveTime::from_hms_nano_opt(
             utc.hour() as u32,
             utc.minute() as u32,
             whole_seconds,
             nanoseconds,
-        );
+        )
+        .unwrap();
 
         DateTime::<Utc>::from_utc(NaiveDateTime::new(date, time), Utc)
     }
@@ -1603,6 +1605,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "chrono")]
     #[test]
     fn chrono_conversions() {
         use chrono::prelude::*;
@@ -1610,8 +1613,8 @@ mod tests {
         let swift_date = UtcTime::from_date(2021, 8, 1, 00, 11, 0.0);
         let expected_utc = DateTime::<Utc>::from_utc(
             NaiveDateTime::new(
-                NaiveDate::from_ymd(2021, 8, 1),
-                NaiveTime::from_hms_nano(00, 11, 0, 0),
+                NaiveDate::from_ymd_opt(2021, 8, 1).unwrap(),
+                NaiveTime::from_hms_nano_opt(00, 11, 0, 0).unwrap(),
             ),
             Utc,
         );
