@@ -15,28 +15,38 @@ communicate with receivers using Swift Binary Protocol (SBP).
 
 # Publishing a new release
 
-Releases are done against the master branch.  Use the
-[`cargo-release`](https://github.com/sunng87/cargo-release) tool.  First
+Releases are done against the master branch.  Use the `cargo publish` tool.  First
 release the `swiftnav-sys` crate:
+
+Update the `swiftnav-sys` crate version:
 
 ```
 cd swiftnav-sys
-cargo release <major|minor|patch>
+sed -i 's@version = "0.8.1"@version = "0.8.2"@' Cargo.toml
+```
 
-# If things look good
-cargo release <major|minor|patch> --execute
+Then release the package:
+
+```
+cd swiftnav-sys
+cargo publish
+```
+
+Update the `swiftnav` crate version:
+
+```
+cd swiftnav
+sed -i 's@version = "0.8.1"@version = "0.8.2"@' Cargo.toml
 ```
 
 Then release the `swiftnav` crate:
 
 ```
 cd swiftnav
-cargo release <major|minor|patch>
-
-# If things look good
-cargo release <major|minor|patch> --execute
+cargo publish
 ```
 
 # License
+
 This crate is distributed under the terms of the LGPLv3, full details are
 available in the [LICENSE](./LICENSE) file.
