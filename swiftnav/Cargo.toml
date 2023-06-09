@@ -1,10 +1,10 @@
 [package]
 name = "swiftnav"
-version = "0.8.0"
+version = "0.8.1"
 authors = ["Swift Navigation <dev@swiftnav.com>"]
 edition = "2018"
 description = "GNSS positioning and related utilities"
-readme = "../README.md"
+readme = "README.md"
 repository = "https://github.com/swift-nav/swiftnav-rs"
 license = "LGPL-3.0"
 rust-version = "1.56.1"
