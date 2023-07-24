@@ -115,6 +115,10 @@ impl GpsTime {
         GpsTime(swiftnav_sys::gps_time_t { wn, tow })
     }
 
+    pub(crate) fn from_gps_time_t(t: swiftnav_sys::gps_time_t) -> Result<GpsTime, InvalidGpsTime> {
+        GpsTime::new(t.wn, t.tow)
+    }
+
     pub(crate) fn to_gps_time_t(self) -> swiftnav_sys::gps_time_t {
         self.0
     }
