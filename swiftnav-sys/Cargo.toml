@@ -10,7 +10,7 @@ license = "LGPL-3.0"
 rust-version = "1.56.1"
 
 [build-dependencies]
-bindgen = "0.66"
+bindgen = "0.69"
 cmake = "0.1.46"
 
 [features]
