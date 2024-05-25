@@ -312,6 +312,16 @@ impl GpsTime {
             self.tow().total_cmp(&other)
         }
     }
+
+    pub fn to_fractional_year(&self, utc_params: &UtcParams) -> f64 {
+        let utc = self.to_utc(utc_params);
+        utc.to_fractional_year()
+    }
+
+    pub fn to_fractional_year_hardcoded(&self) -> f64 {
+        let utc = self.to_utc_hardcoded();
+        utc.to_fractional_year()
+    }
 }
 
 impl fmt::Debug for GpsTime {
@@ -768,6 +778,21 @@ impl UtcTime {
         }
         gps
     }
+
+    pub fn to_fractional_year(&self) -> f64 {
+        let year = self.year() as f64;
+        let days = self.day_of_year() as f64;
+        let hours = self.hour() as f64;
+        let minutes = self.minute() as f64;
+        let seconds = self.seconds();
+        let total_days = days + hours / 24. + minutes / 1440. + seconds / 86400.;
+
+        if is_leap_year(self.year()) {
+            year + total_days / 366.0
+        } else {
+            year + total_days / 365.0
+        }
+    }
 }
 
 impl Default for UtcTime {
@@ -866,6 +891,10 @@ impl From<UtcTime> for MJD {
     fn from(utc: UtcTime) -> MJD {
         utc.to_mjd()
     }
+}
+
+pub fn is_leap_year(year: u16) -> bool {
+    ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0)
 }
 
 #[cfg(test)]
@@ -1668,5 +1697,14 @@ mod tests {
         let gps = glo.to_gps_hardcoded();
         assert_eq!(gps.wn(), swiftnav_sys::GLO_EPOCH_WN as i16);
         assert!((gps.tow() - swiftnav_sys::GLO_EPOCH_TOW as f64).abs() < 1e-9);
+    }
+
+    #[test]
+    fn is_leap_year() {
+        use super::is_leap_year;
+        assert!(!is_leap_year(2019));
+        assert!(is_leap_year(2020));
+        assert!(!is_leap_year(1900));
+        assert!(is_leap_year(2000));
     }
 }
