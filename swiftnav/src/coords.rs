@@ -49,6 +49,11 @@
 
 use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
 
+use crate::{
+    reference_frame::{get_transformation, ReferenceFrame, TransformationNotFound},
+    time::GpsTime,
+};
+
 /// WGS84 geodetic coordinates (Latitude, Longitude, Height)
 ///
 /// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude (both in the given angular units) and height above the geoid in meters
@@ -517,8 +522,102 @@ impl Default for AzimuthElevation {
     }
 }
 
+/// Complete coordinate used for transforming between reference frames
+///
+/// Velocities are optional, but when present they will be transformed
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
+pub struct Coordinate {
+    reference_frame: ReferenceFrame,
+    position: ECEF,
+    velocity: Option<ECEF>,
+    epoch: GpsTime,
+}
+
+impl Coordinate {
+    pub fn new(
+        reference_frame: ReferenceFrame,
+        position: ECEF,
+        velocity: Option<ECEF>,
+        epoch: GpsTime,
+    ) -> Self {
+        Coordinate {
+            reference_frame,
+            position,
+            velocity,
+            epoch,
+        }
+    }
+
+    pub fn without_velocity(
+        reference_frame: ReferenceFrame,
+        position: ECEF,
+        epoch: GpsTime,
+    ) -> Self {
+        Coordinate {
+            reference_frame,
+            position,
+            velocity: None,
+            epoch,
+        }
+    }
+
+    pub fn with_velocity(
+        reference_frame: ReferenceFrame,
+        position: ECEF,
+        velocity: ECEF,
+        epoch: GpsTime,
+    ) -> Self {
+        Coordinate {
+            reference_frame,
+            position,
+            velocity: Some(velocity),
+            epoch,
+        }
+    }
+
+    pub fn reference_frame(&self) -> ReferenceFrame {
+        self.reference_frame
+    }
+
+    pub fn position(&self) -> ECEF {
+        self.position
+    }
+
+    pub fn velocity(&self) -> Option<ECEF> {
+        self.velocity
+    }
+
+    pub fn epoch(&self) -> GpsTime {
+        self.epoch
+    }
+
+    /// Use the velocity term to adjust the epoch of the coordinate.
+    /// When a coordinate has no velocity the position won't be changed.
+    pub fn adjust_epoch(&self, new_epoch: &GpsTime) -> Self {
+        let dt =
+            new_epoch.to_fractional_year_hardcoded() - self.epoch.to_fractional_year_hardcoded();
+        let v = self.velocity.unwrap_or_default();
+
+        Coordinate {
+            position: self.position + dt * v,
+            velocity: self.velocity,
+            epoch: *new_epoch,
+            reference_frame: self.reference_frame,
+        }
+    }
+
+    pub fn transform_to(&self, new_frame: ReferenceFrame) -> Result<Self, TransformationNotFound> {
+        let transformation = get_transformation(self.reference_frame, new_frame)?;
+        Ok(transformation.transform(self))
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    use float_eq::assert_float_eq;
+
+    use crate::time::UtcTime;
+
     use super::*;
 
     const D2R: f64 = std::f64::consts::PI / 180.0;
@@ -659,5 +758,28 @@ mod tests {
         assert_eq!(2.0, result.x());
         assert_eq!(4.0, result.y());
         assert_eq!(6.0, result.z());
+    }
+
+    #[test]
+    fn coordinate_epoch() {
+        let initial_epoch = UtcTime::from_date(2020, 1, 1, 0, 0, 0.).to_gps_hardcoded();
+        let new_epoch = UtcTime::from_date(2021, 1, 1, 0, 0, 0.).to_gps_hardcoded();
+        let initial_coord = Coordinate::with_velocity(
+            ReferenceFrame::ITRF2020,
+            ECEF::new(0.0, 0.0, 0.0),
+            ECEF::new(1.0, 2.0, 3.0),
+            initial_epoch,
+        );
+
+        let new_coord = initial_coord.adjust_epoch(&new_epoch);
+
+        assert_eq!(initial_coord.reference_frame, new_coord.reference_frame);
+        assert_float_eq!(new_coord.position.x(), 1.0, abs <= 0.001);
+        assert_float_eq!(new_coord.position.y(), 2.0, abs <= 0.001);
+        assert_float_eq!(new_coord.position.z(), 3.0, abs <= 0.001);
+        assert_float_eq!(new_coord.velocity.unwrap().x(), 1.0, abs <= 0.001);
+        assert_float_eq!(new_coord.velocity.unwrap().y(), 2.0, abs <= 0.001);
+        assert_float_eq!(new_coord.velocity.unwrap().z(), 3.0, abs <= 0.001);
+        assert_eq!(new_epoch, new_coord.epoch());
     }
 }

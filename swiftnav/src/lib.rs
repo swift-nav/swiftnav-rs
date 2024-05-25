@@ -64,6 +64,7 @@ pub mod ephemeris;
 pub mod geoid;
 pub mod ionosphere;
 pub mod navmeas;
+pub mod reference_frame;
 pub mod signal;
 pub mod solver;
 pub mod time;
