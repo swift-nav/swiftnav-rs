@@ -47,6 +47,8 @@
 //!   * "Transformation from Cartesian to Geodetic Coordinates Accelerated by
 //!      Halley’s Method", T. Fukushima (2006), Journal of Geodesy.
 
+use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
+
 /// WGS84 geodetic coordinates (Latitude, Longitude, Height)
 ///
 /// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude (both in the given angular units) and height above the geoid in meters
@@ -327,6 +329,104 @@ impl AsMut<[f64; 3]> for ECEF {
     }
 }
 
+impl Add for ECEF {
+    type Output = ECEF;
+    fn add(self, rhs: ECEF) -> ECEF {
+        ECEF([self.x() + rhs.x(), self.y() + rhs.y(), self.z() + rhs.z()])
+    }
+}
+
+impl Add<&ECEF> for ECEF {
+    type Output = ECEF;
+    fn add(self, rhs: &ECEF) -> ECEF {
+        self + *rhs
+    }
+}
+
+impl Add<&ECEF> for &ECEF {
+    type Output = ECEF;
+    fn add(self, rhs: &ECEF) -> ECEF {
+        *self + *rhs
+    }
+}
+
+impl AddAssign for ECEF {
+    fn add_assign(&mut self, rhs: ECEF) {
+        *self += &rhs;
+    }
+}
+
+impl AddAssign<&ECEF> for ECEF {
+    fn add_assign(&mut self, rhs: &ECEF) {
+        self.0[0] += rhs.x();
+        self.0[1] += rhs.y();
+        self.0[2] += rhs.z();
+    }
+}
+
+impl Sub for ECEF {
+    type Output = ECEF;
+    fn sub(self, rhs: ECEF) -> ECEF {
+        ECEF([self.x() - rhs.x(), self.y() - rhs.y(), self.z() - rhs.z()])
+    }
+}
+
+impl Sub<&ECEF> for ECEF {
+    type Output = ECEF;
+    fn sub(self, rhs: &ECEF) -> ECEF {
+        self - *rhs
+    }
+}
+
+impl Sub<&ECEF> for &ECEF {
+    type Output = ECEF;
+    fn sub(self, rhs: &ECEF) -> ECEF {
+        *self - *rhs
+    }
+}
+
+impl SubAssign for ECEF {
+    fn sub_assign(&mut self, rhs: ECEF) {
+        *self -= &rhs;
+    }
+}
+
+impl SubAssign<&ECEF> for ECEF {
+    fn sub_assign(&mut self, rhs: &ECEF) {
+        self.0[0] -= rhs.x();
+        self.0[1] -= rhs.y();
+        self.0[2] -= rhs.z();
+    }
+}
+
+impl Mul<ECEF> for f64 {
+    type Output = ECEF;
+    fn mul(self, rhs: ECEF) -> ECEF {
+        ECEF([self * rhs.x(), self * rhs.y(), self * rhs.z()])
+    }
+}
+
+impl Mul<&ECEF> for f64 {
+    type Output = ECEF;
+    fn mul(self, rhs: &ECEF) -> ECEF {
+        self * *rhs
+    }
+}
+
+impl MulAssign<f64> for ECEF {
+    fn mul_assign(&mut self, rhs: f64) {
+        *self *= &rhs;
+    }
+}
+
+impl MulAssign<&f64> for ECEF {
+    fn mul_assign(&mut self, rhs: &f64) {
+        self.0[0] *= *rhs;
+        self.0[1] *= *rhs;
+        self.0[2] *= *rhs;
+    }
+}
+
 /// Local North East Down reference frame coordinates
 ///
 /// Internally stored as an array of 3 [f64](std::f64) values: N, E, D all in meters
@@ -515,5 +615,49 @@ mod tests {
             let height_err = llh.height() - expected_llh.height();
             assert!(height_err.abs() < MAX_DIST_ERROR_M);
         }
+    }
+
+    #[test]
+    fn ecef_ops() {
+        let a = ECEF::new(1.0, 2.0, 3.0);
+        let b = ECEF::new(4.0, 5.0, 6.0);
+
+        let result = a + b;
+        assert_eq!(5.0, result.x());
+        assert_eq!(7.0, result.y());
+        assert_eq!(9.0, result.z());
+
+        let result = a + a + a;
+        assert_eq!(3.0, result.x());
+        assert_eq!(6.0, result.y());
+        assert_eq!(9.0, result.z());
+
+        let result = a - b;
+        assert_eq!(-3.0, result.x());
+        assert_eq!(-3.0, result.y());
+        assert_eq!(-3.0, result.z());
+
+        let result = 2.0 * a;
+        assert_eq!(2.0, result.x());
+        assert_eq!(4.0, result.y());
+        assert_eq!(6.0, result.z());
+
+        let mut result = a;
+        result += b;
+        assert_eq!(5.0, result.x());
+        assert_eq!(7.0, result.y());
+        assert_eq!(9.0, result.z());
+
+        let mut result = a;
+        result -= b;
+        assert_eq!(-3.0, result.x());
+        assert_eq!(-3.0, result.y());
+        assert_eq!(-3.0, result.z());
+
+        let mut result = a;
+        result *= 2.0;
+        assert_eq!(2.0, result.x());
+        assert_eq!(4.0, result.y());
+        assert_eq!(6.0, result.z());
     }
 }
