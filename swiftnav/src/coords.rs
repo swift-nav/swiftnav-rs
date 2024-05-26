@@ -297,6 +297,16 @@ impl ECEF {
         };
         azel
     }
+
+    /// Rotate a vector from ECEF coordinates into NED coordinates, at a given
+    /// reference point. This is approporiate for converting velocity vectors.
+    ///
+    /// This is the inverse of [NED::ecef_vector_at].
+    pub fn ned_vector_at(&self, point: &ECEF) -> NED {
+        let mut ned = NED::default();
+        unsafe { swiftnav_sys::wgsecef2ned(self.as_ptr(), point.as_ptr(), ned.as_mut_ptr()) };
+        ned
+    }
 }
 
 impl Default for ECEF {
@@ -358,6 +368,16 @@ impl NED {
 
     pub fn d(&self) -> f64 {
         self.0[2]
+    }
+
+    /// Rotate a vector from NED coordinates into ECEF coordinates, at a given
+    /// reference point. This is approporiate for converting velocity vectors.
+    ///
+    /// This is the inverse of [ECEF::ned_vector_at].
+    pub fn ecef_vector_at(&self, ref_ecef: &ECEF) -> ECEF {
+        let mut ecef = ECEF::default();
+        unsafe { swiftnav_sys::wgsned2ecef(self.as_ptr(), ref_ecef.as_ptr(), ecef.as_mut_ptr()) };
+        ecef
     }
 }
 
