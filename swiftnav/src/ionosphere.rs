@@ -16,7 +16,7 @@
 //! # References
 //!  * IS-GPS-200H, Section 20.3.3.5.2.5 and Figure 20-4
 
-use crate::{coords::ECEF, navmeas::NavigationMeasurement, time::GpsTime};
+use crate::time::GpsTime;
 use std::error::Error;
 use std::fmt::{Display, Formatter};
 
@@ -37,10 +37,6 @@ impl Display for IonoDecodeFailure {
 impl Error for IonoDecodeFailure {}
 
 impl Ionosphere {
-    fn as_ptr(&self) -> *const swiftnav_sys::ionosphere_t {
-        &self.0
-    }
-
     /// Construct an ionosphere model from already decoded parameters
     #[allow(clippy::too_many_arguments)]
     pub fn new(
@@ -109,19 +105,6 @@ impl Ionosphere {
     /// \return Ionospheric delay distance for GPS L1 frequency \[m\]
     pub fn calc_delay(&self, t: &GpsTime, lat_u: f64, lon_u: f64, a: f64, e: f64) -> f64 {
         unsafe { swiftnav_sys::calc_ionosphere(t.c_ptr(), lat_u, lon_u, a, e, &self.0) }
-    }
-
-    /// Apply ionosphere corrections to a set of measurements
-    pub fn correct_measurements(&self, pos: ECEF, measurements: &mut [NavigationMeasurement]) {
-        assert!(measurements.len() <= std::u8::MAX as usize);
-        unsafe {
-            swiftnav_sys::correct_iono(
-                pos.as_single_ptr(),
-                self.as_ptr(),
-                measurements.len() as u8,
-                measurements.as_mut_ptr() as *mut swiftnav_sys::navigation_measurement_t,
-            );
-        }
     }
 }
 
