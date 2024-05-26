@@ -39,7 +39,7 @@ jobs:
           # MSRV
           - os: ubuntu-latest
             binary_target: x86_64-unknown-linux-gnu
-            toolchain: 1.56.1
+            toolchain: 1.62.1
     steps:
       - uses: actions/checkout@v2
         with:

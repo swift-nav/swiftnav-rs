@@ -804,7 +804,7 @@ impl From<UtcTime> for chrono::DateTime<chrono::offset::Utc> {
         )
         .unwrap();
 
-        DateTime::<Utc>::from_utc(NaiveDateTime::new(date, time), Utc)
+        DateTime::from_naive_utc_and_offset(NaiveDateTime::new(date, time), Utc)
     }
 }
 
@@ -1611,7 +1611,7 @@ mod tests {
         use chrono::prelude::*;
         let epsilon = std::time::Duration::from_secs_f64(1e-6);
         let swift_date = UtcTime::from_date(2021, 8, 1, 00, 11, 0.0);
-        let expected_utc = DateTime::<Utc>::from_utc(
+        let expected_utc = DateTime::from_naive_utc_and_offset(
             NaiveDateTime::new(
                 NaiveDate::from_ymd_opt(2021, 8, 1).unwrap(),
                 NaiveTime::from_hms_nano_opt(00, 11, 0, 0).unwrap(),
