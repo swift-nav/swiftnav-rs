@@ -402,6 +402,14 @@ pub fn calc_pvt(
     let mut dops = Dops::new();
     let mut sidset = SidSet::new();
 
+    // TODO expose this via the PvtSettings
+    let obs_config = swiftnav_sys::obs_mask_config_t {
+        cn0_mask: swiftnav_sys::cn0_mask_t {
+            enable: false,
+            threshold_dbhz: 0.0,
+        },
+    };
+
     let result = unsafe {
         let meas_ptr =
             measurements.as_ptr() as *const [swiftnav_sys::navigation_measurement_t; 0usize];
@@ -411,6 +419,7 @@ pub fn calc_pvt(
             tor.c_ptr(),
             settings.disable_raim,
             settings.disable_velocity,
+            &obs_config,
             settings.strategy.to_processing_strategy_t(),
             &mut solution.0,
             &mut dops.0,

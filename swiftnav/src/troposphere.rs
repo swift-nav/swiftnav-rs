@@ -15,34 +15,18 @@
 //! # References
 //!   * UNB Neutral Atmosphere Models: Development and Performance. R Leandro,
 //!      M Santos, and R B Langley
-use crate::{coords::ECEF, navmeas::NavigationMeasurement, time::GpsTime};
 
 ///  Calculate tropospheric delay using UNM3m model.
 ///
 /// Requires the time of the delay, the latitude (rad) and height (m) of the
 /// receiver, and the elevation of the satellite (rad)
-pub fn calc_delay(t: &GpsTime, lat: f64, h: f64, el: f64) -> f64 {
-    unsafe { swiftnav_sys::calc_troposphere(t.c_ptr(), lat, h, el) }
-}
-
-/// Apply troposphere corrections to a set of measurements
-pub fn correct_measurements(pos: ECEF, measurements: &mut [NavigationMeasurement]) {
-    assert!(measurements.len() <= std::u8::MAX as usize);
-    unsafe {
-        swiftnav_sys::correct_tropo(
-            pos.as_single_ptr(),
-            measurements.len() as u8,
-            measurements.as_mut_ptr() as *mut swiftnav_sys::navigation_measurement_t,
-        );
-    }
+pub fn calc_delay(doy: f64, lat: f64, h: f64, el: f64) -> f64 {
+    unsafe { swiftnav_sys::calc_troposphere(doy, lat, h, el) }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        time::{GpsTime, DAY},
-        troposphere::calc_delay,
-    };
+    use crate::troposphere::calc_delay;
 
     const D2R: f64 = std::f64::consts::PI / 180.0;
 
@@ -59,11 +43,7 @@ mod tests {
         let el = 45.0 * D2R;
         let d_true = 2.8567;
 
-        /* GPS week 1669 starts on 1.1.2012, so easier to generate given doy */
-        let t = GpsTime::new(1669, 0.).unwrap();
-        let t = t + DAY.mul_f64(doy);
-
-        let d_tropo = calc_delay(&t, lat, h, el);
+        let d_tropo = calc_delay(doy, lat, h, el);
 
         assert!(
             (d_tropo - d_true).abs() < D_TOL,
@@ -78,10 +58,7 @@ mod tests {
         let el = 20. * D2R;
         let d_true = 7.4942;
 
-        let t = GpsTime::new(1669, 0.).unwrap();
-        let t = t + DAY.mul_f64(doy);
-
-        let d_tropo = calc_delay(&t, lat, h, el);
+        let d_tropo = calc_delay(doy, lat, h, el);
 
         assert!(
             (d_tropo - d_true).abs() < D_TOL,
@@ -94,12 +71,9 @@ mod tests {
         let h = 0.0;
         let doy = 50.5;
         let el = 10. * D2R;
-        let d_true = 12.9004;
+        let d_true = 12.9007;
 
-        let t = GpsTime::new(1669, 0.).unwrap();
-        let t = t + DAY.mul_f64(doy);
-
-        let d_tropo = calc_delay(&t, lat, h, el);
+        let d_tropo = calc_delay(doy, lat, h, el);
 
         assert!(
             (d_tropo - d_true).abs() < D_TOL,
@@ -111,7 +85,7 @@ mod tests {
         /* altitude sanity tests */
         let max_tropo_correction = 30.0;
         let h = -5000.;
-        let d_tropo = calc_delay(&t, lat, h, el);
+        let d_tropo = calc_delay(doy, lat, h, el);
 
         assert!(
             d_tropo.abs() < max_tropo_correction,
@@ -121,7 +95,7 @@ mod tests {
         );
 
         let h = 12000.;
-        let d_tropo = calc_delay(&t, lat, h, el);
+        let d_tropo = calc_delay(doy, lat, h, el);
 
         assert!(
             d_tropo.abs() < max_tropo_correction,
@@ -136,7 +110,7 @@ mod tests {
         let max_tropo_correction = 100.0;
 
         for el in elevation_testcases.iter() {
-            let d_tropo = calc_delay(&t, lat, h, *el);
+            let d_tropo = calc_delay(doy, lat, h, *el);
             assert!(
                 d_tropo.abs() < max_tropo_correction,
                 "Sanity test fail at satellite elevation {:.5}. : Correction was {:.5}",

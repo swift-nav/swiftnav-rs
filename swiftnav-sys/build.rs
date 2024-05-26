@@ -54,10 +54,6 @@ fn main() {
             "{}/include/swiftnav/single_epoch_solver.h",
             dst.display()
         ))
-        .header(format!(
-            "{}/include/swiftnav/correct_iono_tropo.h",
-            dst.display()
-        ))
         // Tell cargo to invalidate the built crate whenever any of the
         // included header files changed.
         .parse_callbacks(Box::new(bindgen::CargoCallbacks))
@@ -164,14 +160,13 @@ fn main() {
         .allowlist_var("NAV_MEAS_FLAG_CODE_VALID")
         .allowlist_var("NAV_MEAS_FLAG_MEAS_DOPPLER_VALID")
         .allowlist_var("NAV_MEAS_FLAG_CN0_VALID")
+        .allowlist_type("obs_mask_config_t")
         .allowlist_function("sid_set_init")
         .allowlist_function("sid_set_get_sat_count")
         .allowlist_function("sid_set_get_sig_count")
         .allowlist_function("sid_set_contains")
         .allowlist_function("calc_PVT")
         .allowlist_var("pvt_err_msg")
-        .allowlist_function("correct_iono")
-        .allowlist_function("correct_tropo")
         .allowlist_type("geoid_model_t")
         .allowlist_function("get_geoid_offset")
         .allowlist_function("get_geoid_model")

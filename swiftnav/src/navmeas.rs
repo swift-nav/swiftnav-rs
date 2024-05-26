@@ -41,14 +41,14 @@ impl NavigationMeasurement {
     ///
     /// Units of meters, time of flight multiplied by speed of light
     pub fn set_pseudorange(&mut self, value: f64) {
-        self.0.pseudorange = value;
+        self.0.raw_pseudorange = value;
         self.0.flags |= NAV_MEAS_FLAG_CODE_VALID;
     }
 
     /// Gets the pseudorange measurement, if a valid one has been set
     pub fn pseudorange(&self) -> Option<f64> {
         if self.0.flags & NAV_MEAS_FLAG_CODE_VALID != 0 {
-            Some(self.0.pseudorange)
+            Some(self.0.raw_pseudorange)
         } else {
             None
         }
@@ -63,14 +63,14 @@ impl NavigationMeasurement {
     ///
     /// Units of Hertz
     pub fn set_measured_doppler(&mut self, value: f64) {
-        self.0.measured_doppler = value;
+        self.0.raw_measured_doppler = value;
         self.0.flags |= NAV_MEAS_FLAG_MEAS_DOPPLER_VALID;
     }
 
     /// Gets the measured doppler measurement, if a valid one has been set
     pub fn measured_doppler(&self) -> Option<f64> {
         if self.0.flags & NAV_MEAS_FLAG_MEAS_DOPPLER_VALID != 0 {
-            Some(self.0.measured_doppler)
+            Some(self.0.raw_measured_doppler)
         } else {
             None
         }
