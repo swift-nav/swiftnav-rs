@@ -22,7 +22,7 @@ Update the `swiftnav-sys` crate version:
 
 ```
 cd swiftnav-sys
-sed -i 's@version = "0.8.1"@version = "0.8.2"@' Cargo.toml
+sed -i 's@version = "0.8.3"@version = "0.8.4"@' Cargo.toml
 ```
 
 Then release the package:
@@ -36,7 +36,7 @@ Update the `swiftnav` crate version:
 
 ```
 cd swiftnav
-sed -i 's@version = "0.8.1"@version = "0.8.2"@' Cargo.toml
+sed -i 's@version = "0.8.3"@version = "0.8.4"@' Cargo.toml
 ```
 
 Then release the `swiftnav` crate:
