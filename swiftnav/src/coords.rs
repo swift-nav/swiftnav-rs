@@ -47,6 +47,8 @@
 //!   * "Transformation from Cartesian to Geodetic Coordinates Accelerated by
 //!      Halley’s Method", T. Fukushima (2006), Journal of Geodesy.
 
+use std::fmt;
+
 /// WGS84 geodetic coordinates (Latitude, Longitude, Height)
 ///
 /// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude (both in the given angular units) and height above the geoid in meters
@@ -414,6 +416,49 @@ impl AzimuthElevation {
 impl Default for AzimuthElevation {
     fn default() -> Self {
         Self::new(0., 0.)
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+pub struct SexagesimalAngle {
+    pub degrees: i32,
+    pub minutes: i32,
+    pub seconds: f64,
+}
+
+impl SexagesimalAngle {
+    pub fn new(degrees: i32, minutes: i32, seconds: f64) -> SexagesimalAngle {
+        SexagesimalAngle {
+            degrees,
+            minutes,
+            seconds,
+        }
+    }
+
+    pub fn from_degree_f64(degrees: f64) -> SexagesimalAngle {
+        let degrees_int = degrees.trunc();
+        let minutes = (degrees - degrees_int) * 60.0;
+        let minutes_int = minutes.trunc();
+        let seconds = (minutes - minutes_int) * 60.0;
+        SexagesimalAngle {
+            degrees: degrees_int as i32,
+            minutes: minutes_int as i32,
+            seconds,
+        }
+    }
+
+    pub fn to_degrees(&self) -> f64 {
+        self.degrees as f64 + (self.minutes as f64 + self.seconds / 60.0) / 60.0
+    }
+}
+
+impl fmt::Display for SexagesimalAngle {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(
+            f,
+            "{}° {}' {:.5}\"",
+            self.degrees, self.minutes, self.seconds
+        )
     }
 }
 
