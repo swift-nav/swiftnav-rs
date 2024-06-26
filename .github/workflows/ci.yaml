@@ -5,6 +5,8 @@ name: CI
   push:
     branches:
       - "master"
+  schedule:
+    - cron: "0 16 * * 1" # 8am PST every Monday
 jobs:
   ci:
     name: Format, lint, and test
