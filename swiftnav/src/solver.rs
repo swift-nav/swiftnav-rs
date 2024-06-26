@@ -396,7 +396,7 @@ pub fn calc_pvt(
     tor: GpsTime,
     settings: PvtSettings,
 ) -> Result<(PvtStatus, GnssSolution, Dops, SidSet), PvtError> {
-    assert!(measurements.len() <= std::u8::MAX as usize);
+    assert!(measurements.len() <= u8::MAX as usize);
 
     let mut solution = GnssSolution::new();
     let mut dops = Dops::new();
