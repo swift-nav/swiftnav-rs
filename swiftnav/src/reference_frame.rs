@@ -43,7 +43,7 @@
 //! desired reference frame. You can then call the `transform` method on the transformation object
 //! to get a new coordinate in the desired reference frame. This transformation will change the
 //! position and velocity of the coordinate, but it does not the change the epoch of the coordinate.
-//! If you need to change the epoch of the coordinate you will need to use the [`Coordinate::change_epoch`](crate::coords::Coordinate::change_epoch)
+//! If you need to change the epoch of the coordinate you will need to use the [`Coordinate::adjust_epoch`](crate::coords::Coordinate::adjust_epoch)
 //! method which uses the velocity of the coordinate to determine the position at the new epoch.
 //!
 //! # Example
