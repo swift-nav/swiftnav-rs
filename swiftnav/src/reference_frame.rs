@@ -1,3 +1,71 @@
+// Copyright (c) 2024 Swift Navigation Inc.
+// Contact: Swift Navigation <dev@swiftnav.com>
+//
+// This source is subject to the license found in the file 'LICENSE' which must
+// be be distributed together with this source. All other rights reserved.
+//
+// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
+// EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
+//! Geodetic reference frame transformations
+//!
+//! Geodetic reference frames define the coordinate system used to represent
+//! positions on the Earth. Different reference frames are commonly used in
+//! different regions of the world, and for different purposes. For example,
+//! global reference frames, such as the International Terrestrial Reference
+//! Frame (ITRF), are used for global positioning, while regional reference
+//! frames, such as the European Terrestrial Reference Frame (ETRF), are used
+//! for regional positioning. Due to the movement of the earth's crust apparently
+//! fixed positions will move over time. Because of this it's important to note
+//! only take note of a position, but also the time at which that position was
+//! determined. In most regions of the earth the crust moves at a constant speed,
+//! meaning that if you are able to determine the local velocity of the crust you
+//! can easily determine what the position of a static point would have been in
+//! the past. It is commong for regional reference frames to define a common reference
+//! epoch that all positions should be transformed to, allowing the direct comparison
+//! of positions even if they were determined at different times. Regional reference
+//! frames also typically are defined to be "fixed" to a particular tectonic plate,
+//! meaning the large majority of the velocity for points on that tectonic plate
+//! are cancelled out. In contrast, global reference frames are not fixed to
+//! any particular tectonic plate, so most places on earth will have a measurable
+//! velocity. Global reference frames also typically do not have a common reference
+//! epoch, so determining one's local velocity is important to be able to compare
+//! positions or to transform a coordinate from a global reference frame to a regional
+//! reference frame.
+//!
+//! This module provides several types and functions to help transform a set of coordinates
+//! from one reference frame to another, and from one epoch to another. Several sets of
+//! transformation parameters are included for converting between common reference frames.
+//! To start out, you must have a [`Coordinate`](crate::coords::Coordinate) that you want to
+//! transform. This consists of a position, an epoch, and a reference frame as well as an optional
+//! velocity. You then need to get the [`Transformation`](crate::reference_frame::Transformation)
+//! object that describes the transformation from the reference frame of the coordinate to the
+//! desired reference frame. You can then call the `transform` method on the transformation object
+//! to get a new coordinate in the desired reference frame. This transformation will change the
+//! position and velocity of the coordinate, but it does not the change the epoch of the coordinate.
+//! If you need to change the epoch of the coordinate you will need to use the [`Coordinate::change_epoch`](crate::coords::Coordinate::change_epoch)
+//! method which uses the velocity of the coordinate to determine the position at the new epoch.
+//!
+//! # Example
+//! ```
+//! use swiftnav::{coords::{Coordinate, ECEF}, reference_frame::{ReferenceFrame, get_transformation}, time::UtcTime};
+//!
+//! let epoch_2020 = UtcTime::from_date(2020, 3, 15, 0, 0, 0.).to_gps_hardcoded();
+//! let itrf_coord = Coordinate::with_velocity(
+//!     ReferenceFrame::ITRF2014, // The reference frame of the coordinate
+//!     ECEF::new(-2703764.0, -4261273.0, 3887158.0), // The position of the coordinate
+//!     ECEF::new(-0.221, 0.254, 0.122), // The velocity of the coordinate
+//!     epoch_2020); // The epoch of the coordinate
+//!
+//! let epoch_2010 = UtcTime::from_date(2010, 1, 1, 0, 0, 0.).to_gps_hardcoded();
+//! let itrf_coord = itrf_coord.adjust_epoch(&epoch_2010); // Change the epoch of the coordinate
+//!
+//! let transformation = get_transformation(ReferenceFrame::ITRF2014, ReferenceFrame::NAD83_2011).unwrap();
+//!
+//! let nad83_coord = transformation.transform(&itrf_coord);
+//! ```
+//!
+
 use crate::coords::{Coordinate, ECEF};
 use std::{convert::TryFrom, fmt, str::FromStr};
 
@@ -17,6 +85,10 @@ pub enum ReferenceFrame {
     NAD83_CSRS,
 }
 
+/// An Error indicating that the provided reference frame name is invalid
+///
+/// This error is returned when trying to convert a string to a [`ReferenceFrame`](crate::reference_frame::ReferenceFrame)
+/// and the string does not match any accepted reference frame names.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct InvalidReferenceFrameName(String);
 
@@ -169,9 +241,7 @@ impl TimeDependentHelmertParams {
     }
 }
 
-/// Container for a complete transformation which includes
-/// both the transformation parameters as well as the source
-/// and destination reference frames
+/// A transformation from one reference frame to another.
 #[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct Transformation {
     from: ReferenceFrame,
@@ -209,6 +279,10 @@ impl Transformation {
     }
 }
 
+/// Error indicating that no transformation was found between two reference frames
+///
+/// This error is returned when trying to find a transformation between two reference frames
+/// and no transformation is found.
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct TransformationNotFound(ReferenceFrame, ReferenceFrame);
 
