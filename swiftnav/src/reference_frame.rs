@@ -75,10 +75,12 @@
 //!
 
 use crate::coords::{Coordinate, ECEF};
-use std::{convert::TryFrom, fmt, str::FromStr};
+use std::fmt;
+use strum::{Display, EnumIter, EnumString};
 
 /// Reference Frames
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, EnumString, Display, EnumIter)]
+#[strum(serialize_all = "UPPERCASE")]
 pub enum ReferenceFrame {
     ITRF2008,
     ITRF2014,
@@ -87,74 +89,12 @@ pub enum ReferenceFrame {
     ETRF2014,
     ETRF2020,
     /// i.e. NAD83(2011)
+    #[strum(to_string = "NAD83(2011)", serialize = "NAD83_2011")]
     NAD83_2011,
     /// i.e. NAD83(CSRS) - Canadian Spatial Reference System
     #[allow(non_camel_case_types)]
+    #[strum(to_string = "NAD83(CSRS)", serialize = "NAD83_CSRS")]
     NAD83_CSRS,
-}
-
-/// An Error indicating that the provided reference frame name is invalid
-///
-/// This error is returned when trying to convert a string to a [`ReferenceFrame`](crate::reference_frame::ReferenceFrame)
-/// and the string does not match any accepted reference frame names.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
-pub struct InvalidReferenceFrameName(String);
-
-impl fmt::Display for InvalidReferenceFrameName {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Invalid reference frame name ({})", self.0)
-    }
-}
-
-impl std::error::Error for InvalidReferenceFrameName {}
-
-impl TryFrom<&str> for ReferenceFrame {
-    type Error = InvalidReferenceFrameName;
-
-    fn try_from(value: &str) -> Result<Self, Self::Error> {
-        match value {
-            "ITRF2008" => Ok(ReferenceFrame::ITRF2008),
-            "ITRF2014" => Ok(ReferenceFrame::ITRF2014),
-            "ITRF2020" => Ok(ReferenceFrame::ITRF2020),
-            "ETRF2008" => Ok(ReferenceFrame::ETRF2008),
-            "ETRF2014" => Ok(ReferenceFrame::ETRF2014),
-            "ETRF2020" => Ok(ReferenceFrame::ETRF2020),
-            "NAD83(2011)" => Ok(ReferenceFrame::NAD83_2011),
-            "NAD83_2011" => Ok(ReferenceFrame::NAD83_2011),
-            "NAD83(CSRS)" => Ok(ReferenceFrame::NAD83_CSRS),
-            "NAD83_CSRS" => Ok(ReferenceFrame::NAD83_CSRS),
-            _ => Err(InvalidReferenceFrameName(value.to_string())),
-        }
-    }
-}
-
-impl FromStr for ReferenceFrame {
-    type Err = InvalidReferenceFrameName;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        ReferenceFrame::try_from(s)
-    }
-}
-
-impl From<ReferenceFrame> for &'static str {
-    fn from(value: ReferenceFrame) -> &'static str {
-        match value {
-            ReferenceFrame::ITRF2008 => "ITRF2008",
-            ReferenceFrame::ITRF2014 => "ITRF2014",
-            ReferenceFrame::ITRF2020 => "ITRF2020",
-            ReferenceFrame::ETRF2008 => "ETRF2008",
-            ReferenceFrame::ETRF2014 => "ETRF2014",
-            ReferenceFrame::ETRF2020 => "ETRF2020",
-            ReferenceFrame::NAD83_2011 => "NAD83(2011)",
-            ReferenceFrame::NAD83_CSRS => "NAD83(CSRS)",
-        }
-    }
-}
-
-impl fmt::Display for ReferenceFrame {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", Into::<&'static str>::into(*self))
-    }
 }
 
 /// 15-parameter Helmert transformation parameters
@@ -517,17 +457,71 @@ const TRANSFORMATIONS: [Transformation; 9] = [
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use float_eq::assert_float_eq;
+    use std::str::FromStr;
+
+    #[test]
+    fn reference_frame_strings() {
+        assert_eq!(ReferenceFrame::ITRF2008.to_string(), "ITRF2008");
+        assert_eq!(
+            ReferenceFrame::from_str("ITRF2008"),
+            Ok(ReferenceFrame::ITRF2008)
+        );
+        assert_eq!(ReferenceFrame::ITRF2014.to_string(), "ITRF2014");
+        assert_eq!(
+            ReferenceFrame::from_str("ITRF2014"),
+            Ok(ReferenceFrame::ITRF2014)
+        );
+        assert_eq!(ReferenceFrame::ITRF2020.to_string(), "ITRF2020");
+        assert_eq!(
+            ReferenceFrame::from_str("ITRF2020"),
+            Ok(ReferenceFrame::ITRF2020)
+        );
+        assert_eq!(ReferenceFrame::ETRF2008.to_string(), "ETRF2008");
+        assert_eq!(
+            ReferenceFrame::from_str("ETRF2008"),
+            Ok(ReferenceFrame::ETRF2008)
+        );
+        assert_eq!(ReferenceFrame::ETRF2014.to_string(), "ETRF2014");
+        assert_eq!(
+            ReferenceFrame::from_str("ETRF2014"),
+            Ok(ReferenceFrame::ETRF2014)
+        );
+        assert_eq!(ReferenceFrame::ETRF2020.to_string(), "ETRF2020");
+        assert_eq!(
+            ReferenceFrame::from_str("ETRF2020"),
+            Ok(ReferenceFrame::ETRF2020)
+        );
+        assert_eq!(ReferenceFrame::NAD83_2011.to_string(), "NAD83(2011)");
+        assert_eq!(
+            ReferenceFrame::from_str("NAD83_2011"),
+            Ok(ReferenceFrame::NAD83_2011)
+        );
+        assert_eq!(
+            ReferenceFrame::from_str("NAD83(2011)"),
+            Ok(ReferenceFrame::NAD83_2011)
+        );
+        assert_eq!(ReferenceFrame::NAD83_CSRS.to_string(), "NAD83(CSRS)");
+        assert_eq!(
+            ReferenceFrame::from_str("NAD83_CSRS"),
+            Ok(ReferenceFrame::NAD83_CSRS)
+        );
+        assert_eq!(
+            ReferenceFrame::from_str("NAD83(CSRS)"),
+            Ok(ReferenceFrame::NAD83_CSRS)
+        );
+    }
 
     #[test]
     fn helmert_position_translations() {
-        let params = super::TimeDependentHelmertParams {
-            tx: 1.0 / super::TimeDependentHelmertParams::TRANSLATE_SCALE,
-            tx_dot: 0.1 / super::TimeDependentHelmertParams::TRANSLATE_SCALE,
-            ty: 2.0 / super::TimeDependentHelmertParams::TRANSLATE_SCALE,
-            ty_dot: 0.2 / super::TimeDependentHelmertParams::TRANSLATE_SCALE,
-            tz: 3.0 / super::TimeDependentHelmertParams::TRANSLATE_SCALE,
-            tz_dot: 0.3 / super::TimeDependentHelmertParams::TRANSLATE_SCALE,
+        let params = TimeDependentHelmertParams {
+            tx: 1.0 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+            tx_dot: 0.1 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+            ty: 2.0 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+            ty_dot: 0.2 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+            tz: 3.0 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+            tz_dot: 0.3 / TimeDependentHelmertParams::TRANSLATE_SCALE,
             s: 0.0,
             s_dot: 0.0,
             rx: 0.0,
@@ -538,7 +532,7 @@ mod tests {
             rz_dot: 0.0,
             epoch: 2010.0,
         };
-        let initial_position = super::ECEF::default();
+        let initial_position = ECEF::default();
 
         let transformed_position = params.transform_position(&initial_position, 2010.0);
         assert_float_eq!(transformed_position.x(), 1.0, abs_all <= 1e-4);
@@ -553,15 +547,15 @@ mod tests {
 
     #[test]
     fn helmert_position_scaling() {
-        let params = super::TimeDependentHelmertParams {
+        let params = TimeDependentHelmertParams {
             tx: 0.0,
             tx_dot: 0.0,
             ty: 0.0,
             ty_dot: 0.0,
             tz: 0.0,
             tz_dot: 0.0,
-            s: 1.0 / super::TimeDependentHelmertParams::SCALE_SCALE,
-            s_dot: 0.1 / super::TimeDependentHelmertParams::SCALE_SCALE,
+            s: 1.0 / TimeDependentHelmertParams::SCALE_SCALE,
+            s_dot: 0.1 / TimeDependentHelmertParams::SCALE_SCALE,
             rx: 90.0,
             rx_dot: 0.0,
             ry: 0.0,
@@ -570,7 +564,7 @@ mod tests {
             rz_dot: 0.0,
             epoch: 2010.0,
         };
-        let initial_position = super::ECEF::new(1., 2., 3.);
+        let initial_position = ECEF::new(1., 2., 3.);
 
         let transformed_position = params.transform_position(&initial_position, 2010.0);
         assert_float_eq!(transformed_position.x(), 2.0, abs_all <= 1e-4);
@@ -585,7 +579,7 @@ mod tests {
 
     #[test]
     fn helmert_position_rotations() {
-        let params = super::TimeDependentHelmertParams {
+        let params = TimeDependentHelmertParams {
             tx: 0.0,
             tx_dot: 0.0,
             ty: 0.0,
@@ -594,15 +588,15 @@ mod tests {
             tz_dot: 0.0,
             s: 0.0,
             s_dot: 0.0,
-            rx: 1.0 / super::TimeDependentHelmertParams::ROTATE_SCALE,
-            rx_dot: 0.1 / super::TimeDependentHelmertParams::ROTATE_SCALE,
-            ry: 2.0 / super::TimeDependentHelmertParams::ROTATE_SCALE,
-            ry_dot: 0.2 / super::TimeDependentHelmertParams::ROTATE_SCALE,
-            rz: 3.0 / super::TimeDependentHelmertParams::ROTATE_SCALE,
-            rz_dot: 0.3 / super::TimeDependentHelmertParams::ROTATE_SCALE,
+            rx: 1.0 / TimeDependentHelmertParams::ROTATE_SCALE,
+            rx_dot: 0.1 / TimeDependentHelmertParams::ROTATE_SCALE,
+            ry: 2.0 / TimeDependentHelmertParams::ROTATE_SCALE,
+            ry_dot: 0.2 / TimeDependentHelmertParams::ROTATE_SCALE,
+            rz: 3.0 / TimeDependentHelmertParams::ROTATE_SCALE,
+            rz_dot: 0.3 / TimeDependentHelmertParams::ROTATE_SCALE,
             epoch: 2010.0,
         };
-        let initial_position = super::ECEF::new(1.0, 1.0, 1.0);
+        let initial_position = ECEF::new(1.0, 1.0, 1.0);
 
         let transformed_position = params.transform_position(&initial_position, 2010.0);
         assert_float_eq!(transformed_position.x(), 0.0, abs_all <= 1e-4);
@@ -617,13 +611,13 @@ mod tests {
 
     #[test]
     fn helmert_velocity_translations() {
-        let params = super::TimeDependentHelmertParams {
-            tx: 1.0 / super::TimeDependentHelmertParams::TRANSLATE_SCALE,
-            tx_dot: 0.1 / super::TimeDependentHelmertParams::TRANSLATE_SCALE,
-            ty: 2.0 / super::TimeDependentHelmertParams::TRANSLATE_SCALE,
-            ty_dot: 0.2 / super::TimeDependentHelmertParams::TRANSLATE_SCALE,
-            tz: 3.0 / super::TimeDependentHelmertParams::TRANSLATE_SCALE,
-            tz_dot: 0.3 / super::TimeDependentHelmertParams::TRANSLATE_SCALE,
+        let params = TimeDependentHelmertParams {
+            tx: 1.0 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+            tx_dot: 0.1 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+            ty: 2.0 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+            ty_dot: 0.2 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+            tz: 3.0 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+            tz_dot: 0.3 / TimeDependentHelmertParams::TRANSLATE_SCALE,
             s: 0.0,
             s_dot: 0.0,
             rx: 0.0,
@@ -634,8 +628,8 @@ mod tests {
             rz_dot: 0.0,
             epoch: 2010.0,
         };
-        let initial_velocity = super::ECEF::default();
-        let position = super::ECEF::default();
+        let initial_velocity = ECEF::default();
+        let position = ECEF::default();
 
         let transformed_velocity = params.transform_velocity(&initial_velocity, &position);
         assert_float_eq!(transformed_velocity.x(), 0.1, abs_all <= 1e-4);
@@ -645,15 +639,15 @@ mod tests {
 
     #[test]
     fn helmert_velocity_scaling() {
-        let params = super::TimeDependentHelmertParams {
+        let params = TimeDependentHelmertParams {
             tx: 0.0,
             tx_dot: 0.0,
             ty: 0.0,
             ty_dot: 0.0,
             tz: 0.0,
             tz_dot: 0.0,
-            s: 1.0 / super::TimeDependentHelmertParams::SCALE_SCALE,
-            s_dot: 0.1 / super::TimeDependentHelmertParams::SCALE_SCALE,
+            s: 1.0 / TimeDependentHelmertParams::SCALE_SCALE,
+            s_dot: 0.1 / TimeDependentHelmertParams::SCALE_SCALE,
             rx: 90.0,
             rx_dot: 0.0,
             ry: 0.0,
@@ -662,8 +656,8 @@ mod tests {
             rz_dot: 0.0,
             epoch: 2010.0,
         };
-        let initial_velocity = super::ECEF::default();
-        let position = super::ECEF::new(1., 2., 3.);
+        let initial_velocity = ECEF::default();
+        let position = ECEF::new(1., 2., 3.);
 
         let transformed_velocity = params.transform_velocity(&initial_velocity, &position);
         assert_float_eq!(transformed_velocity.x(), 0.1, abs_all <= 1e-4);
@@ -673,7 +667,7 @@ mod tests {
 
     #[test]
     fn helmert_velocity_rotations() {
-        let params = super::TimeDependentHelmertParams {
+        let params = TimeDependentHelmertParams {
             tx: 0.0,
             tx_dot: 0.0,
             ty: 0.0,
@@ -682,16 +676,16 @@ mod tests {
             tz_dot: 0.0,
             s: 0.0,
             s_dot: 0.0,
-            rx: 1.0 / super::TimeDependentHelmertParams::ROTATE_SCALE,
-            rx_dot: 0.1 / super::TimeDependentHelmertParams::ROTATE_SCALE,
-            ry: 2.0 / super::TimeDependentHelmertParams::ROTATE_SCALE,
-            ry_dot: 0.2 / super::TimeDependentHelmertParams::ROTATE_SCALE,
-            rz: 3.0 / super::TimeDependentHelmertParams::ROTATE_SCALE,
-            rz_dot: 0.3 / super::TimeDependentHelmertParams::ROTATE_SCALE,
+            rx: 1.0 / TimeDependentHelmertParams::ROTATE_SCALE,
+            rx_dot: 0.1 / TimeDependentHelmertParams::ROTATE_SCALE,
+            ry: 2.0 / TimeDependentHelmertParams::ROTATE_SCALE,
+            ry_dot: 0.2 / TimeDependentHelmertParams::ROTATE_SCALE,
+            rz: 3.0 / TimeDependentHelmertParams::ROTATE_SCALE,
+            rz_dot: 0.3 / TimeDependentHelmertParams::ROTATE_SCALE,
             epoch: 2010.0,
         };
-        let initial_velocity = super::ECEF::default();
-        let position = super::ECEF::new(4., 5., 6.);
+        let initial_velocity = ECEF::default();
+        let position = ECEF::new(4., 5., 6.);
 
         let transformed_velocity = params.transform_velocity(&initial_velocity, &position);
         assert_float_eq!(transformed_velocity.x(), -0.3, abs_all <= 1e-4);
@@ -701,7 +695,7 @@ mod tests {
 
     #[test]
     fn helmert_invert() {
-        let mut params = super::TimeDependentHelmertParams {
+        let mut params = TimeDependentHelmertParams {
             tx: 1.0,
             tx_dot: 0.1,
             ty: 2.0,
@@ -733,6 +727,22 @@ mod tests {
         assert_float_eq!(params.ry_dot, -0.6, abs_all <= 1e-4);
         assert_float_eq!(params.rz, -7.0, abs_all <= 1e-4);
         assert_float_eq!(params.rz_dot, -0.7, abs_all <= 1e-4);
+        assert_float_eq!(params.epoch, 2010.0, abs_all <= 1e-4);
+        params.invert();
+        assert_float_eq!(params.tx, 1.0, abs_all <= 1e-4);
+        assert_float_eq!(params.tx_dot, 0.1, abs_all <= 1e-4);
+        assert_float_eq!(params.ty, 2.0, abs_all <= 1e-4);
+        assert_float_eq!(params.ty_dot, 0.2, abs_all <= 1e-4);
+        assert_float_eq!(params.tz, 3.0, abs_all <= 1e-4);
+        assert_float_eq!(params.tz_dot, 0.3, abs_all <= 1e-4);
+        assert_float_eq!(params.s, 4.0, abs_all <= 1e-4);
+        assert_float_eq!(params.s_dot, 0.4, abs_all <= 1e-4);
+        assert_float_eq!(params.rx, 5.0, abs_all <= 1e-4);
+        assert_float_eq!(params.rx_dot, 0.5, abs_all <= 1e-4);
+        assert_float_eq!(params.ry, 6.0, abs_all <= 1e-4);
+        assert_float_eq!(params.ry_dot, 0.6, abs_all <= 1e-4);
+        assert_float_eq!(params.rz, 7.0, abs_all <= 1e-4);
+        assert_float_eq!(params.rz_dot, 0.7, abs_all <= 1e-4);
         assert_float_eq!(params.epoch, 2010.0, abs_all <= 1e-4);
     }
 }
