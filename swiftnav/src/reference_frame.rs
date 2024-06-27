@@ -50,7 +50,7 @@
 //! ```
 //! use swiftnav::{
 //!     coords::{Coordinate, ECEF},
-//!     reference_frame::{ReferenceFrame, get_transformation},
+//!     reference_frame::{get_transformation, ReferenceFrame, TransformationNotFound},
 //!     time::UtcTime
 //! };
 //!
