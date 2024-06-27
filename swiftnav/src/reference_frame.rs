@@ -48,7 +48,14 @@
 //!
 //! # Example
 //! ```
-//! use swiftnav::{coords::{Coordinate, ECEF}, reference_frame::{ReferenceFrame, get_transformation}, time::UtcTime};
+//! use swiftnav::{
+//!     coords::{Coordinate, ECEF},
+//!     reference_frame::{ReferenceFrame, get_transformation},
+//!     time::UtcTime
+//! };
+//!
+//! let transformation = get_transformation(ReferenceFrame::ITRF2014, ReferenceFrame::NAD83_2011)
+//!     .unwrap();
 //!
 //! let epoch_2020 = UtcTime::from_date(2020, 3, 15, 0, 0, 0.).to_gps_hardcoded();
 //! let itrf_coord = Coordinate::with_velocity(
@@ -60,9 +67,10 @@
 //! let epoch_2010 = UtcTime::from_date(2010, 1, 1, 0, 0, 0.).to_gps_hardcoded();
 //! let itrf_coord = itrf_coord.adjust_epoch(&epoch_2010); // Change the epoch of the coordinate
 //!
-//! let transformation = get_transformation(ReferenceFrame::ITRF2014, ReferenceFrame::NAD83_2011).unwrap();
-//!
 //! let nad83_coord = transformation.transform(&itrf_coord);
+//! // Alternatively, you can use the `transform_to` method on the coordinate itself
+//! let nad83_coord: Result<Coordinate, TransformationNotFound> =
+//!     itrf_coord.transform_to(ReferenceFrame::NAD83_2011);
 //! ```
 //!
 
