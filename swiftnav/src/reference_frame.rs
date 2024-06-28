@@ -255,9 +255,9 @@ pub fn get_transformation(
         .find(|t| (t.from == from && t.to == to) || (t.from == to && t.to == from))
         .map(|t| {
             if t.from == from && t.to == to {
-                t.clone()
+                *t
             } else {
-                t.clone().invert()
+                (*t).invert()
             }
         })
         .ok_or(TransformationNotFound(from, to))
