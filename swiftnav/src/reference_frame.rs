@@ -111,7 +111,7 @@ pub enum ReferenceFrame {
 /// millimeters, the rotations are in milliarcseconds, and
 /// the scaling is in parts per billion. We also follow the
 /// IERS convention for the sign of the rotation terms.
-#[derive(Debug, PartialEq, PartialOrd, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 struct TimeDependentHelmertParams {
     tx: f64,
     tx_dot: f64,
@@ -190,7 +190,7 @@ impl TimeDependentHelmertParams {
 }
 
 /// A transformation from one reference frame to another.
-#[derive(Debug, PartialEq, PartialOrd, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub struct Transformation {
     from: ReferenceFrame,
     to: ReferenceFrame,

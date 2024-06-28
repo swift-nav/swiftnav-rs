@@ -525,7 +525,7 @@ impl Default for AzimuthElevation {
 /// Complete coordinate used for transforming between reference frames
 ///
 /// Velocities are optional, but when present they will be transformed
-#[derive(Debug, PartialEq, PartialOrd, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub struct Coordinate {
     reference_frame: ReferenceFrame,
     position: ECEF,
