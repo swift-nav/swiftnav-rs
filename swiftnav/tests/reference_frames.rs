@@ -378,3 +378,102 @@ fn htdp_nad83_2011_adjust_epoch() {
     assert_eq!(result_coords.epoch(), make_epoch(2010));
     assert_eq!(result_coords.reference_frame(), ReferenceFrame::NAD83_2011);
 }
+
+/// Truth data obtained from https://webapp.csrs-scrs.nrcan-rncan.gc.ca/geod/tools-outils/trx.php
+#[test]
+fn trx_nad83_csrs_fixed_date() {
+    let initial_coords = Coordinate::new(
+        ReferenceFrame::ITRF2020,
+        ECEF::new(1267458.677, -4294620.216, 4526843.210),
+        Some(ECEF::new(-0.01578, -0.00380, 0.00466)),
+        make_epoch(2010),
+    );
+
+    let transformation =
+        get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::NAD83_CSRS).unwrap();
+
+    let result_coords = transformation.transform(&initial_coords);
+    assert_float_eq!(result_coords.position().x(), 1267459.462, abs <= 0.001);
+    assert_float_eq!(result_coords.position().y(), -4294621.605, abs <= 0.001);
+    assert_float_eq!(result_coords.position().z(), 4526843.224, abs <= 0.001);
+    assert!(result_coords.velocity().is_some());
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().x(),
+        0.00261,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().y(),
+        -0.00241,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().z(),
+        -0.00017,
+        abs <= 0.1
+    );
+    assert_eq!(result_coords.epoch(), make_epoch(2010));
+    assert_eq!(result_coords.reference_frame(), ReferenceFrame::NAD83_CSRS);
+}
+
+/// Truth data obtained from https://geodesy.noaa.gov/TOOLS/Htdp/Htdp.shtml
+#[test]
+fn trx_nad83_csrs_adjust_epoch() {
+    let initial_coords = Coordinate::new(
+        ReferenceFrame::ITRF2020,
+        ECEF::new(1267458.677, -4294620.216, 4526843.210),
+        Some(ECEF::new(-0.01578, -0.00380, 0.00466)),
+        make_epoch(2020),
+    );
+
+    let transformation =
+        get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::NAD83_CSRS).unwrap();
+
+    let result_coords = transformation.transform(&initial_coords.adjust_epoch(&make_epoch(2010)));
+    assert_float_eq!(result_coords.position().x(), 1267459.620, abs <= 0.001);
+    assert_float_eq!(result_coords.position().y(), -4294621.567, abs <= 0.001);
+    assert_float_eq!(result_coords.position().z(), 4526843.177, abs <= 0.001);
+    assert!(result_coords.velocity().is_some());
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().x(),
+        0.00261,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().y(),
+        -0.00241,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().z(),
+        -0.00017,
+        abs <= 0.1
+    );
+    assert_eq!(result_coords.epoch(), make_epoch(2010));
+    assert_eq!(result_coords.reference_frame(), ReferenceFrame::NAD83_CSRS);
+
+    let result_coords = transformation
+        .transform(&initial_coords)
+        .adjust_epoch(&make_epoch(2010));
+    assert_float_eq!(result_coords.position().x(), 1267459.620, abs <= 0.001);
+    assert_float_eq!(result_coords.position().y(), -4294621.567, abs <= 0.001);
+    assert_float_eq!(result_coords.position().z(), 4526843.177, abs <= 0.001);
+    assert!(result_coords.velocity().is_some());
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().x(),
+        0.00261,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().y(),
+        -0.00241,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().z(),
+        -0.00017,
+        abs <= 0.1
+    );
+    assert_eq!(result_coords.epoch(), make_epoch(2010));
+    assert_eq!(result_coords.reference_frame(), ReferenceFrame::NAD83_CSRS);
+}
