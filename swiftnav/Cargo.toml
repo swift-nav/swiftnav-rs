@@ -13,3 +13,7 @@ rust-version = "1.62.1"
 rustversion = "1.0"
 chrono = { version = "0.4", optional = true }
 swiftnav-sys = { version = "^0.8.1", path = "../swiftnav-sys/" }
+strum = { version = "0.26", features = ["derive"] }
+
+[dev-dependencies]
+float_eq = "1.0.1"
