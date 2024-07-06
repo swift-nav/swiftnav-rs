@@ -78,14 +78,36 @@ use crate::coords::{Coordinate, ECEF};
 use std::fmt;
 use strum::{Display, EnumIter, EnumString};
 
+mod params;
+
 /// Reference Frames
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, EnumString, Display, EnumIter)]
 #[strum(serialize_all = "UPPERCASE")]
 pub enum ReferenceFrame {
+    ITRF88,
+    ITRF89,
+    ITRF90,
+    ITRF91,
+    ITRF92,
+    ITRF93,
+    ITRF94,
+    ITRF96,
+    ITRF97,
+    ITRF2000,
+    ITRF2005,
     ITRF2008,
     ITRF2014,
     ITRF2020,
-    ETRF2008,
+    ETRF89,
+    ETRF90,
+    ETRF91,
+    ETRF92,
+    ETRF93,
+    ETRF94,
+    ETRF96,
+    ETRF97,
+    ETRF2000,
+    ETRF2005,
     ETRF2014,
     ETRF2020,
     /// i.e. NAD83(2011)
@@ -95,6 +117,9 @@ pub enum ReferenceFrame {
     #[allow(non_camel_case_types)]
     #[strum(to_string = "NAD83(CSRS)", serialize = "NAD83_CSRS")]
     NAD83_CSRS,
+    #[allow(non_camel_case_types)]
+    #[strum(to_string = "DREF91(R2016)", serialize = "DREF91_R2016")]
+    DREF91_R2016,
 }
 
 /// 15-parameter Helmert transformation parameters
@@ -250,7 +275,7 @@ pub fn get_transformation(
     from: ReferenceFrame,
     to: ReferenceFrame,
 ) -> Result<Transformation, TransformationNotFound> {
-    TRANSFORMATIONS
+    params::TRANSFORMATIONS
         .iter()
         .find(|t| (t.from == from && t.to == to) || (t.from == to && t.to == from))
         .map(|t| {
@@ -263,198 +288,6 @@ pub fn get_transformation(
         .ok_or(TransformationNotFound(from, to))
 }
 
-const TRANSFORMATIONS: [Transformation; 9] = [
-    Transformation {
-        from: ReferenceFrame::ITRF2020,
-        to: ReferenceFrame::ITRF2014,
-        params: TimeDependentHelmertParams {
-            tx: -1.4,
-            tx_dot: 0.0,
-            ty: -0.9,
-            ty_dot: -0.1,
-            tz: 1.4,
-            tz_dot: 0.2,
-            s: -0.42,
-            s_dot: 0.0,
-            rx: 0.0,
-            rx_dot: 0.0,
-            ry: 0.0,
-            ry_dot: 0.0,
-            rz: 0.0,
-            rz_dot: 0.0,
-            epoch: 2015.0,
-        },
-    },
-    Transformation {
-        from: ReferenceFrame::ITRF2020,
-        to: ReferenceFrame::ITRF2008,
-        params: TimeDependentHelmertParams {
-            tx: 0.2,
-            tx_dot: 0.0,
-            ty: 1.0,
-            ty_dot: -0.1,
-            tz: 3.3,
-            tz_dot: 0.1,
-            s: -0.29,
-            s_dot: 0.03,
-            rx: 0.0,
-            rx_dot: 0.0,
-            ry: 0.0,
-            ry_dot: 0.0,
-            rz: 0.0,
-            rz_dot: 0.0,
-            epoch: 2015.0,
-        },
-    },
-    Transformation {
-        from: ReferenceFrame::ITRF2020,
-        to: ReferenceFrame::ETRF2020,
-        params: TimeDependentHelmertParams {
-            tx: 0.0,
-            tx_dot: 0.0,
-            ty: 0.0,
-            ty_dot: 0.0,
-            tz: 0.0,
-            tz_dot: 0.0,
-            s: 0.0,
-            s_dot: 0.0,
-            rx: 0.0,
-            rx_dot: 0.086,
-            ry: 0.0,
-            ry_dot: 0.519,
-            rz: 0.0,
-            rz_dot: -0.753,
-            epoch: 1989.0,
-        },
-    },
-    Transformation {
-        from: ReferenceFrame::ITRF2020,
-        to: ReferenceFrame::ETRF2014,
-        params: TimeDependentHelmertParams {
-            tx: -1.4,
-            tx_dot: 0.0,
-            ty: -0.9,
-            ty_dot: -0.1,
-            tz: 1.4,
-            tz_dot: 0.2,
-            s: -0.42,
-            s_dot: 0.0,
-            rx: 2.21,
-            rx_dot: 0.085,
-            ry: 13.806,
-            ry_dot: 0.531,
-            rz: -20.02,
-            rz_dot: -0.77,
-            epoch: 2015.0,
-        },
-    },
-    Transformation {
-        from: ReferenceFrame::ITRF2014,
-        to: ReferenceFrame::NAD83_2011,
-        params: TimeDependentHelmertParams {
-            tx: 1005.30,
-            tx_dot: 0.79,
-            ty: -1909.21,
-            ty_dot: -0.60,
-            tz: -541.57,
-            tz_dot: -1.44,
-            s: 0.36891,
-            s_dot: -0.07201,
-            rx: -26.78138,
-            rx_dot: -0.06667,
-            ry: 0.42027,
-            ry_dot: 0.75744,
-            rz: -10.93206,
-            rz_dot: 0.05133,
-            epoch: 2010.0,
-        },
-    },
-    Transformation {
-        from: ReferenceFrame::ITRF2014,
-        to: ReferenceFrame::ETRF2014,
-        params: TimeDependentHelmertParams {
-            tx: 0.0,
-            tx_dot: 0.0,
-            ty: 0.0,
-            ty_dot: 0.0,
-            tz: 0.0,
-            tz_dot: 0.0,
-            s: 0.0,
-            s_dot: 0.0,
-            rx: 0.0,
-            rx_dot: 0.085,
-            ry: 0.0,
-            ry_dot: 0.531,
-            rz: 0.0,
-            rz_dot: -0.770,
-            epoch: 1989.0,
-        },
-    },
-    Transformation {
-        from: ReferenceFrame::ITRF2008,
-        to: ReferenceFrame::NAD83_CSRS,
-        params: TimeDependentHelmertParams {
-            tx: 1003.70,
-            tx_dot: 0.79,
-            ty: -1911.11,
-            ty_dot: -0.60,
-            tz: -543.97,
-            tz_dot: -1.34,
-            s: 0.38891,
-            s_dot: -0.10201,
-            rx: -26.78138,
-            rx_dot: -0.06667,
-            ry: 0.42027,
-            ry_dot: 0.75744,
-            rz: -10.93206,
-            rz_dot: 0.05133,
-            epoch: 2010.0,
-        },
-    },
-    Transformation {
-        from: ReferenceFrame::ITRF2014,
-        to: ReferenceFrame::NAD83_CSRS,
-        params: TimeDependentHelmertParams {
-            tx: 1005.30,
-            tx_dot: 0.79,
-            ty: -1909.21,
-            ty_dot: -0.60,
-            tz: -541.57,
-            tz_dot: -1.44,
-            s: 0.36891,
-            s_dot: -0.07201,
-            rx: -26.78138,
-            rx_dot: -0.06667,
-            ry: 0.42027,
-            ry_dot: 0.75744,
-            rz: -10.93206,
-            rz_dot: 0.05133,
-            epoch: 2010.0,
-        },
-    },
-    Transformation {
-        from: ReferenceFrame::ITRF2020,
-        to: ReferenceFrame::NAD83_CSRS,
-        params: TimeDependentHelmertParams {
-            tx: 1003.90,
-            tx_dot: 0.79,
-            ty: -1909.61,
-            ty_dot: -0.70,
-            tz: -541.17,
-            tz_dot: -1.24,
-            s: -0.05109,
-            s_dot: -0.07201,
-            rx: -26.78138,
-            rx_dot: -0.06667,
-            ry: 0.42027,
-            ry_dot: 0.75744,
-            rz: -10.93206,
-            rz_dot: 0.05133,
-            epoch: 2010.0,
-        },
-    },
-];
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -463,6 +296,61 @@ mod tests {
 
     #[test]
     fn reference_frame_strings() {
+        assert_eq!(ReferenceFrame::ITRF88.to_string(), "ITRF88");
+        assert_eq!(
+            ReferenceFrame::from_str("ITRF88"),
+            Ok(ReferenceFrame::ITRF88)
+        );
+        assert_eq!(ReferenceFrame::ITRF89.to_string(), "ITRF89");
+        assert_eq!(
+            ReferenceFrame::from_str("ITRF89"),
+            Ok(ReferenceFrame::ITRF89)
+        );
+        assert_eq!(ReferenceFrame::ITRF90.to_string(), "ITRF90");
+        assert_eq!(
+            ReferenceFrame::from_str("ITRF90"),
+            Ok(ReferenceFrame::ITRF90)
+        );
+        assert_eq!(ReferenceFrame::ITRF91.to_string(), "ITRF91");
+        assert_eq!(
+            ReferenceFrame::from_str("ITRF91"),
+            Ok(ReferenceFrame::ITRF91)
+        );
+        assert_eq!(ReferenceFrame::ITRF92.to_string(), "ITRF92");
+        assert_eq!(
+            ReferenceFrame::from_str("ITRF92"),
+            Ok(ReferenceFrame::ITRF92)
+        );
+        assert_eq!(ReferenceFrame::ITRF93.to_string(), "ITRF93");
+        assert_eq!(
+            ReferenceFrame::from_str("ITRF93"),
+            Ok(ReferenceFrame::ITRF93)
+        );
+        assert_eq!(ReferenceFrame::ITRF94.to_string(), "ITRF94");
+        assert_eq!(
+            ReferenceFrame::from_str("ITRF94"),
+            Ok(ReferenceFrame::ITRF94)
+        );
+        assert_eq!(ReferenceFrame::ITRF96.to_string(), "ITRF96");
+        assert_eq!(
+            ReferenceFrame::from_str("ITRF96"),
+            Ok(ReferenceFrame::ITRF96)
+        );
+        assert_eq!(ReferenceFrame::ITRF97.to_string(), "ITRF97");
+        assert_eq!(
+            ReferenceFrame::from_str("ITRF97"),
+            Ok(ReferenceFrame::ITRF97)
+        );
+        assert_eq!(ReferenceFrame::ITRF2000.to_string(), "ITRF2000");
+        assert_eq!(
+            ReferenceFrame::from_str("ITRF2000"),
+            Ok(ReferenceFrame::ITRF2000)
+        );
+        assert_eq!(ReferenceFrame::ITRF2005.to_string(), "ITRF2005");
+        assert_eq!(
+            ReferenceFrame::from_str("ITRF2005"),
+            Ok(ReferenceFrame::ITRF2005)
+        );
         assert_eq!(ReferenceFrame::ITRF2008.to_string(), "ITRF2008");
         assert_eq!(
             ReferenceFrame::from_str("ITRF2008"),
@@ -478,10 +366,55 @@ mod tests {
             ReferenceFrame::from_str("ITRF2020"),
             Ok(ReferenceFrame::ITRF2020)
         );
-        assert_eq!(ReferenceFrame::ETRF2008.to_string(), "ETRF2008");
+        assert_eq!(ReferenceFrame::ETRF89.to_string(), "ETRF89");
         assert_eq!(
-            ReferenceFrame::from_str("ETRF2008"),
-            Ok(ReferenceFrame::ETRF2008)
+            ReferenceFrame::from_str("ETRF89"),
+            Ok(ReferenceFrame::ETRF89)
+        );
+        assert_eq!(ReferenceFrame::ETRF90.to_string(), "ETRF90");
+        assert_eq!(
+            ReferenceFrame::from_str("ETRF90"),
+            Ok(ReferenceFrame::ETRF90)
+        );
+        assert_eq!(ReferenceFrame::ETRF91.to_string(), "ETRF91");
+        assert_eq!(
+            ReferenceFrame::from_str("ETRF91"),
+            Ok(ReferenceFrame::ETRF91)
+        );
+        assert_eq!(ReferenceFrame::ETRF92.to_string(), "ETRF92");
+        assert_eq!(
+            ReferenceFrame::from_str("ETRF92"),
+            Ok(ReferenceFrame::ETRF92)
+        );
+        assert_eq!(ReferenceFrame::ETRF93.to_string(), "ETRF93");
+        assert_eq!(
+            ReferenceFrame::from_str("ETRF93"),
+            Ok(ReferenceFrame::ETRF93)
+        );
+        assert_eq!(ReferenceFrame::ETRF94.to_string(), "ETRF94");
+        assert_eq!(
+            ReferenceFrame::from_str("ETRF94"),
+            Ok(ReferenceFrame::ETRF94)
+        );
+        assert_eq!(ReferenceFrame::ETRF96.to_string(), "ETRF96");
+        assert_eq!(
+            ReferenceFrame::from_str("ETRF96"),
+            Ok(ReferenceFrame::ETRF96)
+        );
+        assert_eq!(ReferenceFrame::ETRF97.to_string(), "ETRF97");
+        assert_eq!(
+            ReferenceFrame::from_str("ETRF97"),
+            Ok(ReferenceFrame::ETRF97)
+        );
+        assert_eq!(ReferenceFrame::ETRF2000.to_string(), "ETRF2000");
+        assert_eq!(
+            ReferenceFrame::from_str("ETRF2000"),
+            Ok(ReferenceFrame::ETRF2000)
+        );
+        assert_eq!(ReferenceFrame::ETRF2005.to_string(), "ETRF2005");
+        assert_eq!(
+            ReferenceFrame::from_str("ETRF2005"),
+            Ok(ReferenceFrame::ETRF2005)
         );
         assert_eq!(ReferenceFrame::ETRF2014.to_string(), "ETRF2014");
         assert_eq!(

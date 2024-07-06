@@ -118,17 +118,17 @@ fn euref_etrf2020() {
 #[test]
 fn euref_etrf2014() {
     let initial_coords = Coordinate::new(
-        ReferenceFrame::ITRF2020,
+        ReferenceFrame::ITRF2014,
         ECEF::new(4027894.006, 307045.600, 4919474.910),
         Some(ECEF::new(0.01, 0.2, 0.030)),
         make_epoch(2000),
     );
     let transformation =
-        get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::ETRF2014).unwrap();
+        get_transformation(ReferenceFrame::ITRF2014, ReferenceFrame::ETRF2014).unwrap();
     let result_coords = transformation.transform(&initial_coords);
-    assert_float_eq!(result_coords.position().x(), 4027894.1548, abs <= 0.0001);
-    assert_float_eq!(result_coords.position().y(), 307045.4128, abs <= 0.0001);
-    assert_float_eq!(result_coords.position().z(), 4919474.7937, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().x(), 4027894.1579, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().y(), 307045.4123, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().z(), 4919474.7973, abs <= 0.0001);
     assert!(result_coords.velocity().is_some());
     assert_float_eq!(
         result_coords.velocity().as_ref().unwrap().x(),
@@ -142,11 +142,361 @@ fn euref_etrf2014() {
     );
     assert_float_eq!(
         result_coords.velocity().as_ref().unwrap().z(),
-        0.0200,
+        0.0198,
         abs <= 0.1
     );
     assert_eq!(result_coords.epoch(), make_epoch(2000));
     assert_eq!(result_coords.reference_frame(), ReferenceFrame::ETRF2014);
+}
+
+/// Truth data obtained from https://www.epncb.oma.be/_productsservices/coord_trans/
+#[test]
+fn euref_etrf2005() {
+    let initial_coords = Coordinate::new(
+        ReferenceFrame::ITRF2005,
+        ECEF::new(4027894.006, 307045.600, 4919474.910),
+        Some(ECEF::new(0.01, 0.2, 0.030)),
+        make_epoch(2000),
+    );
+    let transformation =
+        get_transformation(ReferenceFrame::ITRF2005, ReferenceFrame::ETRF2005).unwrap();
+    let result_coords = transformation.transform(&initial_coords);
+    assert_float_eq!(result_coords.position().x(), 4027894.2107, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().y(), 307045.4661, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().z(), 4919474.7626, abs <= 0.0001);
+    assert!(result_coords.velocity().is_some());
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().x(),
+        0.0235,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().y(),
+        0.1835,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().z(),
+        0.0200,
+        abs <= 0.1
+    );
+    assert_eq!(result_coords.epoch(), make_epoch(2000));
+    assert_eq!(result_coords.reference_frame(), ReferenceFrame::ETRF2005);
+}
+
+/// Truth data obtained from https://www.epncb.oma.be/_productsservices/coord_trans/
+#[test]
+fn euref_etrf2000() {
+    let initial_coords = Coordinate::new(
+        ReferenceFrame::ITRF2000,
+        ECEF::new(4027894.006, 307045.600, 4919474.910),
+        Some(ECEF::new(0.01, 0.2, 0.030)),
+        make_epoch(2000),
+    );
+    let transformation =
+        get_transformation(ReferenceFrame::ITRF2000, ReferenceFrame::ETRF2000).unwrap();
+    let result_coords = transformation.transform(&initial_coords);
+    assert_float_eq!(result_coords.position().x(), 4027894.2015, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().y(), 307045.4596, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().z(), 4919474.7581, abs <= 0.0001);
+    assert!(result_coords.velocity().is_some());
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().x(),
+        0.0229,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().y(),
+        0.1826,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().z(),
+        0.0206,
+        abs <= 0.1
+    );
+    assert_eq!(result_coords.epoch(), make_epoch(2000));
+    assert_eq!(result_coords.reference_frame(), ReferenceFrame::ETRF2000);
+}
+
+/// Truth data obtained from https://www.epncb.oma.be/_productsservices/coord_trans/
+#[test]
+fn euref_etrf97() {
+    let initial_coords = Coordinate::new(
+        ReferenceFrame::ITRF97,
+        ECEF::new(4027894.006, 307045.600, 4919474.910),
+        Some(ECEF::new(0.01, 0.2, 0.030)),
+        make_epoch(2000),
+    );
+    let transformation =
+        get_transformation(ReferenceFrame::ITRF97, ReferenceFrame::ETRF97).unwrap();
+    let result_coords = transformation.transform(&initial_coords);
+    assert_float_eq!(result_coords.position().x(), 4027894.1888, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().y(), 307045.4489, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().z(), 4919474.7569, abs <= 0.0001);
+    assert!(result_coords.velocity().is_some());
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().x(),
+        0.0229,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().y(),
+        0.1825,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().z(),
+        0.0205,
+        abs <= 0.1
+    );
+    assert_eq!(result_coords.epoch(), make_epoch(2000));
+    assert_eq!(result_coords.reference_frame(), ReferenceFrame::ETRF97);
+}
+
+/// Truth data obtained from https://www.epncb.oma.be/_productsservices/coord_trans/
+#[test]
+fn euref_etrf96() {
+    let initial_coords = Coordinate::new(
+        ReferenceFrame::ITRF96,
+        ECEF::new(4027894.006, 307045.600, 4919474.910),
+        Some(ECEF::new(0.01, 0.2, 0.030)),
+        make_epoch(2000),
+    );
+    let transformation =
+        get_transformation(ReferenceFrame::ITRF96, ReferenceFrame::ETRF96).unwrap();
+    let result_coords = transformation.transform(&initial_coords);
+    assert_float_eq!(result_coords.position().x(), 4027894.1888, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().y(), 307045.4489, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().z(), 4919474.7569, abs <= 0.0001);
+    assert!(result_coords.velocity().is_some());
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().x(),
+        0.0229,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().y(),
+        0.1825,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().z(),
+        0.0205,
+        abs <= 0.1
+    );
+    assert_eq!(result_coords.epoch(), make_epoch(2000));
+    assert_eq!(result_coords.reference_frame(), ReferenceFrame::ETRF96);
+}
+
+/// Truth data obtained from https://www.epncb.oma.be/_productsservices/coord_trans/
+#[test]
+fn euref_etrf94() {
+    let initial_coords = Coordinate::new(
+        ReferenceFrame::ITRF94,
+        ECEF::new(4027894.006, 307045.600, 4919474.910),
+        Some(ECEF::new(0.01, 0.2, 0.030)),
+        make_epoch(2000),
+    );
+    let transformation =
+        get_transformation(ReferenceFrame::ITRF94, ReferenceFrame::ETRF94).unwrap();
+    let result_coords = transformation.transform(&initial_coords);
+    assert_float_eq!(result_coords.position().x(), 4027894.1888, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().y(), 307045.4489, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().z(), 4919474.7569, abs <= 0.0001);
+    assert!(result_coords.velocity().is_some());
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().x(),
+        0.0229,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().y(),
+        0.1825,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().z(),
+        0.0205,
+        abs <= 0.1
+    );
+    assert_eq!(result_coords.epoch(), make_epoch(2000));
+    assert_eq!(result_coords.reference_frame(), ReferenceFrame::ETRF94);
+}
+
+/// Truth data obtained from https://www.epncb.oma.be/_productsservices/coord_trans/
+#[test]
+fn euref_etrf93() {
+    let initial_coords = Coordinate::new(
+        ReferenceFrame::ITRF93,
+        ECEF::new(4027894.006, 307045.600, 4919474.910),
+        Some(ECEF::new(0.01, 0.2, 0.030)),
+        make_epoch(2000),
+    );
+    let transformation =
+        get_transformation(ReferenceFrame::ITRF93, ReferenceFrame::ETRF93).unwrap();
+    let result_coords = transformation.transform(&initial_coords);
+    assert_float_eq!(result_coords.position().x(), 4027894.2406, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().y(), 307045.4251, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().z(), 4919474.7267, abs <= 0.0001);
+    assert!(result_coords.velocity().is_some());
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().x(),
+        0.0296,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().y(),
+        0.1793,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().z(),
+        0.0152,
+        abs <= 0.1
+    );
+    assert_eq!(result_coords.epoch(), make_epoch(2000));
+    assert_eq!(result_coords.reference_frame(), ReferenceFrame::ETRF93);
+}
+
+/// Truth data obtained from https://www.epncb.oma.be/_productsservices/coord_trans/
+#[test]
+fn euref_etrf92() {
+    let initial_coords = Coordinate::new(
+        ReferenceFrame::ITRF92,
+        ECEF::new(4027894.006, 307045.600, 4919474.910),
+        Some(ECEF::new(0.01, 0.2, 0.030)),
+        make_epoch(2000),
+    );
+    let transformation =
+        get_transformation(ReferenceFrame::ITRF92, ReferenceFrame::ETRF92).unwrap();
+    let result_coords = transformation.transform(&initial_coords);
+    assert_float_eq!(result_coords.position().x(), 4027894.1916, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().y(), 307045.4388, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().z(), 4919474.7647, abs <= 0.0001);
+    assert!(result_coords.velocity().is_some());
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().x(),
+        0.0234,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().y(),
+        0.1817,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().z(),
+        0.0202,
+        abs <= 0.1
+    );
+    assert_eq!(result_coords.epoch(), make_epoch(2000));
+    assert_eq!(result_coords.reference_frame(), ReferenceFrame::ETRF92);
+}
+
+/// Truth data obtained from https://www.epncb.oma.be/_productsservices/coord_trans/
+#[test]
+fn euref_etrf91() {
+    let initial_coords = Coordinate::new(
+        ReferenceFrame::ITRF91,
+        ECEF::new(4027894.006, 307045.600, 4919474.910),
+        Some(ECEF::new(0.01, 0.2, 0.030)),
+        make_epoch(2000),
+    );
+    let transformation =
+        get_transformation(ReferenceFrame::ITRF91, ReferenceFrame::ETRF91).unwrap();
+    let result_coords = transformation.transform(&initial_coords);
+    assert_float_eq!(result_coords.position().x(), 4027894.1746, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().y(), 307045.4238, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().z(), 4919474.7647, abs <= 0.0001);
+    assert!(result_coords.velocity().is_some());
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().x(),
+        0.0234,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().y(),
+        0.1817,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().z(),
+        0.0202,
+        abs <= 0.1
+    );
+    assert_eq!(result_coords.epoch(), make_epoch(2000));
+    assert_eq!(result_coords.reference_frame(), ReferenceFrame::ETRF91);
+}
+
+/// Truth data obtained from https://www.epncb.oma.be/_productsservices/coord_trans/
+#[test]
+fn euref_etrf90() {
+    let initial_coords = Coordinate::new(
+        ReferenceFrame::ITRF90,
+        ECEF::new(4027894.006, 307045.600, 4919474.910),
+        Some(ECEF::new(0.01, 0.2, 0.030)),
+        make_epoch(2000),
+    );
+    let transformation =
+        get_transformation(ReferenceFrame::ITRF90, ReferenceFrame::ETRF90).unwrap();
+    let result_coords = transformation.transform(&initial_coords);
+    assert_float_eq!(result_coords.position().x(), 4027894.1862, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().y(), 307045.4466, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().z(), 4919474.7664, abs <= 0.0001);
+    assert!(result_coords.velocity().is_some());
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().x(),
+        0.0247,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().y(),
+        0.1835,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().z(),
+        0.0190,
+        abs <= 0.1
+    );
+    assert_eq!(result_coords.epoch(), make_epoch(2000));
+    assert_eq!(result_coords.reference_frame(), ReferenceFrame::ETRF90);
+}
+
+/// Truth data obtained from https://www.epncb.oma.be/_productsservices/coord_trans/
+#[test]
+fn euref_etrf89() {
+    let initial_coords = Coordinate::new(
+        ReferenceFrame::ITRF89,
+        ECEF::new(4027894.006, 307045.600, 4919474.910),
+        Some(ECEF::new(0.01, 0.2, 0.030)),
+        make_epoch(2000),
+    );
+    let transformation =
+        get_transformation(ReferenceFrame::ITRF89, ReferenceFrame::ETRF89).unwrap();
+    let result_coords = transformation.transform(&initial_coords);
+    assert_float_eq!(result_coords.position().x(), 4027894.1672, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().y(), 307045.4186, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().z(), 4919474.7894, abs <= 0.0001);
+    assert!(result_coords.velocity().is_some());
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().x(),
+        0.0247,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().y(),
+        0.1835,
+        abs <= 0.1
+    );
+    assert_float_eq!(
+        result_coords.velocity().as_ref().unwrap().z(),
+        0.0190,
+        abs <= 0.1
+    );
+    assert_eq!(result_coords.epoch(), make_epoch(2000));
+    assert_eq!(result_coords.reference_frame(), ReferenceFrame::ETRF89);
 }
 
 /// Truth data obtained from https://www.epncb.oma.be/_productsservices/coord_trans/
@@ -159,11 +509,11 @@ fn euref_etrf2014_reverse() {
         make_epoch(2000),
     );
     let transformation =
-        get_transformation(ReferenceFrame::ETRF2014, ReferenceFrame::ITRF2020).unwrap();
+        get_transformation(ReferenceFrame::ETRF2014, ReferenceFrame::ITRF2014).unwrap();
     let result_coords = transformation.transform(&initial_coords);
-    assert_float_eq!(result_coords.position().x(), 4027893.8572, abs <= 0.0001);
-    assert_float_eq!(result_coords.position().y(), 307045.7872, abs <= 0.0001);
-    assert_float_eq!(result_coords.position().z(), 4919475.0263, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().x(), 4027893.8541, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().y(), 307045.7877, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().z(), 4919475.0227, abs <= 0.0001);
     assert!(result_coords.velocity().is_some());
     assert_float_eq!(
         result_coords.velocity().as_ref().unwrap().x(),
@@ -172,16 +522,16 @@ fn euref_etrf2014_reverse() {
     );
     assert_float_eq!(
         result_coords.velocity().as_ref().unwrap().y(),
-        0.2172,
+        0.2171,
         abs <= 0.1
     );
     assert_float_eq!(
         result_coords.velocity().as_ref().unwrap().z(),
-        0.0400,
+        0.0402,
         abs <= 0.1
     );
     assert_eq!(result_coords.epoch(), make_epoch(2000));
-    assert_eq!(result_coords.reference_frame(), ReferenceFrame::ITRF2020);
+    assert_eq!(result_coords.reference_frame(), ReferenceFrame::ITRF2014);
 }
 
 /// Truth data obtained from https://www.epncb.oma.be/_productsservices/coord_trans/
@@ -221,19 +571,19 @@ fn euref_adjust_epoch() {
 #[test]
 fn euref_complete_transform() {
     let initial_coords = Coordinate::new(
-        ReferenceFrame::ITRF2020,
+        ReferenceFrame::ITRF2014,
         ECEF::new(4027894.006, 307045.600, 4919474.910),
         Some(ECEF::new(0.01, 0.2, 0.030)),
         make_epoch(2000),
     );
     let transformation =
-        get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::ETRF2014).unwrap();
+        get_transformation(ReferenceFrame::ITRF2014, ReferenceFrame::ETRF2014).unwrap();
 
     // Test adjusting the epoch first then transforming
     let result_coords = transformation.transform(&initial_coords.adjust_epoch(&make_epoch(2008)));
-    assert_float_eq!(result_coords.position().x(), 4027894.3453, abs <= 0.0001);
-    assert_float_eq!(result_coords.position().y(), 307046.8755, abs <= 0.0001);
-    assert_float_eq!(result_coords.position().z(), 4919474.9533, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().x(), 4027894.3484, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().y(), 307046.8758, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().z(), 4919474.9554, abs <= 0.0001);
     assert!(result_coords.velocity().is_some());
     assert_float_eq!(
         result_coords.velocity().as_ref().unwrap().x(),
@@ -242,12 +592,12 @@ fn euref_complete_transform() {
     );
     assert_float_eq!(
         result_coords.velocity().as_ref().unwrap().y(),
-        0.1828,
+        0.1829,
         abs <= 0.1
     );
     assert_float_eq!(
         result_coords.velocity().as_ref().unwrap().z(),
-        0.0200,
+        0.0198,
         abs <= 0.1
     );
     assert_eq!(result_coords.epoch(), make_epoch(2008));
@@ -257,9 +607,9 @@ fn euref_complete_transform() {
     let result_coords = transformation
         .transform(&initial_coords)
         .adjust_epoch(&make_epoch(2008));
-    assert_float_eq!(result_coords.position().x(), 4027894.3453, abs <= 0.0001);
-    assert_float_eq!(result_coords.position().y(), 307046.8755, abs <= 0.0001);
-    assert_float_eq!(result_coords.position().z(), 4919474.9533, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().x(), 4027894.3484, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().y(), 307046.8758, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().z(), 4919474.9554, abs <= 0.0001);
     assert!(result_coords.velocity().is_some());
     assert_float_eq!(
         result_coords.velocity().as_ref().unwrap().x(),
@@ -268,12 +618,12 @@ fn euref_complete_transform() {
     );
     assert_float_eq!(
         result_coords.velocity().as_ref().unwrap().y(),
-        0.1828,
+        0.1829,
         abs <= 0.1
     );
     assert_float_eq!(
         result_coords.velocity().as_ref().unwrap().z(),
-        0.0200,
+        0.0198,
         abs <= 0.1
     );
     assert_eq!(result_coords.epoch(), make_epoch(2008));
@@ -476,4 +826,31 @@ fn trx_nad83_csrs_adjust_epoch() {
     );
     assert_eq!(result_coords.epoch(), make_epoch(2010));
     assert_eq!(result_coords.reference_frame(), ReferenceFrame::NAD83_CSRS);
+}
+
+/// Truth data obtained from https://www.epncb.oma.be/_productsservices/coord_trans/
+#[test]
+fn dref91_r2016() {
+    let initial_coords: Coordinate = Coordinate::new(
+        ReferenceFrame::ITRF2020,
+        ECEF::new(3842152.805, 563402.164, 5042888.600),
+        None,
+        UtcTime::from_date(2023, 02, 22, 0, 0, 0.).to_gps_hardcoded(),
+    );
+    let transformation =
+        get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::DREF91_R2016).unwrap();
+    let result_coords = transformation.transform(&initial_coords);
+    assert_float_eq!(result_coords.position().x(), 3842153.3718, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().y(), 563401.6528, abs <= 0.0001);
+    assert_float_eq!(result_coords.position().z(), 5042888.2271, abs <= 0.0001);
+    assert!(result_coords.velocity().is_none());
+    assert_float_eq!(
+        result_coords.epoch().to_fractional_year_hardcoded(),
+        2023.15,
+        abs <= 0.01
+    );
+    assert_eq!(
+        result_coords.reference_frame(),
+        ReferenceFrame::DREF91_R2016
+    );
 }
