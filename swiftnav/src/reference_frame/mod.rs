@@ -137,7 +137,7 @@ pub enum ReferenceFrame {
 /// the scaling is in parts per billion. We also follow the
 /// IERS convention for the sign of the rotation terms.
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
-struct TimeDependentHelmertParams {
+pub struct TimeDependentHelmertParams {
     tx: f64,
     tx_dot: f64,
     ty: f64,
@@ -161,7 +161,7 @@ impl TimeDependentHelmertParams {
     const ROTATE_SCALE: f64 = (std::f64::consts::PI / 180.0) * (0.001 / 3600.0);
 
     /// Reverses the transformation. Since this is a linear transformation we simply negate all terms
-    fn invert(&mut self) {
+    pub fn invert(&mut self) {
         self.tx *= -1.0;
         self.tx_dot *= -1.0;
         self.ty *= -1.0;
@@ -179,7 +179,7 @@ impl TimeDependentHelmertParams {
     }
 
     /// Apply the transformation on a position at a specific epoch
-    fn transform_position(&self, position: &ECEF, epoch: f64) -> ECEF {
+    pub fn transform_position(&self, position: &ECEF, epoch: f64) -> ECEF {
         let dt = epoch - self.epoch;
         let tx = (self.tx + self.tx_dot * dt) * Self::TRANSLATE_SCALE;
         let ty = (self.ty + self.ty_dot * dt) * Self::TRANSLATE_SCALE;
@@ -197,7 +197,7 @@ impl TimeDependentHelmertParams {
     }
 
     /// Apply the transformation on a velocity at a specific position
-    fn transform_velocity(&self, velocity: &ECEF, position: &ECEF) -> ECEF {
+    pub fn transform_velocity(&self, velocity: &ECEF, position: &ECEF) -> ECEF {
         let tx = self.tx_dot * Self::TRANSLATE_SCALE;
         let ty = self.ty_dot * Self::TRANSLATE_SCALE;
         let tz = self.tz_dot * Self::TRANSLATE_SCALE;
@@ -217,9 +217,9 @@ impl TimeDependentHelmertParams {
 /// A transformation from one reference frame to another.
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub struct Transformation {
-    from: ReferenceFrame,
-    to: ReferenceFrame,
-    params: TimeDependentHelmertParams,
+    pub from: ReferenceFrame,
+    pub to: ReferenceFrame,
+    pub params: TimeDependentHelmertParams,
 }
 
 impl Transformation {
