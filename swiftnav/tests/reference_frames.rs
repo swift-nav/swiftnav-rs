@@ -828,7 +828,7 @@ fn trx_nad83_csrs_adjust_epoch() {
     assert_eq!(result_coords.reference_frame(), ReferenceFrame::NAD83_CSRS);
 }
 
-/// Truth data obtained from https://www.epncb.oma.be/_productsservices/coord_trans/
+/// Truth data obtained from https://www.adv-online.de/AdV-Produkte/Integrierter-geodaetischer-Raumbezug/Transformationsparameter/
 #[test]
 fn dref91_r2016() {
     let initial_coords: Coordinate = Coordinate::new(
