@@ -83,6 +83,7 @@ mod params;
 /// Reference Frames
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, EnumString, Display, EnumIter)]
 #[strum(serialize_all = "UPPERCASE")]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum ReferenceFrame {
     ITRF88,
     ITRF89,
@@ -137,6 +138,7 @@ pub enum ReferenceFrame {
 /// the scaling is in parts per billion. We also follow the
 /// IERS convention for the sign of the rotation terms.
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct TimeDependentHelmertParams {
     tx: f64,
     tx_dot: f64,
@@ -216,6 +218,7 @@ impl TimeDependentHelmertParams {
 
 /// A transformation from one reference frame to another.
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Transformation {
     pub from: ReferenceFrame,
     pub to: ReferenceFrame,
