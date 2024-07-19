@@ -58,6 +58,7 @@ use crate::{
 ///
 /// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude (both in the given angular units) and height above the geoid in meters
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct LLHDegrees([f64; 3]);
 
 impl LLHDegrees {
@@ -147,6 +148,7 @@ impl From<ECEF> for LLHRadians {
 ///
 /// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude (both in the given angular units) and height above the geoid in meters
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct LLHRadians([f64; 3]);
 
 impl LLHRadians {
@@ -238,6 +240,7 @@ impl From<ECEF> for LLHDegrees {
 ///
 /// Internally stored as an array of 3 [f64](std::f64) values: x, y, z all in meters
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ECEF([f64; 3]);
 
 impl ECEF {
@@ -436,6 +439,7 @@ impl MulAssign<&f64> for ECEF {
 ///
 /// Internally stored as an array of 3 [f64](std::f64) values: N, E, D all in meters
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct NED([f64; 3]);
 
 impl NED {
