@@ -6,17 +6,21 @@ updates:
     interval: weekly
     time: "09:00"
     timezone: "America/Los_Angeles"
-  open-pull-requests-limit: 10
+  reviewers:
+    - swift-nav/open-source
 - package-ecosystem: cargo
   directory: "/"
   schedule:
     interval: weekly
     time: "09:00"
     timezone: "America/Los_Angeles"
+  reviewers:
+    - swift-nav/open-source
 - package-ecosystem: "github-actions"
   directory: "/"
   schedule:
     interval: weekly
     time: "09:00"
     timezone: "America/Los_Angeles"
-  open-pull-requests-limit: 10
+  reviewers:
+    - swift-nav/open-source
