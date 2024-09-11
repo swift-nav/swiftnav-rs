@@ -56,7 +56,7 @@ jobs:
 
       # Required for bindgen on Windows
       - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v1
+        uses: KyleMayes/install-llvm-action@v2
         if: matrix.os == 'windows-latest'
         with:
           version: "10.0"
