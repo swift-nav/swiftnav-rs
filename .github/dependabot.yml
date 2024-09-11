@@ -3,12 +3,24 @@ updates:
 - package-ecosystem: gitsubmodule
   directory: "/"
   schedule:
-    interval: daily
-    time: "13:00"
-  open-pull-requests-limit: 10
+    interval: weekly
+    time: "09:00"
+    timezone: "America/Los_Angeles"
+  reviewers:
+    - swift-nav/open-source
 - package-ecosystem: cargo
   directory: "/"
   schedule:
-    interval: daily
-    time: "13:00"
-  open-pull-requests-limit: 10
+    interval: weekly
+    time: "09:00"
+    timezone: "America/Los_Angeles"
+  reviewers:
+    - swift-nav/open-source
+- package-ecosystem: "github-actions"
+  directory: "/"
+  schedule:
+    interval: weekly
+    time: "09:00"
+    timezone: "America/Los_Angeles"
+  reviewers:
+    - swift-nav/open-source
