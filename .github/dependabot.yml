@@ -3,12 +3,20 @@ updates:
 - package-ecosystem: gitsubmodule
   directory: "/"
   schedule:
-    interval: daily
-    time: "13:00"
+    interval: weekly
+    time: "09:00"
+    timezone: "America/Los_Angeles"
   open-pull-requests-limit: 10
 - package-ecosystem: cargo
   directory: "/"
   schedule:
-    interval: daily
-    time: "13:00"
+    interval: weekly
+    time: "09:00"
+    timezone: "America/Los_Angeles"
+- package-ecosystem: "github-actions"
+  directory: "/"
+  schedule:
+    interval: weekly
+    time: "09:00"
+    timezone: "America/Los_Angeles"
   open-pull-requests-limit: 10
