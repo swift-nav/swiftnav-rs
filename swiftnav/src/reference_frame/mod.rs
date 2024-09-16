@@ -755,7 +755,7 @@ mod tests {
     }
 
     #[test]
-    fn ITRF2020_to_ETRF2000_shortest_path() {
+    fn itrf2020_to_etrf2000_shortest_path() {
         let from = ReferenceFrame::ITRF2020;
         let to = ReferenceFrame::ETRF2000;
 
