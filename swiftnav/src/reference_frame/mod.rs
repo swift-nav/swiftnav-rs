@@ -75,13 +75,18 @@
 //!
 
 use crate::coords::{Coordinate, ECEF};
-use std::fmt;
+use std::{
+    collections::{HashMap, HashSet, VecDeque},
+    fmt,
+};
 use strum::{Display, EnumIter, EnumString};
 
 mod params;
 
 /// Reference Frames
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, EnumString, Display, EnumIter)]
+#[derive(
+    Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, EnumString, Display, EnumIter, Hash,
+)]
 #[strum(serialize_all = "UPPERCASE")]
 pub enum ReferenceFrame {
     ITRF88,
@@ -288,11 +293,81 @@ pub fn get_transformation(
         .ok_or(TransformationNotFound(from, to))
 }
 
+/// A helper type for finding transformations between reference frames that require multiple steps
+///
+/// This object can be used to determine which calls to [`get_transformation`](crate::reference_frame::get_transformation)
+/// are needed when a single transformation does not exist between two reference frames.
+pub struct TransformationGraph {
+    graph: HashMap<ReferenceFrame, HashSet<ReferenceFrame>>,
+}
+
+impl TransformationGraph {
+    /// Create a new transformation graph, fully populated with the known transformations
+    pub fn new() -> Self {
+        let mut graph = HashMap::new();
+        for transformation in params::TRANSFORMATIONS.iter() {
+            graph
+                .entry(transformation.from)
+                .or_insert_with(HashSet::new)
+                .insert(transformation.to);
+            graph
+                .entry(transformation.to)
+                .or_insert_with(HashSet::new)
+                .insert(transformation.from);
+        }
+        TransformationGraph { graph }
+    }
+
+    /// Get the shortest path between two reference frames, if one exists
+    ///
+    /// This function will also search for reverse paths if no direct path is found.
+    /// The search is performed breadth-first.
+    pub fn get_shortest_path(
+        &self,
+        from: ReferenceFrame,
+        to: ReferenceFrame,
+    ) -> Option<Vec<ReferenceFrame>> {
+        if from == to {
+            return None;
+        }
+
+        let mut visited: HashSet<ReferenceFrame> = HashSet::new();
+        let mut queue: VecDeque<(ReferenceFrame, Vec<ReferenceFrame>)> = VecDeque::new();
+        queue.push_back((from, vec![from]));
+
+        while let Some((current_frame, path)) = queue.pop_front() {
+            if current_frame == to {
+                return Some(path);
+            }
+
+            if let Some(neighbors) = self.graph.get(&current_frame) {
+                for neighbor in neighbors {
+                    if !visited.contains(neighbor) {
+                        visited.insert(*neighbor);
+                        let mut new_path = path.clone();
+                        new_path.push(*neighbor);
+                        queue.push_back((*neighbor, new_path));
+                    }
+                }
+            }
+        }
+        None
+    }
+}
+
+impl Default for TransformationGraph {
+    fn default() -> Self {
+        TransformationGraph::new()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use float_eq::assert_float_eq;
+    use params::TRANSFORMATIONS;
     use std::str::FromStr;
+    use strum::IntoEnumIterator;
 
     #[test]
     fn reference_frame_strings() {
@@ -677,5 +752,39 @@ mod tests {
         assert_float_eq!(params.rz, 7.0, abs_all <= 1e-4);
         assert_float_eq!(params.rz_dot, 0.7, abs_all <= 1e-4);
         assert_float_eq!(params.epoch, 2010.0, abs_all <= 1e-4);
+    }
+
+    #[test]
+    fn itrf2020_to_etrf2000_shortest_path() {
+        let from = ReferenceFrame::ITRF2020;
+        let to = ReferenceFrame::ETRF2000;
+
+        // Make sure there isn't a direct path
+        assert!(!TRANSFORMATIONS.iter().any(|t| t.from == from && t.to == to));
+
+        let graph = TransformationGraph::new();
+        let path = graph.get_shortest_path(from, to);
+        assert!(path.is_some());
+        // Make sure that the path is correct. N.B. this may change if more transformations
+        // are added in the future
+        let path = path.unwrap();
+        assert_eq!(path.len(), 3);
+        assert_eq!(path[0], from);
+        assert_eq!(path[1], ReferenceFrame::ITRF2000);
+        assert_eq!(path[2], to);
+    }
+
+    #[test]
+    fn fully_traversable_graph() {
+        let graph = TransformationGraph::new();
+        for from in ReferenceFrame::iter() {
+            for to in ReferenceFrame::iter() {
+                if from == to {
+                    continue;
+                }
+                let path = graph.get_shortest_path(from, to);
+                assert!(path.is_some(), "No path from {} to {}", from, to);
+            }
+        }
     }
 }
