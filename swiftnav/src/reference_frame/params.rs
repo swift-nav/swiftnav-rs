@@ -1,6 +1,6 @@
 use super::{ReferenceFrame, TimeDependentHelmertParams, Transformation};
 
-pub const TRANSFORMATIONS: [Transformation; 31] = [
+pub const TRANSFORMATIONS: [Transformation; 34] = [
     Transformation {
         from: ReferenceFrame::ITRF2020,
         to: ReferenceFrame::ITRF2014,
@@ -650,6 +650,72 @@ pub const TRANSFORMATIONS: [Transformation; 31] = [
             rz: -27.6123,
             rz_dot: -0.5284,
             epoch: 2021.0,
+        },
+    },
+    // WGS84(G2296) is defined to be the same as ITRF2020 at epoch 2024.0
+    Transformation {
+        from: ReferenceFrame::ITRF2020,
+        to: ReferenceFrame::WGS84_G2296,
+        params: TimeDependentHelmertParams {
+            tx: 0.0,
+            tx_dot: 0.0,
+            ty: 0.0,
+            ty_dot: 0.0,
+            tz: 0.0,
+            tz_dot: 0.0,
+            s: 0.0,
+            s_dot: 0.0,
+            rx: 0.0,
+            rx_dot: 0.0,
+            ry: 0.0,
+            ry_dot: 0.0,
+            rz: 0.0,
+            rz_dot: 0.0,
+            epoch: 2024.0,
+        },
+    },
+    // WGS84(G2139) is defined to be the same as ITRF2014 at epoch 2016.0
+    Transformation {
+        from: ReferenceFrame::ITRF2014,
+        to: ReferenceFrame::WGS84_G2139,
+        params: TimeDependentHelmertParams {
+            tx: 0.0,
+            tx_dot: 0.0,
+            ty: 0.0,
+            ty_dot: 0.0,
+            tz: 0.0,
+            tz_dot: 0.0,
+            s: 0.0,
+            s_dot: 0.0,
+            rx: 0.0,
+            rx_dot: 0.0,
+            ry: 0.0,
+            ry_dot: 0.0,
+            rz: 0.0,
+            rz_dot: 0.0,
+            epoch: 2016.0,
+        },
+    },
+    // WGS84(G1762) is defined to be the same as ITRF2008 at epoch 2005.0
+    Transformation {
+        from: ReferenceFrame::ITRF2008,
+        to: ReferenceFrame::WGS84_G1762,
+        params: TimeDependentHelmertParams {
+            tx: 0.0,
+            tx_dot: 0.0,
+            ty: 0.0,
+            ty_dot: 0.0,
+            tz: 0.0,
+            tz_dot: 0.0,
+            s: 0.0,
+            s_dot: 0.0,
+            rx: 0.0,
+            rx_dot: 0.0,
+            ry: 0.0,
+            ry_dot: 0.0,
+            rz: 0.0,
+            rz_dot: 0.0,
+            epoch: 2005.0,
         },
     },
 ];

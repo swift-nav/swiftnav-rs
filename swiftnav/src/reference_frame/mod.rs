@@ -125,6 +125,15 @@ pub enum ReferenceFrame {
     #[allow(non_camel_case_types)]
     #[strum(to_string = "DREF91(R2016)", serialize = "DREF91_R2016")]
     DREF91_R2016,
+    #[allow(non_camel_case_types)]
+    #[strum(to_string = "WGS84(G1762)", serialize = "WGS84_G1762")]
+    WGS84_G1762,
+    #[allow(non_camel_case_types)]
+    #[strum(to_string = "WGS84(G2139)", serialize = "WGS84_G2139")]
+    WGS84_G2139,
+    #[allow(non_camel_case_types)]
+    #[strum(to_string = "WGS84(G2296)", serialize = "WGS84_G2296")]
+    WGS84_G2296,
 }
 
 /// 15-parameter Helmert transformation parameters
