@@ -76,7 +76,5 @@ jobs:
           rustup toolchain install --force-non-host ${{ matrix.toolchain }}-${{ matrix.binary_target }}
           rustup show
 
-      - uses: actions-rs/cargo@v1
-        with:
-          command: make
-          args: --no-workspace workspace-ci-flow
+      - name: Build
+        run: cargo make --no-workspace workspace-ci-flow
