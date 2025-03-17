@@ -72,7 +72,6 @@ jobs:
       - name: Install rust ${{ matrix.binary_target }}
         run: |
           rustup -V
-          rustup show
           rustup set profile minimal
           rustup toolchain install --force-non-host ${{ matrix.toolchain }}-${{ matrix.binary_target }}
           rustup show
