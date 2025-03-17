@@ -70,10 +70,12 @@ jobs:
           echo $env:CMAKE_GENERATOR
 
       - name: Install rust ${{ matrix.binary_target }}
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: ${{ matrix.toolchain }}-${{ matrix.binary_target }}
-          profile: minimal
+        run: |
+          rustup -V
+          rustup show
+          rustup set profile minimal
+          rustup toolchain install ${{ matrix.toolchain }}-${{ matrix.binary_target }}
+          rustup show
 
       - uses: actions-rs/cargo@v1
         with:
