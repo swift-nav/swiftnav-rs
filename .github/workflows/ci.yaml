@@ -30,7 +30,7 @@ jobs:
 
       - name: Docs
         env:
-          RUSTDOCFLAGS:-D warnings
+          RUSTDOCFLAGS: -D warnings
         run: cargo doc --workspace --all-features --no-deps --verbose
 
   build:
