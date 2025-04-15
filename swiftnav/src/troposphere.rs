@@ -13,8 +13,8 @@
 //! parameters are hardcoded into the library, unlike the ionosphere model.
 //!
 //! # References
-//!   * UNB Neutral Atmosphere Models: Development and Performance. R Leandro,
-//!      M Santos, and R B Langley
+//! * UNB Neutral Atmosphere Models: Development and Performance. R Leandro,
+//!   M Santos, and R B Langley
 
 ///  Calculate tropospheric delay using UNM3m model.
 ///
