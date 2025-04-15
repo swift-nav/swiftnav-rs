@@ -23,10 +23,15 @@ jobs:
           rustup show
 
       - name: Check Formatting
-        run: cargo fmt --check --all
+        run: cargo fmt --check --all --verbose
 
       - name: Clippy
-        run: cargo clippy --workspace --all-features -- -Dwarnings
+        run: cargo clippy --workspace --all-features --verbose -- -Dwarnings
+
+      - name: Docs
+        env:
+          RUSTDOCFLAGS:-D warnings
+        run: cargo doc --workspace --all-features --no-deps --verbose
 
   build:
     name: Build and test
@@ -89,7 +94,7 @@ jobs:
           rustup show
 
       - name: Build
-        run: cargo build --workspace --all-features
+        run: cargo build --workspace --all-features --verbose
 
       - name: Test
-        run: cargo test --workspace --all-features
+        run: cargo test --workspace --all-features --verbose
