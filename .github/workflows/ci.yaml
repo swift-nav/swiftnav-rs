@@ -1,102 +1,102 @@
 ---
-name: CI - Build
-on:
-  pull_request:
-  push:
-    branches:
-      - "master"
-  schedule:
-    - cron: "0 16 * * 1" # 8am PST every Monday
-jobs:
-  lint:
-    name: PR Checks
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-        submodules: recursive
-
-      - name: Install rust
-        run: |
-          rustup -V
-          rustup set profile minimal
-          rustup toolchain install stable
-          rustup show
-
-      - name: Check Formatting
-        run: cargo fmt --check --all
-
-      - name: Clippy
-        run: cargo clippy --check --workspace --all-features
-  build:
-    name: Build and test
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          # Ubuntus
-          - os: ubuntu-latest
-            binary_target: x86_64-unknown-linux-musl
-            needs_musl: true
-            toolchain: stable
-          - os: ubuntu-20.04
-            binary_target: x86_64-unknown-linux-gnu
-            toolchain: stable
-
-          # MacOS ARM
-          - os: macos-latest
-            binary_target: aarch64-apple-darwin
-            toolchain: stable
-
-          # Windows
-          - os: windows-latest
-            binary_target: x86_64-pc-windows-msvc
-            toolchain: stable
-
-          # Nightly Rust
-          - os: ubuntu-latest
-            binary_target: x86_64-unknown-linux-gnu
-            toolchain: nightly
-
-          # MSRV
-          - os: ubuntu-latest
-            binary_target: x86_64-unknown-linux-gnu
-            toolchain: 1.62.1
-    steps:
-      - uses: actions/checkout@v4
-        with:
+  name: CI
+  on:
+    pull_request:
+    push:
+      branches:
+        - "master"
+    schedule:
+      - cron: "0 16 * * 1" # 8am PST every Monday
+  jobs:
+    lint:
+      name: Lints
+      runs-on: ubuntu-latest
+      steps:
+        - uses: actions/checkout@v4
+          with:
           submodules: recursive
 
-      - name: Install musl tools
-        if: matrix.needs_musl
-        run: |
-          sudo apt-get install musl-tools
-          sudo ln -s /usr/bin/musl-gcc /usr/bin/musl-g++
+        - name: Install rust
+          run: |
+            rustup -V
+            rustup set profile minimal
+            rustup toolchain install stable
+            rustup show
 
-      # Required for bindgen on Windows
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
-        if: matrix.os == 'windows-latest'
-        with:
-          version: "10.0"
-          directory: ${{ runner.temp }}/llvm-10.0/
+        - name: Check Formatting
+          run: cargo fmt --check --all
 
-      - name: Set CMake generator
-        if: matrix.os == 'windows-latest'
-        run: |
-          echo "CMAKE_GENERATOR=NMake Makefiles" >> $env:GITHUB_ENV
-          echo "${{ env.CMAKE_GENERATOR }}"
-          echo $env:CMAKE_GENERATOR
+        - name: Clippy
+          run: cargo clippy --check --workspace --all-features
+    build:
+      name: Build and test
+      runs-on: ${{ matrix.os }}
+      strategy:
+        matrix:
+          include:
+            # Ubuntus
+            - os: ubuntu-latest
+              binary_target: x86_64-unknown-linux-musl
+              needs_musl: true
+              toolchain: stable
+            - os: ubuntu-20.04
+              binary_target: x86_64-unknown-linux-gnu
+              toolchain: stable
 
-      - name: Install rust ${{ matrix.binary_target }}
-        run: |
-          rustup -V
-          rustup set profile minimal
-          rustup toolchain install --force-non-host ${{ matrix.toolchain }}-${{ matrix.binary_target }}
-          rustup show
+            # MacOS ARM
+            - os: macos-latest
+              binary_target: aarch64-apple-darwin
+              toolchain: stable
 
-      - name: Build
-        run: cargo build --workspace --all-features
+            # Windows
+            - os: windows-latest
+              binary_target: x86_64-pc-windows-msvc
+              toolchain: stable
 
-      - name: Test
-        run: cargo test --workspace --all-features
+            # Nightly Rust
+            - os: ubuntu-latest
+              binary_target: x86_64-unknown-linux-gnu
+              toolchain: nightly
+
+            # MSRV
+            - os: ubuntu-latest
+              binary_target: x86_64-unknown-linux-gnu
+              toolchain: 1.62.1
+      steps:
+        - uses: actions/checkout@v4
+          with:
+            submodules: recursive
+
+        - name: Install musl tools
+          if: matrix.needs_musl
+          run: |
+            sudo apt-get install musl-tools
+            sudo ln -s /usr/bin/musl-gcc /usr/bin/musl-g++
+
+        # Required for bindgen on Windows
+        - name: Install LLVM and Clang
+          uses: KyleMayes/install-llvm-action@v2
+          if: matrix.os == 'windows-latest'
+          with:
+            version: "10.0"
+            directory: ${{ runner.temp }}/llvm-10.0/
+
+        - name: Set CMake generator
+          if: matrix.os == 'windows-latest'
+          run: |
+            echo "CMAKE_GENERATOR=NMake Makefiles" >> $env:GITHUB_ENV
+            echo "${{ env.CMAKE_GENERATOR }}"
+            echo $env:CMAKE_GENERATOR
+
+        - name: Install rust ${{ matrix.binary_target }}
+          run: |
+            rustup -V
+            rustup set profile minimal
+            rustup toolchain install --force-non-host ${{ matrix.toolchain }}-${{ matrix.binary_target }}
+            rustup show
+
+        - name: Build
+          run: cargo build --workspace --all-features
+
+        - name: Test
+          run: cargo test --workspace --all-features
