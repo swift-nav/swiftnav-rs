@@ -1,5 +1,5 @@
 ---
-name: CI
+name: CI - Build
 "on":
   pull_request:
   push:
@@ -77,4 +77,7 @@ jobs:
           rustup show
 
       - name: Build
-        run: cargo make --no-workspace workspace-ci-flow
+        run: cargo build --workspace --all-features
+
+      - name: Test
+        run: cargo test --workspace --all-features

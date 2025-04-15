@@ -1,0 +1,26 @@
+---
+name: CI - Lint
+on:
+  pull_request:
+jobs:
+  lint:
+    name: PR Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+        submodules: recursive
+        token: ${{ secrets.GH_TOKEN }}
+
+      - name: Install rust
+        run: |
+          rustup -V
+          rustup set profile minimal
+          rustup toolchain install stable
+          rustup show
+
+      - name: Check Formatting
+        run: cargo fmt --check --all
+
+      - name: Clippy
+        run: cargo clippy --check --workspace --all-features
