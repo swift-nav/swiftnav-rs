@@ -41,11 +41,11 @@
 //! the more common algortihms based on the Newton-Raphson method.
 //!
 //! # References
-//!   * "A comparison of methods used in rectangular to Geodetic Coordinates
-//!      Transformations", Burtch R. R. (2006), American Congress for Surveying
-//!      and Mapping Annual Conference. Orlando, Florida.
-//!   * "Transformation from Cartesian to Geodetic Coordinates Accelerated by
-//!      Halley’s Method", T. Fukushima (2006), Journal of Geodesy.
+//! * "A comparison of methods used in rectangular to Geodetic Coordinates
+//!   Transformations", Burtch R. R. (2006), American Congress for Surveying
+//!   and Mapping Annual Conference. Orlando, Florida.
+//! * "Transformation from Cartesian to Geodetic Coordinates Accelerated by
+//!   Halley’s Method", T. Fukushima (2006), Journal of Geodesy.
 
 use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
 

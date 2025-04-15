@@ -1,6 +1,6 @@
 ---
 name: CI
-"on":
+on:
   pull_request:
   push:
     branches:
@@ -8,8 +8,36 @@ name: CI
   schedule:
     - cron: "0 16 * * 1" # 8am PST every Monday
 jobs:
-  ci:
-    name: Format, lint, and test
+  lint:
+    name: Lints
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install rust
+        run: |
+          rustup -V
+          rustup set profile minimal
+          rustup toolchain install stable
+          rustup show
+
+      - name: Check Formatting
+        run: cargo fmt --check --all --verbose
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-features --verbose -- -Dwarnings
+
+      # Check for docs warnings
+      # Only do this for the swiftnav crate since swiftnav-sys has some errors
+      # in the bindgen output
+      - name: Docs
+        env:
+          RUSTDOCFLAGS: -D warnings
+        run: cargo doc --package swiftnav --all-features --no-deps --verbose
+
+  build:
+    name: Build and test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -19,25 +47,18 @@ jobs:
             binary_target: x86_64-unknown-linux-musl
             needs_musl: true
             toolchain: stable
-          - os: ubuntu-20.04
-            binary_target: x86_64-unknown-linux-gnu
-            toolchain: stable
-
           # MacOS ARM
           - os: macos-latest
             binary_target: aarch64-apple-darwin
             toolchain: stable
-
           # Windows
           - os: windows-latest
             binary_target: x86_64-pc-windows-msvc
             toolchain: stable
-
           # Nightly Rust
           - os: ubuntu-latest
             binary_target: x86_64-unknown-linux-gnu
             toolchain: nightly
-
           # MSRV
           - os: ubuntu-latest
             binary_target: x86_64-unknown-linux-gnu
@@ -46,7 +67,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: davidB/rust-cargo-make@v1
 
       - name: Install musl tools
         if: matrix.needs_musl
@@ -77,4 +97,7 @@ jobs:
           rustup show
 
       - name: Build
-        run: cargo make --no-workspace workspace-ci-flow
+        run: cargo build --workspace --all-features --verbose
+
+      - name: Test
+        run: cargo test --workspace --all-features --verbose

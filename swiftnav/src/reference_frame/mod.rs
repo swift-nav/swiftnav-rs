@@ -36,14 +36,14 @@
 //! This module provides several types and functions to help transform a set of coordinates
 //! from one reference frame to another, and from one epoch to another. Several sets of
 //! transformation parameters are included for converting between common reference frames.
-//! To start out, you must have a [`Coordinate`](crate::coords::Coordinate) that you want to
-//! transform. This consists of a position, an epoch, and a reference frame as well as an optional
-//! velocity. You then need to get the [`Transformation`](crate::reference_frame::Transformation)
-//! object that describes the transformation from the reference frame of the coordinate to the
-//! desired reference frame. You can then call the `transform` method on the transformation object
-//! to get a new coordinate in the desired reference frame. This transformation will change the
-//! position and velocity of the coordinate, but it does not the change the epoch of the coordinate.
-//! If you need to change the epoch of the coordinate you will need to use the [`Coordinate::adjust_epoch`](crate::coords::Coordinate::adjust_epoch)
+//! To start out, you must have a [`Coordinate`] that you want to transform. This consists of a
+//! position, an epoch, and a reference frame as well as an optional velocity. You then need to
+//! get the [`Transformation`] object that describes the transformation from the reference
+//! frame of the coordinate to the desired reference frame. You can then call the `transform`
+//! method on the transformation object to get a new coordinate in the desired reference frame.
+//! This transformation will change the position and velocity of the coordinate, but it does
+//! not the change the epoch of the coordinate. If you need to change the epoch of the
+//! coordinate you will need to use the [`Coordinate::adjust_epoch`](crate::coords::Coordinate::adjust_epoch)
 //! method which uses the velocity of the coordinate to determine the position at the new epoch.
 //!
 //! # Example
@@ -304,7 +304,7 @@ pub fn get_transformation(
 
 /// A helper type for finding transformations between reference frames that require multiple steps
 ///
-/// This object can be used to determine which calls to [`get_transformation`](crate::reference_frame::get_transformation)
+/// This object can be used to determine which calls to [`get_transformation`]
 /// are needed when a single transformation does not exist between two reference frames.
 pub struct TransformationGraph {
     graph: HashMap<ReferenceFrame, HashSet<ReferenceFrame>>,
