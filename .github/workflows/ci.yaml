@@ -28,10 +28,13 @@ jobs:
       - name: Clippy
         run: cargo clippy --workspace --all-features --verbose -- -Dwarnings
 
+      # Check for docs warnings
+      # Only do this for the swiftnav crate since swiftnav-sys has some errors
+      # in the bindgen output
       - name: Docs
         env:
           RUSTDOCFLAGS: -D warnings
-        run: cargo doc --workspace --all-features --no-deps --verbose
+        run: cargo doc --package swiftnav --all-features --no-deps --verbose
 
   build:
     name: Build and test
