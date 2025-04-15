@@ -39,9 +39,6 @@ jobs:
             binary_target: x86_64-unknown-linux-musl
             needs_musl: true
             toolchain: stable
-          - os: ubuntu-20.04
-            binary_target: x86_64-unknown-linux-gnu
-            toolchain: stable
           # MacOS ARM
           - os: macos-latest
             binary_target: aarch64-apple-darwin
