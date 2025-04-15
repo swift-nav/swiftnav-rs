@@ -1,6 +1,6 @@
 ---
 name: CI - Build
-"on":
+on:
   pull_request:
   push:
     branches:
@@ -8,8 +8,28 @@ name: CI - Build
   schedule:
     - cron: "0 16 * * 1" # 8am PST every Monday
 jobs:
-  ci:
-    name: Format, lint, and test
+  lint:
+    name: PR Checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+        submodules: recursive
+
+      - name: Install rust
+        run: |
+          rustup -V
+          rustup set profile minimal
+          rustup toolchain install stable
+          rustup show
+
+      - name: Check Formatting
+        run: cargo fmt --check --all
+
+      - name: Clippy
+        run: cargo clippy --check --workspace --all-features
+  build:
+    name: Build and test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -46,7 +66,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-      - uses: davidB/rust-cargo-make@v1
 
       - name: Install musl tools
         if: matrix.needs_musl
