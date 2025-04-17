@@ -51,40 +51,41 @@
 
 use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
 
+use nalgebra::{ArrayStorage, Vector3, Matrix3};
+
 use crate::{
-    reference_frame::{get_transformation, ReferenceFrame, TransformationNotFound},
-    time::GpsTime,
+    math::compile_time_sqrt, reference_frame::{get_transformation, ReferenceFrame, TransformationNotFound}, time::GpsTime
 };
 
 /// WGS84 geodetic coordinates (Latitude, Longitude, Height)
 ///
 /// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude (both in the given angular units) and height above the geoid in meters
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
-pub struct LLHDegrees([f64; 3]);
+pub struct LLHDegrees(Vector3<f64>);
 
 impl LLHDegrees {
     pub fn new(lat: f64, lon: f64, height: f64) -> LLHDegrees {
-        LLHDegrees([lat, lon, height])
+        LLHDegrees(Vector3::new(lat, lon, height))
     }
 
-    pub fn from_array(array: &[f64; 3]) -> LLHDegrees {
-        LLHDegrees(*array)
+    pub const fn from_array(array: &[f64; 3]) -> LLHDegrees {
+        LLHDegrees(Vector3::from_array_storage(ArrayStorage([*array; 1])))
     }
 
-    pub fn as_ptr(&self) -> *const [f64; 3] {
-        &self.0
+    pub fn as_ptr(&self) -> *const f64 {
+        self.0.as_ptr()
     }
 
-    pub fn as_mut_ptr(&mut self) -> *mut [f64; 3] {
-        &mut self.0
+    pub fn as_mut_ptr(&mut self) -> *mut f64 {
+        self.0.as_mut_ptr()
     }
 
     pub fn as_array_ref(&self) -> &[f64; 3] {
-        &self.0
+        &self.0.data.0[0]
     }
 
     pub fn as_mut_array_ref(&mut self) -> &mut [f64; 3] {
-        &mut self.0
+        &mut self.0.data.0[0]
     }
 
     pub fn latitude(&self) -> f64 {
@@ -102,9 +103,9 @@ impl LLHDegrees {
     /// Converts a LLH position from degrees to radians. The position doesn't change,
     /// just the representation of the angular values.
     pub fn to_radians(&self) -> LLHRadians {
-        let mut rad = LLHRadians::default();
-        unsafe { swiftnav_sys::llhdeg2rad(self.as_ptr(), rad.as_mut_ptr()) };
-        rad
+        LLHRadians::new(self.0.x * std::f64::consts::PI / 180.0,
+                        self.0.y * std::f64::consts::PI / 180.0,
+                        self.0.z)
     }
 
     /// Converts from WGS84 geodetic coordinates (latitude, longitude and height)
@@ -121,17 +122,17 @@ impl Default for LLHDegrees {
     }
 }
 
-impl AsRef<[f64; 3]> for LLHDegrees {
-    fn as_ref(&self) -> &[f64; 3] {
-        &self.0
-    }
-}
+// impl AsRef<[f64; 3]> for LLHDegrees {
+//     fn as_ref(&self) -> &[f64; 3] {
+//         &self.0
+//     }
+// }
 
-impl AsMut<[f64; 3]> for LLHDegrees {
-    fn as_mut(&mut self) -> &mut [f64; 3] {
-        &mut self.0
-    }
-}
+// impl AsMut<[f64; 3]> for LLHDegrees {
+//     fn as_mut(&mut self) -> &mut [f64; 3] {
+//         &mut self.0
+//     }
+// }
 
 impl From<LLHDegrees> for LLHRadians {
     fn from(deg: LLHDegrees) -> LLHRadians {
@@ -149,31 +150,31 @@ impl From<ECEF> for LLHRadians {
 ///
 /// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude (both in the given angular units) and height above the geoid in meters
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
-pub struct LLHRadians([f64; 3]);
+pub struct LLHRadians(Vector3<f64>);
 
 impl LLHRadians {
     pub fn new(lat: f64, lon: f64, height: f64) -> LLHRadians {
-        LLHRadians([lat, lon, height])
+        LLHRadians(Vector3::new(lat, lon, height))
     }
 
-    pub fn from_array(array: &[f64; 3]) -> LLHRadians {
-        LLHRadians(*array)
+    pub const fn from_array(array: &[f64; 3]) -> LLHRadians {
+        LLHRadians(Vector3::from_array_storage(ArrayStorage([*array; 1])))
     }
 
-    pub fn as_ptr(&self) -> *const [f64; 3] {
-        &self.0
+    pub fn as_ptr(&self) -> *const f64 {
+        self.0.as_ptr()
     }
 
-    pub fn as_mut_ptr(&mut self) -> *mut [f64; 3] {
-        &mut self.0
+    pub fn as_mut_ptr(&mut self) -> *mut f64 {
+        self.0.as_mut_ptr()
     }
 
     pub fn as_array_ref(&self) -> &[f64; 3] {
-        &self.0
+        &self.0.data.0[0]
     }
 
     pub fn as_mut_array_ref(&mut self) -> &mut [f64; 3] {
-        &mut self.0
+        &mut self.0.data.0[0]
     }
 
     pub fn latitude(&self) -> f64 {
@@ -191,18 +192,16 @@ impl LLHRadians {
     /// Converts a LLH position from radians to degrees. The position doesn't change,
     /// just the representation of the angular values.
     pub fn to_degrees(&self) -> LLHDegrees {
-        let mut deg = LLHDegrees::default();
-        unsafe { swiftnav_sys::llhrad2deg(self.as_ptr(), deg.as_mut_ptr()) };
-        deg
+        LLHDegrees::new(self.0.x * 180.0 / std::f64::consts::PI,
+                        self.0.y * 180.0 / std::f64::consts::PI,
+                        self.0.z)
     }
 
     /// Converts from WGS84 geodetic coordinates (latitude, longitude and height)
     /// into WGS84 Earth Centered, Earth Fixed Cartesian (ECEF) coordinates
     /// (X, Y and Z).
     pub fn to_ecef(&self) -> ECEF {
-        let mut ecef = ECEF::default();
-        unsafe { swiftnav_sys::wgsllh2ecef(self.as_ptr(), ecef.as_mut_ptr()) };
-        ecef
+        WGS84::llh2ecef(self)
     }
 }
 
@@ -214,13 +213,13 @@ impl Default for LLHRadians {
 
 impl AsRef<[f64; 3]> for LLHRadians {
     fn as_ref(&self) -> &[f64; 3] {
-        &self.0
+        &self.0.data.0[0]
     }
 }
 
 impl AsMut<[f64; 3]> for LLHRadians {
     fn as_mut(&mut self) -> &mut [f64; 3] {
-        &mut self.0
+        &mut self.0.data.0[0]
     }
 }
 
@@ -240,35 +239,35 @@ impl From<ECEF> for LLHDegrees {
 ///
 /// Internally stored as an array of 3 [f64](std::f64) values: x, y, z all in meters
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
-pub struct ECEF([f64; 3]);
+pub struct ECEF(Vector3<f64>);
 
 impl ECEF {
     pub fn new(x: f64, y: f64, z: f64) -> ECEF {
-        ECEF([x, y, z])
+        ECEF(Vector3::new(x, y, z))
     }
 
-    pub fn from_array(array: &[f64; 3]) -> ECEF {
-        ECEF(*array)
+    pub const fn from_array(array: &[f64; 3]) -> ECEF {
+        ECEF(Vector3::from_array_storage(ArrayStorage([*array; 1])))
     }
 
-    pub fn as_ptr(&self) -> *const [f64; 3] {
-        &self.0
+    pub fn as_ptr(&self) -> *const f64 {
+        self.0.as_ptr()
     }
 
-    pub fn as_mut_ptr(&mut self) -> *mut [f64; 3] {
-        &mut self.0
+    pub fn as_mut_ptr(&mut self) -> *mut f64 {
+        self.0.as_mut_ptr()
     }
 
-    pub fn as_single_ptr(&self) -> *const f64 {
-        &self.0[0]
-    }
+    // pub fn as_single_ptr(&self) -> *const f64 {
+    //     &self.0[0]
+    // }
 
     pub fn as_array_ref(&self) -> &[f64; 3] {
-        &self.0
+        &self.0.data.0[0]
     }
 
     pub fn as_mut_array_ref(&mut self) -> &mut [f64; 3] {
-        &mut self.0
+        &mut self.0.data.0[0]
     }
 
     pub fn x(&self) -> f64 {
@@ -287,9 +286,7 @@ impl ECEF {
     /// coordinates (X, Y and Z) into WGS84 geodetic coordinates (latitude,
     /// longitude and height).
     pub fn to_llh(&self) -> LLHRadians {
-        let mut llh = LLHRadians::from_array(&[0.0; 3]);
-        unsafe { swiftnav_sys::wgsecef2llh(self.as_ptr(), llh.as_mut_ptr()) };
-        llh
+        WGS84::ecef2llh(self)
     }
 
     /// Determine the azimuth and elevation of a point in WGS84 Earth Centered,
@@ -300,11 +297,7 @@ impl ECEF {
     /// Down frame of the reference point. Then we can directly calculate the
     /// azimuth and elevation.
     pub fn azel_of(&self, point: &ECEF) -> AzimuthElevation {
-        let mut azel = AzimuthElevation::new(0.0, 0.0);
-        unsafe {
-            swiftnav_sys::wgsecef2azel(point.as_ptr(), self.as_ptr(), &mut azel.az, &mut azel.el)
-        };
-        azel
+        WGS84::ecef2azel(point, self)
     }
 
     /// Rotate a vector from ECEF coordinates into NED coordinates, at a given
@@ -312,9 +305,7 @@ impl ECEF {
     ///
     /// This is the inverse of [NED::ecef_vector_at].
     pub fn ned_vector_at(&self, point: &ECEF) -> NED {
-        let mut ned = NED::default();
-        unsafe { swiftnav_sys::wgsecef2ned(self.as_ptr(), point.as_ptr(), ned.as_mut_ptr()) };
-        ned
+        WGS84::ecef2ned(self, point)
     }
 }
 
@@ -326,20 +317,20 @@ impl Default for ECEF {
 
 impl AsRef<[f64; 3]> for ECEF {
     fn as_ref(&self) -> &[f64; 3] {
-        &self.0
+        &self.0.data.0[0]
     }
 }
 
 impl AsMut<[f64; 3]> for ECEF {
     fn as_mut(&mut self) -> &mut [f64; 3] {
-        &mut self.0
+        &mut self.0.data.0[0]
     }
 }
 
 impl Add for ECEF {
     type Output = ECEF;
     fn add(self, rhs: ECEF) -> ECEF {
-        ECEF([self.x() + rhs.x(), self.y() + rhs.y(), self.z() + rhs.z()])
+        ECEF(self.0 + rhs.0)
     }
 }
 
@@ -374,7 +365,7 @@ impl AddAssign<&ECEF> for ECEF {
 impl Sub for ECEF {
     type Output = ECEF;
     fn sub(self, rhs: ECEF) -> ECEF {
-        ECEF([self.x() - rhs.x(), self.y() - rhs.y(), self.z() - rhs.z()])
+        ECEF(self.0 - rhs.0)
     }
 }
 
@@ -409,7 +400,7 @@ impl SubAssign<&ECEF> for ECEF {
 impl Mul<ECEF> for f64 {
     type Output = ECEF;
     fn mul(self, rhs: ECEF) -> ECEF {
-        ECEF([self * rhs.x(), self * rhs.y(), self * rhs.z()])
+        ECEF(self * rhs.0)
     }
 }
 
@@ -438,31 +429,31 @@ impl MulAssign<&f64> for ECEF {
 ///
 /// Internally stored as an array of 3 [f64](std::f64) values: N, E, D all in meters
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
-pub struct NED([f64; 3]);
+pub struct NED(Vector3<f64>);
 
 impl NED {
     pub fn new(n: f64, e: f64, d: f64) -> NED {
-        NED([n, e, d])
+        NED(Vector3::new(n, e, d))
     }
 
     pub fn from_array(array: &[f64; 3]) -> NED {
-        NED(*array)
+        NED(Vector3::from_array_storage(ArrayStorage([*array; 1])))
     }
 
-    pub fn as_ptr(&self) -> *const [f64; 3] {
-        &self.0
+    pub fn as_ptr(&self) -> *const f64 {
+        self.0.as_ptr()
     }
 
-    pub fn as_mut_ptr(&mut self) -> *mut [f64; 3] {
-        &mut self.0
+    pub fn as_mut_ptr(&mut self) -> *mut f64 {
+        self.0.as_mut_ptr()
     }
 
     pub fn as_array_ref(&self) -> &[f64; 3] {
-        &self.0
+        &self.0.data.0[0]
     }
 
     pub fn as_mut_array_ref(&mut self) -> &mut [f64; 3] {
-        &mut self.0
+        &mut self.0.data.0[0]
     }
 
     pub fn n(&self) -> f64 {
@@ -482,9 +473,7 @@ impl NED {
     ///
     /// This is the inverse of [ECEF::ned_vector_at].
     pub fn ecef_vector_at(&self, ref_ecef: &ECEF) -> ECEF {
-        let mut ecef = ECEF::default();
-        unsafe { swiftnav_sys::wgsned2ecef(self.as_ptr(), ref_ecef.as_ptr(), ecef.as_mut_ptr()) };
-        ecef
+        WGS84::ned2ecef(self, ref_ecef)
     }
 }
 
@@ -496,13 +485,13 @@ impl Default for NED {
 
 impl AsRef<[f64; 3]> for NED {
     fn as_ref(&self) -> &[f64; 3] {
-        &self.0
+        &self.0.data.0[0]
     }
 }
 
 impl AsMut<[f64; 3]> for NED {
     fn as_mut(&mut self) -> &mut [f64; 3] {
-        &mut self.0
+        &mut self.0.data.0[0]
     }
 }
 
@@ -614,6 +603,188 @@ impl Coordinate {
     }
 }
 
+/// \defgroup WGS84_params WGS84 Parameters
+/// Parameters defining the WGS84 ellipsoid. The ellipsoid is defined in terms
+/// of the semi-major axis and the inverse flattening. We also calculate some
+/// derived parameters which are useful for the implementation of the coordinate
+/// transform functions.
+struct WGS84;
+
+impl Ellipsoid for WGS84 {
+    const A: f64 = 6378137.0;
+    const IF: f64 = 298.257_223_563;
+}
+
+/// Ellipsoid
+/// 
+/// An ellipsoid can be defined in terms of the semi-major axis and a second
+/// parameter, here we choose to use the inverse flattening term. The other
+/// parameters are derived from these two values.
+trait Ellipsoid {
+    /// Semi-major axis of the Earth in meters.
+    const A: f64;
+    /// Inverse flattening of the Earth.
+    const IF: f64;
+
+    /// The flattening of the Earth.
+    const F: f64 = 1.0 / Self::IF;
+    /// Semi-minor axis of the Earth in meters.
+    const B: f64 = Self::A * (1.0 - Self::F);
+    /// Eccentricity of the Earth,  where e^2 = 2f - f^2
+    const E: f64 = compile_time_sqrt(2.0 * Self::F - Self::F * Self::F);
+
+    fn llh2ecef(llh: &LLHRadians) -> ECEF {
+        let d = Self::E * (llh.latitude()).sin();
+        let n = Self::A / (1. - d * d).sqrt();
+
+        let x = (n + llh.height()) * llh.latitude().cos() * llh.longitude().cos();
+        let y = (n + llh.height()) * llh.latitude().cos() * llh.longitude().sin();
+        let z = ((1.0 - Self::E * Self::E) * n + llh.height()) * llh.latitude().sin();
+
+        ECEF::new(x, y, z)
+    }
+
+    fn ecef2llh(ecef: &ECEF) -> LLHRadians {
+        // Distance from polar axis.
+        let p = (ecef.x() * ecef.x() + ecef.y() * ecef.y()).sqrt();
+      
+        // Compute longitude first, this can be done exactly.
+        let longitude = if p != 0.0 {
+          ecef.y().atan2(ecef.x())
+        } else {
+          0.0
+        };
+      
+        // If we are close to the pole then convergence is very slow, treat this is a
+        // special case.
+        if p < Self::A * 1e-16 {
+          let latitude = std::f64::consts::FRAC_PI_2.copysign(ecef.z());
+          let height = ecef.z().abs() - Self::B;
+          return LLHRadians::new(latitude, longitude, height);
+        }
+      
+        // Caluclate some other constants as defined in the Fukushima paper.
+        let p_norm = p / Self::A;
+        let e_c = (1. - Self::E * Self::E).sqrt();
+        let z = ecef.z().abs() * e_c / Self::A;
+      
+        // Initial values for S and C correspond to a zero height solution.
+        let mut s = z;
+        let mut c = e_c * p_norm;
+      
+        // Neither S nor C can be negative on the first iteration so
+        // starting prev = -1 will not cause and early exit.
+        let mut prev_c = -1.0;
+        let mut prev_s = -1.0;
+      
+        let mut a_n;
+        let mut b_n;
+        let mut d_n;
+        let mut f_n;
+      
+        // Iterate a maximum of 10 times. This should be way more than enough for all
+        // sane inputs
+        for _ in 0..10 {
+          // Calculate some intermediate variables used in the update step based on
+          // the current state.
+          a_n = (s * s + c * c).sqrt();
+          d_n = z * a_n * a_n * a_n + Self::E * Self::E * s * s * s;
+          f_n = p_norm * a_n * a_n * a_n - Self::E * Self::E * c * c * c;
+          b_n = 1.5 * Self::E * s * c * c * (a_n * (p_norm * s - z * c) - Self::E * s * c);
+      
+          // Update step.
+          s = d_n * f_n - b_n * s;
+          c = f_n * f_n - b_n * c;
+      
+          // The original algorithm as presented in the paper by Fukushima has a
+          // problem with numerical stability. S and C can grow very large or small
+          // and over or underflow a double. In the paper this is acknowledged and
+          // the proposed resolution is to non-dimensionalise the equations for S and
+          // C. However, this does not completely solve the problem. The author caps
+          // the solution to only a couple of iterations and in this period over or
+          // underflow is unlikely but as we require a bit more precision and hence
+          // more iterations so this is still a concern for us.
+          //
+          // As the only thing that is important is the ratio T = S/C, my solution is
+          // to divide both S and C by either S or C. The scaling is chosen such that
+          // one of S or C is scaled to unity whilst the other is scaled to a value
+          // less than one. By dividing by the larger of S or C we ensure that we do
+          // not divide by zero as only one of S or C should ever be zero.
+          //
+          // This incurs an extra division each iteration which the author was
+          // explicityl trying to avoid and it may be that this solution is just
+          // reverting back to the method of iterating on T directly, perhaps this
+          // bears more thought?
+      
+          if s > c {
+            c = c / s;
+            s = 1.0;
+          } else {
+            s = s / c;
+            c = 1.0;
+          }
+      
+          // Check for convergence and exit early if we have converged.
+          if (s - prev_s).abs() < 1e-16 && (c - prev_c).abs() < 1e-16 {
+            break;
+          }
+          prev_s = s;
+          prev_c = c;
+        }
+      
+        a_n = (s * s + c * c).sqrt();
+        let latitude = 1.0_f64.copysign(ecef.z()) * (s / (e_c * c)).atan();
+        let height = (p * e_c * c + ecef.z().abs() * s - Self::A * e_c * a_n) /
+                 (e_c * e_c * c * c + s * s).sqrt();
+        LLHRadians::new(latitude, longitude, height)
+      }
+
+      fn ecef2ned(ecef: &ECEF, ref_ecef: &ECEF) -> NED {
+        let m = ecef2ned_matrix(Self::ecef2llh(ref_ecef));
+        NED(m * ecef.0)
+      }
+
+      fn ned2ecef(ned: &NED, ref_ecef: &ECEF) -> ECEF {
+        let m = ecef2ned_matrix(Self::ecef2llh(ref_ecef));
+        ECEF(m.transpose() * ned.0)
+    }
+
+    fn ecef2ned_d(ecef: &ECEF, ref_ecef: &ECEF) -> NED {
+        let temp_vector = ecef - ref_ecef;
+        Self::ecef2ned(&temp_vector, ref_ecef)
+    }
+
+    fn ecef2azel(ecef: &ECEF, ref_ecef: &ECEF) -> AzimuthElevation {
+        /* Calculate the vector from the reference point in the local North, East,
+         * Down frame of the reference point. */
+        let ned = Self::ecef2ned_d(ecef, ref_ecef);
+
+        let azimuth = ned.e().atan2(ned.n());
+        /* atan2 returns angle in range [-pi, pi], usually azimuth is defined in the
+        * range [0, 2pi]. */
+        let azimuth = if azimuth < 0.0 {
+            azimuth + 2.0 * std::f64::consts::PI
+        } else {
+            azimuth
+        };
+
+        let elevation = (-ned.d() / ned.0.norm()).asin();
+        AzimuthElevation::new(azimuth, elevation)
+    }
+}
+
+fn ecef2ned_matrix<T: Into<LLHRadians>>(llh: T) -> Matrix3<f64> {
+    let llh = llh.into();
+    let sin_lat = llh.latitude().sin();
+    let cos_lat = llh.latitude().cos();
+    let sin_lon = llh.longitude().sin();
+    let cos_lon = llh.longitude().cos();
+
+    Matrix3::new(-sin_lat * cos_lon, -sin_lat * sin_lon, cos_lat,
+                    -sin_lon, cos_lon, 0.0,
+                    -cos_lat * cos_lon, -cos_lat * sin_lon, -sin_lat)
+}
+
 #[cfg(test)]
 mod tests {
     use float_eq::assert_float_eq;
@@ -644,20 +815,20 @@ mod tests {
 
         assert!((rads.latitude() - 0.659381970558).abs() < MAX_ANGLE_ERROR_RAD);
         assert!((rads.longitude() + 2.136139032231).abs() < MAX_ANGLE_ERROR_RAD);
-        assert!(rads.height() == swift_home.height());
+        assert!(rads.height() == swift_home.height(), "rads.height() = {}, swift_home.height() = {}", rads.height(), swift_home.height());
     }
 
     const LLH_VALUES: [LLHRadians; 10] = [
-        LLHRadians([0.0, 0.0, 0.0]), /* On the Equator and Prime Meridian. */
-        LLHRadians([0.0, 180.0 * D2R, 0.0]), /* On the Equator. */
-        LLHRadians([0.0, 90.0 * D2R, 0.0]), /* On the Equator. */
-        LLHRadians([0.0, -90.0 * D2R, 0.0]), /* On the Equator. */
-        LLHRadians([90.0 * D2R, 0.0, 0.0]), /* North pole. */
-        LLHRadians([-90.0 * D2R, 0.0, 0.0]), /* South pole. */
-        LLHRadians([90.0 * D2R, 0.0, 22.0]), /* 22m above the north pole. */
-        LLHRadians([-90.0 * D2R, 0.0, 22.0]), /* 22m above the south pole. */
-        LLHRadians([0.0, 0.0, 22.0]), /* 22m above the Equator and Prime Meridian. */
-        LLHRadians([0.0, 180.0 * D2R, 22.0]), /* 22m above the Equator. */
+        LLHRadians::from_array(&[0.0, 0.0, 0.0]), /* On the Equator and Prime Meridian. */
+        LLHRadians::from_array(&[0.0, 180.0 * D2R, 0.0]), /* On the Equator. */
+        LLHRadians::from_array(&[0.0, 90.0 * D2R, 0.0]), /* On the Equator. */
+        LLHRadians::from_array(&[0.0, -90.0 * D2R, 0.0]), /* On the Equator. */
+        LLHRadians::from_array(&[90.0 * D2R, 0.0, 0.0]), /* North pole. */
+        LLHRadians::from_array(&[-90.0 * D2R, 0.0, 0.0]), /* South pole. */
+        LLHRadians::from_array(&[90.0 * D2R, 0.0, 22.0]), /* 22m above the north pole. */
+        LLHRadians::from_array(&[-90.0 * D2R, 0.0, 22.0]), /* 22m above the south pole. */
+        LLHRadians::from_array(&[0.0, 0.0, 22.0]), /* 22m above the Equator and Prime Meridian. */
+        LLHRadians::from_array(&[0.0, 180.0 * D2R, 22.0]), /* 22m above the Equator. */
     ];
 
     /* Semi-major axis. */
@@ -666,16 +837,16 @@ mod tests {
     const EARTH_B: f64 = 6356752.31424517929553985595703125;
 
     const ECEF_VALUES: [ECEF; 10] = [
-        ECEF([EARTH_A, 0.0, 0.0]),
-        ECEF([-EARTH_A, 0.0, 0.0]),
-        ECEF([0.0, EARTH_A, 0.0]),
-        ECEF([0.0, -EARTH_A, 0.0]),
-        ECEF([0.0, 0.0, EARTH_B]),
-        ECEF([0.0, 0.0, -EARTH_B]),
-        ECEF([0.0, 0.0, (EARTH_B + 22.0)]),
-        ECEF([0.0, 0.0, -(EARTH_B + 22.0)]),
-        ECEF([(22.0 + EARTH_A), 0.0, 0.0]),
-        ECEF([-(22.0 + EARTH_A), 0.0, 0.0]),
+        ECEF::from_array(&[EARTH_A, 0.0, 0.0]),
+        ECEF::from_array(&[-EARTH_A, 0.0, 0.0]),
+        ECEF::from_array(&[0.0, EARTH_A, 0.0]),
+        ECEF::from_array(&[0.0, -EARTH_A, 0.0]),
+        ECEF::from_array(&[0.0, 0.0, EARTH_B]),
+        ECEF::from_array(&[0.0, 0.0, -EARTH_B]),
+        ECEF::from_array(&[0.0, 0.0, (EARTH_B + 22.0)]),
+        ECEF::from_array(&[0.0, 0.0, -(EARTH_B + 22.0)]),
+        ECEF::from_array(&[(22.0 + EARTH_A), 0.0, 0.0]),
+        ECEF::from_array(&[-(22.0 + EARTH_A), 0.0, 0.0]),
     ];
 
     #[test]
@@ -783,5 +954,22 @@ mod tests {
         assert_float_eq!(new_coord.velocity.unwrap().y(), 2.0, abs <= 0.001);
         assert_float_eq!(new_coord.velocity.unwrap().z(), 3.0, abs <= 0.001);
         assert_eq!(new_epoch, new_coord.epoch());
+    }
+
+    #[test]
+    fn test_wgs84() {
+        println!("WGS84::A = {}", WGS84::A);
+        println!("WGS84::IF = {}", WGS84::IF);
+        println!("WGS84::F = {}", WGS84::F);
+        println!("WGS84::B = {}", WGS84::B);
+        println!("WGS84::E = {}", WGS84::E);
+        // println!("WGS84::GM = {}", WGS84::GM);
+        // println!("WGS84::OMEGAE_DOT = {}", WGS84::OMEGAE_DOT);
+        // println!("WGS84::C = {}", WGS84::C);
+        // println!("WGS84::G = {}", WGS84::G);
+        // println!("WGS84::M = {}", WGS84::M);
+        // println!("WGS84::M = {}", WGS84::M_A);
+        // println!("WGS84::H = {}", WGS84::H);
+        // println!("WGS84::J02 = {}", WGS84::J02);
     }
 }

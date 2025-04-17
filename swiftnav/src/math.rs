@@ -1,0 +1,30 @@
+/// Computes the square root of a given number at compile time using the Newton-Raphson method.
+///
+/// # Parameters
+/// - `s`: A `f64` value representing the number for which the square root is to be calculated.
+///
+/// # Returns
+/// - A `f64` value representing the square root of the input number.
+///
+/// # Panics
+/// - This function will panic if the computation does not converge within 100 iterations.
+///
+/// # Notes
+/// - This function is marked as `const`, allowing it to be evaluated at compile time.
+/// - The algorithm iteratively refines the approximation of the square root until the result stabilizes.
+pub(crate) const fn compile_time_sqrt(s: f64) -> f64 {
+    let mut x = s;
+    let mut y = 0.0;
+    let mut z;
+    let mut i = 0;
+    while y != x {
+        y = x;
+        z = s / y;
+        x = (y + z) / 2.0;
+        i += 1;
+    }
+    if i > 100 {
+        panic!("SLOW_SQRT failed to converge");
+    }
+    x
+}
