@@ -138,7 +138,7 @@ pub enum ReferenceFrame {
 
 /// 15-parameter Helmert transformation parameters
 ///
-/// This is an extention of the 7-parameter Helmert transformation
+/// This is an extension of the 7-parameter Helmert transformation
 /// where each term has an additional time-dependent term. This
 /// transformation consists of a 3 dimensional translation,
 /// 3 dimensional rotation, and a universal scaling. The tranformation
