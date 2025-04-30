@@ -138,18 +138,34 @@ pub enum ReferenceFrame {
 
 /// 15-parameter Helmert transformation parameters
 ///
-/// This transformation consists of a 3 dimensional translation,
-/// 3 dimensional rotation, and a universal scaling. All terms,
-/// except for the reference epoch, have a an additional time
-/// dependent term. The rotations are typically very small, so
-/// the small angle approximation is used.
+/// This is an extension of the 7-parameter Helmert transformation
+/// where each term has an additional time-dependent term. This
+/// transformation consists of a 3 dimensional translation,
+/// 3 dimensional rotation, and a universal scaling. The tranformation
+/// takes the form of:
 ///
-/// There are several sign and scale conventions in use with
-/// Helmert transformations. In this implementation we follow
-/// the IERS conventions, meaning the translations are in
-/// millimeters, the rotations are in milliarcseconds, and
-/// the scaling is in parts per billion. We also follow the
-/// IERS convention for the sign of the rotation terms.
+/// $$
+///  \begin{bmatrix} X \\\\ Y \\\\ Z \end{bmatrix}\_{REF2} =
+///  \begin{bmatrix} X \\\\ Y \\\\ Z \end{bmatrix}\_{REF1} +
+///  \begin{bmatrix} \bar{t}_x \\\\ \bar{t}_y \\\\ \bar{t}_z \end{bmatrix} +
+///  \begin{bmatrix}   \bar{s} & -\bar{r}_z & \bar{r}_y \\\\
+///                    \bar{r}_z & \bar{s} & -\bar{r}_x \\\\
+///                    -\bar{r}_y  & \bar{r}_x & \bar{s} \end{bmatrix}
+///  \begin{bmatrix} X \\\\ Y \\\\ Z \end{bmatrix}\_{REF1}
+/// $$
+///
+/// Where each $\bar{}$ parameter in the transformation is time
+/// dependent and is defined to be:
+///
+/// $$ \bar{p}(t) = p + \dot{p}(t - \tau) $$
+///
+/// Where $p$ is the constant value, $\dot{p}$ is the rate of
+/// change, and $\tau$ is the reference epoch.
+///
+/// There are several sign conventions in use for the rotation
+/// parameters in Helmert transformations. In this implementation
+/// we follow the IERS conventions, which is opposite of the original
+/// formulation of the Helmert transformation.
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub struct TimeDependentHelmertParams {
     tx: f64,

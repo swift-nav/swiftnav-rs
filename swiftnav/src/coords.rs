@@ -17,16 +17,18 @@
 //!
 //! --------
 //! Conversion from geodetic coordinates latitude, longitude and height
-//! (ϕ, λ, h) into Cartesian coordinates (X, Y, Z) can be
+//! ($\phi$, $\lambda$, $h$) into Cartesian coordinates ($X$, $Y$, $Z$) can be
 //! achieved with the following formulae:
-//!  * X = (N(ϕ) + h) * cos(ϕ) * cos(λ)
-//!  * Y = (N(ϕ) + h) * cos(ϕ) * sin(λ)
-//!  * Z = [(1-e^2) * N(ϕ) + h] * sin(ϕ)
 //!
-//! Where the 'radius of curvature', N(ϕ), is defined as:
-//!  * N(ϕ) = a / sqrt(1-e^2 / sin^2(ϕ))
+//! $$X = (N(\phi) + h) \cos{\phi}\cos{\lambda}$$
+//! $$Y = (N(\phi) + h) \cos{\phi}\sin{\lambda}$$
+//! $$Z = \left[(1-e^2)N(\phi) + h\right] \sin{\phi}$$
 //!
-//! and `a` is the WGS84 semi-major axis and `e` is the WGS84
+//! Where the 'radius of curvature', $N(\phi)$, is defined as:
+//!
+//! $$N(\phi) = \frac{a}{\sqrt{1-e^2\sin^2 \phi}}$$
+//!
+//! and $a$ is the WGS84 semi-major axis and $e$ is the WGS84
 //! eccentricity.
 //!
 //! --------
