@@ -44,7 +44,7 @@ pub enum InvalidEphemeris {
 
 impl fmt::Display for InvalidEphemeris {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Invalid ephemeris ({:?})", self)
+        write!(f, "Invalid ephemeris ({self:?})")
     }
 }
 

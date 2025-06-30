@@ -461,7 +461,7 @@ impl fmt::Display for InvalidGnssSignal {
         match self {
             InvalidGnssSignal::InvalidCode(code) => code.fmt(f),
             InvalidGnssSignal::InvalidSatellite(sat) => {
-                write!(f, "Invalid satellite number: {}", sat)
+                write!(f, "Invalid satellite number: {sat}")
             }
         }
     }
