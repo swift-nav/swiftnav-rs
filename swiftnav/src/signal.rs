@@ -14,13 +14,144 @@
 //! satellite can send out multiple signals.
 
 use std::borrow::Cow;
-use std::error::Error;
-use std::ffi;
 use std::fmt;
-use std::str::FromStr;
+
+pub mod consts {
+    use crate::math::compile_time_max_u16;
+
+    /* Number of satellites in each constellation. */
+    pub const NUM_SATS_GPS: u16 = 32;
+    pub const NUM_SATS_SBAS: u16 = 19;
+    /// Number of GLO SV.
+    /// refer to https://igscb.jpl.nasa.gov/pipermail/igsmail/2012/007771.html and
+    /// https://igscb.jpl.nasa.gov/pipermail/igsmail/2015/008391.html */
+    pub const NUM_SATS_GLO: u16 = 28;
+    pub const NUM_SATS_BDS: u16 = 64;
+    pub const NUM_SATS_GAL: u16 = 36;
+    pub const NUM_SATS_QZS: u16 = 10;
+
+    pub const NUM_SATS: u16 =
+        NUM_SATS_GPS + NUM_SATS_SBAS + NUM_SATS_GLO + NUM_SATS_BDS + NUM_SATS_QZS + NUM_SATS_GAL;
+
+    pub const MAX_NUM_SATS: u16 = compile_time_max_u16(
+        NUM_SATS_GPS,
+        compile_time_max_u16(
+            NUM_SATS_SBAS,
+            compile_time_max_u16(
+                NUM_SATS_GLO,
+                compile_time_max_u16(NUM_SATS_BDS, compile_time_max_u16(NUM_SATS_QZS, NUM_SATS_GAL)),
+            ),
+        ),
+    );
+
+    /* Number of codes in each constellation. */
+    pub const NUM_CODES_GPS: u16 = 13;
+    pub const NUM_CODES_SBAS: u16 = 5;
+    pub const NUM_CODES_GLO: u16 = 4;
+    pub const NUM_CODES_BDS: u16 = 15;
+    pub const NUM_CODES_QZS: u16 = 11;
+    pub const NUM_CODES_GAL: u16 = 16;
+
+    pub const NUM_CODES: u16 =
+        NUM_CODES_GPS + NUM_CODES_SBAS + NUM_CODES_GLO + NUM_CODES_BDS + NUM_CODES_GAL + NUM_CODES_QZS;
+
+    /// Max number of GLO frequency slot, correspond to frequency slot 6
+    pub const GLO_MAX_FCN: u16 = 14;
+
+    // /// Min number of GLO frequency slot, correspond to frequency slot -7
+    // const GLO_MIN_FCN: u16 = 1;
+
+    // /// Frequency of GLO channel is unknown */
+    // const GLO_FCN_UNKNOWN: u16 = 0;
+
+    // /// Used to produce an unshifted GLO frequency slot out of GLO slots in
+    // /// GLO_MIN_FCN .. GLO_MAX_FCN range
+    // const GLO_FCN_OFFSET: u16 = 8;
+
+    // /// GLO Orbital slot is unknown
+    // const GLO_ORBIT_SLOT_UNKNOWN: u16 = 0;
+
+    /* Number of signals in each code. */
+    pub const NUM_SIGNALS_GPS_L1CA: u16 = NUM_SATS_GPS;
+    pub const NUM_SIGNALS_GPS_L2C: u16 = NUM_SATS_GPS;
+    pub const NUM_SIGNALS_GPS_L5: u16 = NUM_SATS_GPS;
+    pub const NUM_SIGNALS_GPS_L1P: u16 = NUM_SATS_GPS;
+    pub const NUM_SIGNALS_GPS_L2P: u16 = NUM_SATS_GPS;
+    pub const NUM_SIGNALS_GPS_L1C: u16 = NUM_SATS_GPS;
+
+    pub const NUM_SIGNALS_SBAS_L1CA: u16 = NUM_SATS_SBAS;
+    pub const NUM_SIGNALS_SBAS_L5: u16 = NUM_SATS_SBAS;
+
+    pub const NUM_SIGNALS_GLO_L1OF: u16 = NUM_SATS_GLO;
+    pub const NUM_SIGNALS_GLO_L2OF: u16 = NUM_SATS_GLO;
+    pub const NUM_SIGNALS_GLO_L1P: u16 = NUM_SATS_GLO;
+    pub const NUM_SIGNALS_GLO_L2P: u16 = NUM_SATS_GLO;
+
+    pub const NUM_SIGNALS_BDS2_B1: u16 = NUM_SATS_BDS;
+    pub const NUM_SIGNALS_BDS2_B2: u16 = NUM_SATS_BDS;
+    pub const NUM_SIGNALS_BDS3_B1C: u16 = NUM_SATS_BDS;
+    pub const NUM_SIGNALS_BDS3_B5: u16 = NUM_SATS_BDS;
+    pub const NUM_SIGNALS_BDS3_B7: u16 = NUM_SATS_BDS;
+    pub const NUM_SIGNALS_BDS3_B3: u16 = NUM_SATS_BDS;
+
+    pub const NUM_SIGNALS_GAL_E1: u16 = NUM_SATS_GAL;
+    pub const NUM_SIGNALS_GAL_E6: u16 = NUM_SATS_GAL;
+    pub const NUM_SIGNALS_GAL_E7: u16 = NUM_SATS_GAL;
+    pub const NUM_SIGNALS_GAL_E8: u16 = NUM_SATS_GAL;
+    pub const NUM_SIGNALS_GAL_E5: u16 = NUM_SATS_GAL;
+
+    pub const NUM_SIGNALS_QZS_L1: u16 = NUM_SATS_QZS;
+    pub const NUM_SIGNALS_QZS_L1C: u16 = NUM_SATS_QZS;
+    pub const NUM_SIGNALS_QZS_L2C: u16 = NUM_SATS_QZS;
+    pub const NUM_SIGNALS_QZS_L5: u16 = NUM_SATS_QZS;
+
+    /* Number of frequencies in GLO. */
+    pub const NUM_FREQ_GLO_L1OF: u16 = GLO_MAX_FCN;
+    pub const NUM_FREQ_GLO_L2OF: u16 = GLO_MAX_FCN;
+
+    /* Number of signals in each constellation. */
+    pub const NUM_SIGNALS_GPS: u16 = 2 * NUM_SIGNALS_GPS_L1CA
+        + 3 * NUM_SIGNALS_GPS_L2C
+        + NUM_SIGNALS_GPS_L1P
+        + NUM_SIGNALS_GPS_L2P
+        + 3 * NUM_SIGNALS_GPS_L5
+        + 3 * NUM_SIGNALS_GPS_L1C;
+    pub const NUM_SIGNALS_SBAS: u16 = 2 * NUM_SIGNALS_SBAS_L1CA + 3 * NUM_SIGNALS_SBAS_L5;
+    pub const NUM_SIGNALS_GLO: u16 =
+        NUM_SIGNALS_GLO_L1OF + NUM_SIGNALS_GLO_L2OF + NUM_SIGNALS_GLO_L1P + NUM_SIGNALS_GLO_L2P;
+    pub const NUM_SIGNALS_BDS: u16 = 2 * NUM_SIGNALS_BDS2_B1
+        + NUM_SIGNALS_BDS2_B2
+        + 3 * NUM_SIGNALS_BDS3_B1C
+        + 3 * NUM_SIGNALS_BDS3_B5
+        + 3 * NUM_SIGNALS_BDS3_B7
+        + 3 * NUM_SIGNALS_BDS3_B3;
+    pub const NUM_SIGNALS_GAL: u16 = 4 * NUM_SIGNALS_GAL_E1
+        + 3 * NUM_SIGNALS_GAL_E6
+        + 3 * NUM_SIGNALS_GAL_E7
+        + 3 * NUM_SIGNALS_GAL_E8
+        + 3 * NUM_SIGNALS_GAL_E5;
+    pub const NUM_SIGNALS_QZS: u16 = 2 * NUM_SIGNALS_QZS_L1
+        + 3 * NUM_SIGNALS_QZS_L1C
+        + 3 * NUM_SIGNALS_QZS_L2C
+        + 3 * NUM_SIGNALS_QZS_L5;
+    pub const NUM_SIGNALS: u16 = NUM_SIGNALS_GPS
+        + NUM_SIGNALS_SBAS
+        + NUM_SIGNALS_GLO
+        + NUM_SIGNALS_BDS
+        + NUM_SIGNALS_GAL
+        + NUM_SIGNALS_QZS;
+
+    pub const GPS_FIRST_PRN: u16 = 1;
+    pub const SBAS_FIRST_PRN: u16 = 120;
+    pub const GLO_FIRST_PRN: u16 = 1;
+    pub const BDS_FIRST_PRN: u16 = 1;
+    pub const GAL_FIRST_PRN: u16 = 1;
+    pub const QZS_FIRST_PRN: u16 = 193;
+}
 
 /// GNSS satellite constellations
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, strum::Display, strum::EnumString, strum::IntoStaticStr)]
+#[strum(serialize_all = "UPPERCASE")]
 pub enum Constellation {
     /// GPS
     Gps,
@@ -36,502 +167,433 @@ pub enum Constellation {
     Gal,
 }
 
-/// Invalid constellation integer value
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct InvalidConstellation(swiftnav_sys::constellation_t);
-
-impl fmt::Display for InvalidConstellation {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Invalid constellation integer value: {}", self.0)
-    }
-}
-
-impl Error for InvalidConstellation {}
-
 impl Constellation {
-    fn from_constellation_t(
-        value: swiftnav_sys::constellation_t,
-    ) -> Result<Constellation, InvalidConstellation> {
-        match value {
-            swiftnav_sys::constellation_e_CONSTELLATION_GPS => Ok(Constellation::Gps),
-            swiftnav_sys::constellation_e_CONSTELLATION_SBAS => Ok(Constellation::Sbas),
-            swiftnav_sys::constellation_e_CONSTELLATION_GLO => Ok(Constellation::Glo),
-            swiftnav_sys::constellation_e_CONSTELLATION_BDS => Ok(Constellation::Bds),
-            swiftnav_sys::constellation_e_CONSTELLATION_QZS => Ok(Constellation::Qzs),
-            swiftnav_sys::constellation_e_CONSTELLATION_GAL => Ok(Constellation::Gal),
-            _ => Err(InvalidConstellation(value)),
-        }
-    }
-
-    pub(crate) fn to_constellation_t(self) -> swiftnav_sys::constellation_t {
-        match self {
-            Constellation::Gps => swiftnav_sys::constellation_e_CONSTELLATION_GPS,
-            Constellation::Sbas => swiftnav_sys::constellation_e_CONSTELLATION_SBAS,
-            Constellation::Glo => swiftnav_sys::constellation_e_CONSTELLATION_GLO,
-            Constellation::Bds => swiftnav_sys::constellation_e_CONSTELLATION_BDS,
-            Constellation::Qzs => swiftnav_sys::constellation_e_CONSTELLATION_QZS,
-            Constellation::Gal => swiftnav_sys::constellation_e_CONSTELLATION_GAL,
-        }
-    }
-
     /// Gets the specified maximum number of active satellites for the constellation
     pub fn sat_count(&self) -> u16 {
-        unsafe { swiftnav_sys::constellation_to_sat_count(*self as swiftnav_sys::constellation_t) }
+        match &self {
+            Constellation::Gps => consts::NUM_SATS_GPS,
+            Constellation::Sbas => consts::NUM_SATS_SBAS,
+            Constellation::Glo => consts::NUM_SATS_GLO,
+            Constellation::Bds => consts::NUM_SATS_BDS,
+            Constellation::Gal => consts::NUM_SATS_GAL,
+            Constellation::Qzs => consts::NUM_SATS_QZS,
+        }
+    }
+
+    pub fn first_prn(&self) -> u16 {
+        match &self {
+            Constellation::Gps => consts::GPS_FIRST_PRN,
+            Constellation::Sbas => consts::SBAS_FIRST_PRN,
+            Constellation::Glo => consts::GLO_FIRST_PRN,
+            Constellation::Bds => consts::BDS_FIRST_PRN,
+            Constellation::Gal => consts::GAL_FIRST_PRN,
+            Constellation::Qzs => consts::QZS_FIRST_PRN,
+        }
     }
 
     /// Get the human readable name of the constellation.
     pub fn to_str(&self) -> Cow<'static, str> {
-        let c_str = unsafe {
-            ffi::CStr::from_ptr(swiftnav_sys::constellation_to_string(
-                self.to_constellation_t(),
-            ))
-        };
-        c_str.to_string_lossy()
+        let s: &'static str = self.into();
+        s.into()
     }
 }
 
-impl FromStr for Constellation {
-    type Err = InvalidConstellation;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let c_str = ffi::CString::new(s).map_err(|_| InvalidConstellation(-1))?;
-        let constellation = unsafe { swiftnav_sys::constellation_string_to_enum(c_str.as_ptr()) };
-
-        Self::from_constellation_t(constellation)
-    }
-}
-
-impl fmt::Display for Constellation {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_str())
-    }
-}
+#[derive(thiserror::Error, Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[error("Invalid integer for GNSS Constellation ({0})")]
+pub struct InvalidConstellationInt(u8);
 
 impl std::convert::TryFrom<u8> for Constellation {
-    type Error = InvalidConstellation;
-    fn try_from(value: u8) -> Result<Constellation, InvalidConstellation> {
-        Self::from_constellation_t(value as swiftnav_sys::constellation_t)
+    type Error = InvalidConstellationInt;
+    fn try_from(value: u8) -> Result<Constellation, Self::Error> {
+        match value {
+            0 => Ok(Constellation::Gps),
+            1 => Ok(Constellation::Sbas),
+            2 => Ok(Constellation::Glo),
+            3 => Ok(Constellation::Bds),
+            4 => Ok(Constellation::Qzs),
+            5 => Ok(Constellation::Gal),
+            _ => Err(InvalidConstellationInt(value)),
+        }
     }
 }
 
 /// Code identifiers
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, strum::Display, strum::EnumString, strum::IntoStaticStr)]
 pub enum Code {
+    #[strum(to_string = "GPS L1CA")]
     /// GPS L1CA: BPSK(1)
     GpsL1ca,
+    #[strum(to_string = "GPS L2CM")]
     /// GPS L2C: 2 x BPSK(0.5)
     GpsL2cm,
+    #[strum(to_string = "SBAS L1")]
     /// SBAS L1: BPSK(1)
     SbasL1ca,
+    #[strum(to_string = "GLO L1OF")]
     /// GLONASS L1OF: FDMA BPSK(0.5)
     GloL1of,
+    #[strum(to_string = "GLO L2OF")]
     /// GLONASS L2OF: FDMA BPSK(0.5)
     GloL2of,
+    #[strum(to_string = "GPS L1P")]
     /// GPS L1P(Y): encrypted BPSK(10)
     GpsL1p,
+    #[strum(to_string = "GPS L2P")]
     /// GPS L2P(Y): encrypted BPSK(10)
     GpsL2p,
+    #[strum(to_string = "GPS L2CL")]
     GpsL2cl,
+    #[strum(to_string = "GPS L2C")]
     GpsL2cx,
+    #[strum(to_string = "GPS L5I")]
     /// GPS L5: QPSK(10) at 1150*f0
     GpsL5i,
+    #[strum(to_string = "GPS L5Q")]
     GpsL5q,
+    #[strum(to_string = "GPS L5")]
     GpsL5x,
+    #[strum(to_string = "BDS B1")]
     /// BDS2 B1I: BPSK(2) at 1526*f0
     Bds2B1,
+    #[strum(to_string = "BDS B2")]
     /// BDS2 B2I: BPSK(2) at 1180*f0
     Bds2B2,
+    #[strum(to_string = "GAL E1B")]
     /// Galileo E1: CASM CBOC(1,1) at 1540*f0
     GalE1b,
+    #[strum(to_string = "GAL E1C")]
     GalE1c,
+    #[strum(to_string = "GAL E1")]
     GalE1x,
+    #[strum(to_string = "GAL E6B")]
     /// Galileo E6: CASM BPSK(5) at 1250*f0
     GalE6b,
+    #[strum(to_string = "GAL E6C")]
     GalE6c,
+    #[strum(to_string = "GAL E6")]
     GalE6x,
+    #[strum(to_string = "GAL E5bI")]
     /// Galileo E5b: QPSK(10) at 1180*f0
     GalE7i,
+    #[strum(to_string = "GAL E5bQ")]
     GalE7q,
+    #[strum(to_string = "GAL E5b")]
     GalE7x,
+    #[strum(to_string = "GAL E8I")]
     /// Galileo E5AltBOC(15,10) at 1165*f0
     GalE8i,
+    #[strum(to_string = "GAL E8Q")]
     GalE8q,
+    #[strum(to_string = "GAL E8")]
     GalE8x,
+    #[strum(to_string = "GAL E5aI")]
     /// Galileo E5a: QPSK(10) at 1150*f0
     GalE5i,
+    #[strum(to_string = "GAL E5aQ")]
     GalE5q,
+    #[strum(to_string = "GAL E5a")]
     GalE5x,
+    #[strum(to_string = "GLO L1P")]
     /// GLONASS L1P: encrypted
     GloL1p,
+    #[strum(to_string = "GLO L2P")]
     /// GLONASS L2P: encrypted
     GloL2p,
+    #[strum(to_string = "QZS L1CA")]
     /// QZSS L1CA: BPSK(1) at 1540*f0
     QzsL1ca,
+    #[strum(to_string = "QZS L1CI")]
     /// QZSS L1C: TM-BOC at 1540*f0
     QzsL1ci,
+    #[strum(to_string = "QZS L1CQ")]
     QzsL1cq,
+    #[strum(to_string = "QZS L1CX")]
     QzsL1cx,
+    #[strum(to_string = "QZS L2CM")]
     /// QZSS L2C: 2 x BPSK(0.5) at 1200*f0
     QzsL2cm,
+    #[strum(to_string = "QZS L2CL")]
     QzsL2cl,
+    #[strum(to_string = "QZS L2C")]
     QzsL2cx,
+    #[strum(to_string = "QZS L5I")]
     /// QZSS L5: QPSK(10) at 1150*f0
     QzsL5i,
+    #[strum(to_string = "QZS L5Q")]
     QzsL5q,
+    #[strum(to_string = "QZS L5")]
     QzsL5x,
+    #[strum(to_string = "SBAS L5I")]
     /// SBAS L5: ? at 1150*f0
     SbasL5i,
+    #[strum(to_string = "SBAS L5Q")]
     SbasL5q,
+    #[strum(to_string = "SBAS L5")]
     SbasL5x,
+    #[strum(to_string = "BDS3 B1CI")]
     /// BDS3 B1C: TM-BOC at 1540*f0
     Bds3B1ci,
+    #[strum(to_string = "BDS3 B1CQ")]
     Bds3B1cq,
+    #[strum(to_string = "BDS3 B1C")]
     Bds3B1cx,
+    #[strum(to_string = "BDS3 B5I")]
     /// BDS3 B2a: QPSK(10) at 1150*f0
     Bds3B5i,
+    #[strum(to_string = "BDS3 B5Q")]
     Bds3B5q,
+    #[strum(to_string = "BDS3 B5")]
     Bds3B5x,
+    #[strum(to_string = "BDS3 B7I")]
     /// BDS3 B2b: QPSK(10) at 1180*f0
     Bds3B7i,
+    #[strum(to_string = "BDS3 B7Q")]
     Bds3B7q,
+    #[strum(to_string = "BDS3 B7")]
     Bds3B7x,
+    #[strum(to_string = "BDS3 B3I")]
     /// BDS3 B3I: QPSK(10) at 1240*f0
     Bds3B3i,
+    #[strum(to_string = "BDS3 B3Q")]
     Bds3B3q,
+    #[strum(to_string = "BDS3 B3")]
     Bds3B3x,
+    #[strum(to_string = "GPS L1CI")]
     /// GPS L1C: TM-BOC at 1540*f0
     GpsL1ci,
+    #[strum(to_string = "GPS L1CQ")]
     GpsL1cq,
+    #[strum(to_string = "GPS L1C")]
     GpsL1cx,
+    #[strum(to_string = "GPS AUX")]
     /// Auxiliary GPS antenna signals
     AuxGps,
+    #[strum(to_string = "SBAS AUX")]
     /// Auxiliary SBAS antenna signals
     AuxSbas,
+    #[strum(to_string = "GAL AUX")]
     /// Auxiliary GAL antenna signals
     AuxGal,
+    #[strum(to_string = "QZS AUX")]
     /// Auxiliary QZSS antenna signals
     AuxQzs,
+    #[strum(to_string = "BDS AUX")]
     /// Auxiliary BDS antenna signals
     AuxBds,
 }
 
-/// Invalid code integer value
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct InvalidCode(swiftnav_sys::code_t);
-
-impl fmt::Display for InvalidCode {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "Invalid code integer value: {}", self.0)
-    }
-}
-
-impl Error for InvalidCode {}
-
 impl Code {
-    pub(crate) fn from_code_t(value: swiftnav_sys::code_t) -> Result<Code, InvalidCode> {
-        match value {
-            swiftnav_sys::code_e_CODE_GPS_L1CA => Ok(Code::GpsL1ca),
-            swiftnav_sys::code_e_CODE_GPS_L2CM => Ok(Code::GpsL2cm),
-            swiftnav_sys::code_e_CODE_SBAS_L1CA => Ok(Code::SbasL1ca),
-            swiftnav_sys::code_e_CODE_GLO_L1OF => Ok(Code::GloL1of),
-            swiftnav_sys::code_e_CODE_GLO_L2OF => Ok(Code::GloL2of),
-            swiftnav_sys::code_e_CODE_GPS_L1P => Ok(Code::GpsL1p),
-            swiftnav_sys::code_e_CODE_GPS_L2P => Ok(Code::GpsL2p),
-            swiftnav_sys::code_e_CODE_GPS_L2CL => Ok(Code::GpsL2cl),
-            swiftnav_sys::code_e_CODE_GPS_L2CX => Ok(Code::GpsL2cx),
-            swiftnav_sys::code_e_CODE_GPS_L5I => Ok(Code::GpsL5i),
-            swiftnav_sys::code_e_CODE_GPS_L5Q => Ok(Code::GpsL5q),
-            swiftnav_sys::code_e_CODE_GPS_L5X => Ok(Code::GpsL5x),
-            swiftnav_sys::code_e_CODE_BDS2_B1 => Ok(Code::Bds2B1),
-            swiftnav_sys::code_e_CODE_BDS2_B2 => Ok(Code::Bds2B2),
-            swiftnav_sys::code_e_CODE_GAL_E1B => Ok(Code::GalE1b),
-            swiftnav_sys::code_e_CODE_GAL_E1C => Ok(Code::GalE1c),
-            swiftnav_sys::code_e_CODE_GAL_E1X => Ok(Code::GalE1x),
-            swiftnav_sys::code_e_CODE_GAL_E6B => Ok(Code::GalE6b),
-            swiftnav_sys::code_e_CODE_GAL_E6C => Ok(Code::GalE6c),
-            swiftnav_sys::code_e_CODE_GAL_E6X => Ok(Code::GalE6x),
-            swiftnav_sys::code_e_CODE_GAL_E7I => Ok(Code::GalE7i),
-            swiftnav_sys::code_e_CODE_GAL_E7Q => Ok(Code::GalE7q),
-            swiftnav_sys::code_e_CODE_GAL_E7X => Ok(Code::GalE7x),
-            swiftnav_sys::code_e_CODE_GAL_E8I => Ok(Code::GalE8i),
-            swiftnav_sys::code_e_CODE_GAL_E8Q => Ok(Code::GalE8q),
-            swiftnav_sys::code_e_CODE_GAL_E8X => Ok(Code::GalE8x),
-            swiftnav_sys::code_e_CODE_GAL_E5I => Ok(Code::GalE5i),
-            swiftnav_sys::code_e_CODE_GAL_E5Q => Ok(Code::GalE5q),
-            swiftnav_sys::code_e_CODE_GAL_E5X => Ok(Code::GalE5x),
-            swiftnav_sys::code_e_CODE_GLO_L1P => Ok(Code::GloL1p),
-            swiftnav_sys::code_e_CODE_GLO_L2P => Ok(Code::GloL2p),
-            swiftnav_sys::code_e_CODE_QZS_L1CA => Ok(Code::QzsL1ca),
-            swiftnav_sys::code_e_CODE_QZS_L1CI => Ok(Code::QzsL1ci),
-            swiftnav_sys::code_e_CODE_QZS_L1CQ => Ok(Code::QzsL1cq),
-            swiftnav_sys::code_e_CODE_QZS_L1CX => Ok(Code::QzsL1cx),
-            swiftnav_sys::code_e_CODE_QZS_L2CM => Ok(Code::QzsL2cm),
-            swiftnav_sys::code_e_CODE_QZS_L2CL => Ok(Code::QzsL2cl),
-            swiftnav_sys::code_e_CODE_QZS_L2CX => Ok(Code::QzsL2cx),
-            swiftnav_sys::code_e_CODE_QZS_L5I => Ok(Code::QzsL5i),
-            swiftnav_sys::code_e_CODE_QZS_L5Q => Ok(Code::QzsL5q),
-            swiftnav_sys::code_e_CODE_QZS_L5X => Ok(Code::QzsL5x),
-            swiftnav_sys::code_e_CODE_SBAS_L5I => Ok(Code::SbasL5i),
-            swiftnav_sys::code_e_CODE_SBAS_L5Q => Ok(Code::SbasL5q),
-            swiftnav_sys::code_e_CODE_SBAS_L5X => Ok(Code::SbasL5x),
-            swiftnav_sys::code_e_CODE_BDS3_B1CI => Ok(Code::Bds3B1ci),
-            swiftnav_sys::code_e_CODE_BDS3_B1CQ => Ok(Code::Bds3B1cq),
-            swiftnav_sys::code_e_CODE_BDS3_B1CX => Ok(Code::Bds3B1cx),
-            swiftnav_sys::code_e_CODE_BDS3_B5I => Ok(Code::Bds3B5i),
-            swiftnav_sys::code_e_CODE_BDS3_B5Q => Ok(Code::Bds3B5q),
-            swiftnav_sys::code_e_CODE_BDS3_B5X => Ok(Code::Bds3B5x),
-            swiftnav_sys::code_e_CODE_BDS3_B7I => Ok(Code::Bds3B7i),
-            swiftnav_sys::code_e_CODE_BDS3_B7Q => Ok(Code::Bds3B7q),
-            swiftnav_sys::code_e_CODE_BDS3_B7X => Ok(Code::Bds3B7x),
-            swiftnav_sys::code_e_CODE_BDS3_B3I => Ok(Code::Bds3B3i),
-            swiftnav_sys::code_e_CODE_BDS3_B3Q => Ok(Code::Bds3B3q),
-            swiftnav_sys::code_e_CODE_BDS3_B3X => Ok(Code::Bds3B3x),
-            swiftnav_sys::code_e_CODE_GPS_L1CI => Ok(Code::GpsL1ci),
-            swiftnav_sys::code_e_CODE_GPS_L1CQ => Ok(Code::GpsL1cq),
-            swiftnav_sys::code_e_CODE_GPS_L1CX => Ok(Code::GpsL1cx),
-            swiftnav_sys::code_e_CODE_AUX_GPS => Ok(Code::AuxGps),
-            swiftnav_sys::code_e_CODE_AUX_SBAS => Ok(Code::AuxSbas),
-            swiftnav_sys::code_e_CODE_AUX_GAL => Ok(Code::AuxGal),
-            swiftnav_sys::code_e_CODE_AUX_QZS => Ok(Code::AuxQzs),
-            swiftnav_sys::code_e_CODE_AUX_BDS => Ok(Code::AuxBds),
-            _ => Err(InvalidCode(value)),
-        }
-    }
-
-    pub(crate) fn to_code_t(self) -> swiftnav_sys::code_t {
-        match self {
-            Code::GpsL1ca => swiftnav_sys::code_e_CODE_GPS_L1CA,
-            Code::GpsL2cm => swiftnav_sys::code_e_CODE_GPS_L2CM,
-            Code::SbasL1ca => swiftnav_sys::code_e_CODE_SBAS_L1CA,
-            Code::GloL1of => swiftnav_sys::code_e_CODE_GLO_L1OF,
-            Code::GloL2of => swiftnav_sys::code_e_CODE_GLO_L2OF,
-            Code::GpsL1p => swiftnav_sys::code_e_CODE_GPS_L1P,
-            Code::GpsL2p => swiftnav_sys::code_e_CODE_GPS_L2P,
-            Code::GpsL2cl => swiftnav_sys::code_e_CODE_GPS_L2CL,
-            Code::GpsL2cx => swiftnav_sys::code_e_CODE_GPS_L2CX,
-            Code::GpsL5i => swiftnav_sys::code_e_CODE_GPS_L5I,
-            Code::GpsL5q => swiftnav_sys::code_e_CODE_GPS_L5Q,
-            Code::GpsL5x => swiftnav_sys::code_e_CODE_GPS_L5X,
-            Code::Bds2B1 => swiftnav_sys::code_e_CODE_BDS2_B1,
-            Code::Bds2B2 => swiftnav_sys::code_e_CODE_BDS2_B2,
-            Code::GalE1b => swiftnav_sys::code_e_CODE_GAL_E1B,
-            Code::GalE1c => swiftnav_sys::code_e_CODE_GAL_E1C,
-            Code::GalE1x => swiftnav_sys::code_e_CODE_GAL_E1X,
-            Code::GalE6b => swiftnav_sys::code_e_CODE_GAL_E6B,
-            Code::GalE6c => swiftnav_sys::code_e_CODE_GAL_E6C,
-            Code::GalE6x => swiftnav_sys::code_e_CODE_GAL_E6X,
-            Code::GalE7i => swiftnav_sys::code_e_CODE_GAL_E7I,
-            Code::GalE7q => swiftnav_sys::code_e_CODE_GAL_E7Q,
-            Code::GalE7x => swiftnav_sys::code_e_CODE_GAL_E7X,
-            Code::GalE8i => swiftnav_sys::code_e_CODE_GAL_E8I,
-            Code::GalE8q => swiftnav_sys::code_e_CODE_GAL_E8Q,
-            Code::GalE8x => swiftnav_sys::code_e_CODE_GAL_E8X,
-            Code::GalE5i => swiftnav_sys::code_e_CODE_GAL_E5I,
-            Code::GalE5q => swiftnav_sys::code_e_CODE_GAL_E5Q,
-            Code::GalE5x => swiftnav_sys::code_e_CODE_GAL_E5X,
-            Code::GloL1p => swiftnav_sys::code_e_CODE_GLO_L1P,
-            Code::GloL2p => swiftnav_sys::code_e_CODE_GLO_L2P,
-            Code::QzsL1ca => swiftnav_sys::code_e_CODE_QZS_L1CA,
-            Code::QzsL1ci => swiftnav_sys::code_e_CODE_QZS_L1CI,
-            Code::QzsL1cq => swiftnav_sys::code_e_CODE_QZS_L1CQ,
-            Code::QzsL1cx => swiftnav_sys::code_e_CODE_QZS_L1CX,
-            Code::QzsL2cm => swiftnav_sys::code_e_CODE_QZS_L2CM,
-            Code::QzsL2cl => swiftnav_sys::code_e_CODE_QZS_L2CL,
-            Code::QzsL2cx => swiftnav_sys::code_e_CODE_QZS_L2CX,
-            Code::QzsL5i => swiftnav_sys::code_e_CODE_QZS_L5I,
-            Code::QzsL5q => swiftnav_sys::code_e_CODE_QZS_L5Q,
-            Code::QzsL5x => swiftnav_sys::code_e_CODE_QZS_L5X,
-            Code::SbasL5i => swiftnav_sys::code_e_CODE_SBAS_L5I,
-            Code::SbasL5q => swiftnav_sys::code_e_CODE_SBAS_L5Q,
-            Code::SbasL5x => swiftnav_sys::code_e_CODE_SBAS_L5X,
-            Code::Bds3B1ci => swiftnav_sys::code_e_CODE_BDS3_B1CI,
-            Code::Bds3B1cq => swiftnav_sys::code_e_CODE_BDS3_B1CQ,
-            Code::Bds3B1cx => swiftnav_sys::code_e_CODE_BDS3_B1CX,
-            Code::Bds3B5i => swiftnav_sys::code_e_CODE_BDS3_B5I,
-            Code::Bds3B5q => swiftnav_sys::code_e_CODE_BDS3_B5Q,
-            Code::Bds3B5x => swiftnav_sys::code_e_CODE_BDS3_B5X,
-            Code::Bds3B7i => swiftnav_sys::code_e_CODE_BDS3_B7I,
-            Code::Bds3B7q => swiftnav_sys::code_e_CODE_BDS3_B7Q,
-            Code::Bds3B7x => swiftnav_sys::code_e_CODE_BDS3_B7X,
-            Code::Bds3B3i => swiftnav_sys::code_e_CODE_BDS3_B3I,
-            Code::Bds3B3q => swiftnav_sys::code_e_CODE_BDS3_B3Q,
-            Code::Bds3B3x => swiftnav_sys::code_e_CODE_BDS3_B3X,
-            Code::GpsL1ci => swiftnav_sys::code_e_CODE_GPS_L1CI,
-            Code::GpsL1cq => swiftnav_sys::code_e_CODE_GPS_L1CQ,
-            Code::GpsL1cx => swiftnav_sys::code_e_CODE_GPS_L1CX,
-            Code::AuxGps => swiftnav_sys::code_e_CODE_AUX_GPS,
-            Code::AuxSbas => swiftnav_sys::code_e_CODE_AUX_SBAS,
-            Code::AuxGal => swiftnav_sys::code_e_CODE_AUX_GAL,
-            Code::AuxQzs => swiftnav_sys::code_e_CODE_AUX_QZS,
-            Code::AuxBds => swiftnav_sys::code_e_CODE_AUX_BDS,
-        }
-    }
-
     /// Get the human readable name of the code.
     pub fn to_str(&self) -> Cow<'static, str> {
-        let c_str = unsafe { ffi::CStr::from_ptr(swiftnav_sys::code_to_string(self.to_code_t())) };
-        c_str.to_string_lossy()
+        let s: &'static str = self.into();
+        s.into()
     }
 
     /// Gets the corresponding [`Constellation`]
     pub fn to_constellation(&self) -> Constellation {
-        Constellation::from_constellation_t(unsafe {
-            swiftnav_sys::code_to_constellation(self.to_code_t())
-        })
-        .unwrap()
-    }
-
-    /// Get the number of signals for a code
-    pub fn sig_count(&self) -> u16 {
-        unsafe { swiftnav_sys::code_to_sig_count(self.to_code_t()) }
-    }
-
-    /// Get the chips count of a code
-    pub fn chip_count(&self) -> u32 {
-        unsafe { swiftnav_sys::code_to_chip_count(self.to_code_t()) }
-    }
-
-    /// Get the chips rate of a code
-    pub fn chip_rate(&self) -> f64 {
-        unsafe { swiftnav_sys::code_to_chip_rate(self.to_code_t()) }
+        match &self {
+            Code::GpsL1ca
+            | Code::GpsL2cm
+            | Code::GpsL1p
+            | Code::GpsL2p
+            | Code::GpsL2cl
+            | Code::GpsL2cx
+            | Code::GpsL5i
+            | Code::GpsL5q
+            | Code::GpsL5x
+            | Code::GpsL1ci
+            | Code::GpsL1cq
+            | Code::GpsL1cx
+            | Code::AuxGps => Constellation::Gps,
+            Code::SbasL1ca | Code::SbasL5i | Code::SbasL5q | Code::SbasL5x | Code::AuxSbas => {
+                Constellation::Sbas
+            }
+            Code::GloL1of | Code::GloL2of | Code::GloL1p | Code::GloL2p => Constellation::Glo,
+            Code::Bds2B1
+            | Code::Bds2B2
+            | Code::Bds3B1ci
+            | Code::Bds3B1cq
+            | Code::Bds3B1cx
+            | Code::Bds3B5i
+            | Code::Bds3B5q
+            | Code::Bds3B5x
+            | Code::Bds3B7i
+            | Code::Bds3B7q
+            | Code::Bds3B7x
+            | Code::Bds3B3i
+            | Code::Bds3B3q
+            | Code::Bds3B3x
+            | Code::AuxBds => Constellation::Bds,
+            Code::GalE1b
+            | Code::GalE1c
+            | Code::GalE1x
+            | Code::GalE6b
+            | Code::GalE6c
+            | Code::GalE6x
+            | Code::GalE7i
+            | Code::GalE7q
+            | Code::GalE7x
+            | Code::GalE8i
+            | Code::GalE8q
+            | Code::GalE8x
+            | Code::GalE5i
+            | Code::GalE5q
+            | Code::GalE5x
+            | Code::AuxGal => Constellation::Gal,
+            Code::QzsL1ca
+            | Code::QzsL1ci
+            | Code::QzsL1cq
+            | Code::QzsL1cx
+            | Code::QzsL2cm
+            | Code::QzsL2cl
+            | Code::QzsL2cx
+            | Code::QzsL5i
+            | Code::QzsL5q
+            | Code::QzsL5x
+            | Code::AuxQzs => Constellation::Qzs,
+        }
     }
 
     pub fn is_gps(&self) -> bool {
-        unsafe { swiftnav_sys::is_gps(self.to_code_t()) }
+        self.to_constellation() == Constellation::Gps
     }
 
     pub fn is_sbas(&self) -> bool {
-        unsafe { swiftnav_sys::is_sbas(self.to_code_t()) }
+        self.to_constellation() == Constellation::Sbas
     }
 
     pub fn is_glo(&self) -> bool {
-        unsafe { swiftnav_sys::is_glo(self.to_code_t()) }
+        self.to_constellation() == Constellation::Glo
     }
 
     pub fn is_bds2(&self) -> bool {
-        unsafe { swiftnav_sys::is_bds2(self.to_code_t()) }
+        self.to_constellation() == Constellation::Bds
     }
 
     pub fn is_gal(&self) -> bool {
-        unsafe { swiftnav_sys::is_gal(self.to_code_t()) }
+        self.to_constellation() == Constellation::Gal
     }
 
     pub fn is_qzss(&self) -> bool {
-        unsafe { swiftnav_sys::is_qzss(self.to_code_t()) }
+        self.to_constellation() == Constellation::Qzs
     }
 }
 
-impl FromStr for Code {
-    type Err = InvalidCode;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let c_str = ffi::CString::new(s).map_err(|_| InvalidCode(-1))?;
-        let code = unsafe { swiftnav_sys::code_string_to_enum(c_str.as_ptr()) };
-
-        Self::from_code_t(code)
-    }
-}
-
-impl fmt::Display for Code {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_str())
-    }
-}
+#[derive(thiserror::Error, Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[error("Invalid integer for GNSS Code ({0})")]
+pub struct InvalidCodeInt(u8);
 
 impl std::convert::TryFrom<u8> for Code {
-    type Error = InvalidCode;
-    fn try_from(value: u8) -> Result<Code, InvalidCode> {
-        Self::from_code_t(value as swiftnav_sys::code_t)
+    type Error = InvalidCodeInt;
+    fn try_from(value: u8) -> Result<Code, Self::Error> {
+        match value {
+            0 => Ok(Code::GpsL1ca),
+            1 => Ok(Code::GpsL2cm),
+            2 => Ok(Code::SbasL1ca),
+            3 => Ok(Code::GloL1of),
+            4 => Ok(Code::GloL2of),
+            5 => Ok(Code::GpsL1p),
+            6 => Ok(Code::GpsL2p),
+            7 => Ok(Code::GpsL2cl),
+            8 => Ok(Code::GpsL2cx),
+            9 => Ok(Code::GpsL5i),
+            10 => Ok(Code::GpsL5q),
+            11 => Ok(Code::GpsL5x),
+            12 => Ok(Code::Bds2B1),
+            13 => Ok(Code::Bds2B2),
+            14 => Ok(Code::GalE1b),
+            15 => Ok(Code::GalE1c),
+            16 => Ok(Code::GalE1x),
+            17 => Ok(Code::GalE6b),
+            18 => Ok(Code::GalE6c),
+            19 => Ok(Code::GalE6x),
+            20 => Ok(Code::GalE7i),
+            21 => Ok(Code::GalE7q),
+            22 => Ok(Code::GalE7x),
+            23 => Ok(Code::GalE8i),
+            24 => Ok(Code::GalE8q),
+            25 => Ok(Code::GalE8x),
+            26 => Ok(Code::GalE5i),
+            27 => Ok(Code::GalE5q),
+            28 => Ok(Code::GalE5x),
+            29 => Ok(Code::GloL1p),
+            30 => Ok(Code::GloL2p),
+            31 => Ok(Code::QzsL1ca),
+            32 => Ok(Code::QzsL1ci),
+            33 => Ok(Code::QzsL1cq),
+            34 => Ok(Code::QzsL1cx),
+            35 => Ok(Code::QzsL2cm),
+            36 => Ok(Code::QzsL2cl),
+            37 => Ok(Code::QzsL2cx),
+            38 => Ok(Code::QzsL5i),
+            39 => Ok(Code::QzsL5q),
+            40 => Ok(Code::QzsL5x),
+            41 => Ok(Code::SbasL5i),
+            42 => Ok(Code::SbasL5q),
+            43 => Ok(Code::SbasL5x),
+            44 => Ok(Code::Bds3B1ci),
+            45 => Ok(Code::Bds3B1cq),
+            46 => Ok(Code::Bds3B1cx),
+            47 => Ok(Code::Bds3B5i),
+            48 => Ok(Code::Bds3B5q),
+            49 => Ok(Code::Bds3B5x),
+            50 => Ok(Code::Bds3B7i),
+            51 => Ok(Code::Bds3B7q),
+            52 => Ok(Code::Bds3B7x),
+            53 => Ok(Code::Bds3B3i),
+            54 => Ok(Code::Bds3B3q),
+            55 => Ok(Code::Bds3B3x),
+            56 => Ok(Code::GpsL1ci),
+            57 => Ok(Code::GpsL1cq),
+            58 => Ok(Code::GpsL1cx),
+            59 => Ok(Code::AuxGps),
+            60 => Ok(Code::AuxSbas),
+            61 => Ok(Code::AuxGal),
+            62 => Ok(Code::AuxQzs),
+            63 => Ok(Code::AuxBds),
+            _ => Err(InvalidCodeInt(value))
+        }
     }
 }
 
 /// GNSS Signal identifier
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct GnssSignal(swiftnav_sys::gnss_signal_t);
-
-/// Invalid values when creating a [`GnssSignal`] object
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub enum InvalidGnssSignal {
-    /// The code integer value was invalid
-    InvalidCode(InvalidCode),
-    /// The satellite number is not in the valid range for the associated constellation
-    InvalidSatellite(u16),
+pub struct GnssSignal{
+    code: Code,
+    sat: u16,
 }
 
-impl fmt::Display for InvalidGnssSignal {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            InvalidGnssSignal::InvalidCode(code) => code.fmt(f),
-            InvalidGnssSignal::InvalidSatellite(sat) => {
-                write!(f, "Invalid satellite number: {sat}")
-            }
-        }
-    }
-}
-
-impl Error for InvalidGnssSignal {}
-
-impl From<InvalidCode> for InvalidGnssSignal {
-    fn from(other: InvalidCode) -> InvalidGnssSignal {
-        InvalidGnssSignal::InvalidCode(other)
-    }
-}
+/// The satellite number is not in the valid range for the associated constellation
+#[derive(thiserror::Error, Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
+#[error("The satellite number is not valid for the associated constellation ({0})")]
+pub struct InvalidSatellite(u16);
 
 impl GnssSignal {
-    pub fn new(sat: u16, code: Code) -> Result<GnssSignal, InvalidGnssSignal> {
-        let code = code.to_code_t();
-        let sid = swiftnav_sys::gnss_signal_t { sat, code };
-        let sid_is_valid = unsafe { swiftnav_sys::sid_valid(sid) };
-        if sid_is_valid {
-            Ok(GnssSignal(sid))
+    pub fn new(sat: u16, code: Code) -> Result<GnssSignal, InvalidSatellite> {
+        let constellation = code.to_constellation();
+        if sat < constellation.first_prn() || sat >= (constellation.first_prn() + constellation.sat_count()) {
+            Err(InvalidSatellite(sat))
         } else {
-            Err(InvalidGnssSignal::InvalidSatellite(sat))
+            Ok(GnssSignal{code, sat})
         }
-    }
-
-    pub(crate) fn from_gnss_signal_t(
-        sid: swiftnav_sys::gnss_signal_t,
-    ) -> Result<GnssSignal, InvalidGnssSignal> {
-        GnssSignal::new(sid.sat, Code::from_code_t(sid.code)?)
-    }
-
-    pub(crate) fn to_gnss_signal_t(self) -> swiftnav_sys::gnss_signal_t {
-        self.0
     }
 
     pub fn sat(&self) -> u16 {
-        self.0.sat
+        self.sat
     }
 
     pub fn code(&self) -> Code {
-        Code::from_code_t(self.0.code).unwrap()
+        self.code
     }
 
     /// Get the constellation of the signal
     pub fn to_constellation(&self) -> Constellation {
-        Constellation::from_constellation_t(unsafe { swiftnav_sys::sid_to_constellation(self.0) })
-            .unwrap()
-    }
-
-    /// Get the carrier frequency of the signal
-    pub fn carrier_frequency(&self) -> f64 {
-        unsafe { swiftnav_sys::sid_to_carr_freq(self.0) }
+        self.code.to_constellation()
     }
 
     /// Makes the human readable signal name
     pub fn to_str(&self) -> String {
-        let mut raw_str = [0; swiftnav_sys::SID_STR_LEN_MAX as usize + 1];
-
-        unsafe {
-            let n_bytes = swiftnav_sys::sid_to_string(
-                raw_str.as_mut_ptr(),
-                raw_str.len() as i32 - 1,
-                self.to_gnss_signal_t(),
-            );
-            raw_str[n_bytes as usize] = 0;
-
-            let str = ffi::CStr::from_ptr(raw_str.as_ptr());
-
-            str.to_string_lossy().to_string()
-        }
+        format!("{} {}", self.code.to_str(), self.sat)
     }
 }
 
@@ -959,90 +1021,90 @@ mod tests {
 
     #[test]
     fn invalid_sats() {
-        let first = swiftnav_sys::GPS_FIRST_PRN;
-        let last = swiftnav_sys::GPS_FIRST_PRN + swiftnav_sys::NUM_SATS_GPS;
+        let first = consts::GPS_FIRST_PRN;
+        let last = consts::GPS_FIRST_PRN + consts::NUM_SATS_GPS;
         for sat in (first - 1)..(last + 2) {
             let result = GnssSignal::new(sat as u16, Code::GpsL1ca);
             if sat < first || sat >= last {
                 assert!(result.is_err());
                 assert_eq!(
                     result.unwrap_err(),
-                    InvalidGnssSignal::InvalidSatellite(sat as u16)
+                    InvalidSatellite(sat as u16)
                 );
             } else {
                 assert!(result.is_ok());
             }
         }
 
-        let first = swiftnav_sys::SBAS_FIRST_PRN;
-        let last = swiftnav_sys::SBAS_FIRST_PRN + swiftnav_sys::NUM_SATS_SBAS;
+        let first = consts::SBAS_FIRST_PRN;
+        let last = consts::SBAS_FIRST_PRN + consts::NUM_SATS_SBAS;
         for sat in (first - 1)..(last + 2) {
             let result = GnssSignal::new(sat as u16, Code::SbasL1ca);
             if sat < first || sat >= last {
                 assert!(result.is_err());
                 assert_eq!(
                     result.unwrap_err(),
-                    InvalidGnssSignal::InvalidSatellite(sat as u16)
+                    InvalidSatellite(sat as u16)
                 );
             } else {
                 assert!(result.is_ok());
             }
         }
 
-        let first = swiftnav_sys::GLO_FIRST_PRN;
-        let last = swiftnav_sys::GLO_FIRST_PRN + swiftnav_sys::NUM_SATS_GLO;
+        let first = consts::GLO_FIRST_PRN;
+        let last = consts::GLO_FIRST_PRN + consts::NUM_SATS_GLO;
         for sat in (first - 1)..(last + 2) {
             let result = GnssSignal::new(sat as u16, Code::GloL1of);
             if sat < first || sat >= last {
                 assert!(result.is_err());
                 assert_eq!(
                     result.unwrap_err(),
-                    InvalidGnssSignal::InvalidSatellite(sat as u16)
+                    InvalidSatellite(sat as u16)
                 );
             } else {
                 assert!(result.is_ok());
             }
         }
 
-        let first = swiftnav_sys::BDS_FIRST_PRN;
-        let last = swiftnav_sys::BDS_FIRST_PRN + swiftnav_sys::NUM_SATS_BDS;
+        let first = consts::BDS_FIRST_PRN;
+        let last = consts::BDS_FIRST_PRN + consts::NUM_SATS_BDS;
         for sat in (first - 1)..(last + 2) {
             let result = GnssSignal::new(sat as u16, Code::Bds2B1);
             if sat < first || sat >= last {
                 assert!(result.is_err());
                 assert_eq!(
                     result.unwrap_err(),
-                    InvalidGnssSignal::InvalidSatellite(sat as u16)
+                    InvalidSatellite(sat as u16)
                 );
             } else {
                 assert!(result.is_ok());
             }
         }
 
-        let first = swiftnav_sys::GAL_FIRST_PRN;
-        let last = swiftnav_sys::GAL_FIRST_PRN + swiftnav_sys::NUM_SATS_GAL;
+        let first = consts::GAL_FIRST_PRN;
+        let last = consts::GAL_FIRST_PRN + consts::NUM_SATS_GAL;
         for sat in (first - 1)..(last + 2) {
             let result = GnssSignal::new(sat as u16, Code::GalE1b);
             if sat < first || sat >= last {
                 assert!(result.is_err());
                 assert_eq!(
                     result.unwrap_err(),
-                    InvalidGnssSignal::InvalidSatellite(sat as u16)
+                    InvalidSatellite(sat as u16)
                 );
             } else {
                 assert!(result.is_ok());
             }
         }
 
-        let first = swiftnav_sys::QZS_FIRST_PRN;
-        let last = swiftnav_sys::QZS_FIRST_PRN + swiftnav_sys::NUM_SATS_QZS;
+        let first = consts::QZS_FIRST_PRN;
+        let last = consts::QZS_FIRST_PRN + consts::NUM_SATS_QZS;
         for sat in (first - 1)..(last + 2) {
             let result = GnssSignal::new(sat as u16, Code::QzsL1ca);
             if sat < first || sat >= last {
                 assert!(result.is_err());
                 assert_eq!(
                     result.unwrap_err(),
-                    InvalidGnssSignal::InvalidSatellite(sat as u16)
+                    InvalidSatellite(sat as u16)
                 );
             } else {
                 assert!(result.is_ok());
@@ -1052,6 +1114,8 @@ mod tests {
 
     #[test]
     fn constellation_strings() {
+        use std::str::FromStr;
+
         assert_eq!(Constellation::Gps.to_str(), "GPS");
         assert_eq!(Constellation::Sbas.to_str(), "SBAS");
         assert_eq!(Constellation::Glo.to_str(), "GLO");
@@ -1072,22 +1136,21 @@ mod tests {
         {
             let result = Constellation::from_str("Bad String");
             assert!(result.is_err());
-            assert_eq!(result.unwrap_err(), InvalidConstellation(-1));
         }
         {
             let result = Constellation::from_str("Nul\0String");
             assert!(result.is_err());
-            assert_eq!(result.unwrap_err(), InvalidConstellation(-1));
         }
         {
             let result = Constellation::from_str("💩💩💩💩");
             assert!(result.is_err());
-            assert_eq!(result.unwrap_err(), InvalidConstellation(-1));
         }
     }
 
     #[test]
     fn code_strings() {
+        use std::str::FromStr;
+
         assert_eq!(Code::GpsL1ca.to_str(), "GPS L1CA");
         assert_eq!(Code::GpsL2cm.to_str(), "GPS L2CM");
         assert_eq!(Code::SbasL1ca.to_str(), "SBAS L1");
@@ -1221,17 +1284,14 @@ mod tests {
         {
             let result = Code::from_str("Bad String");
             assert!(result.is_err());
-            assert_eq!(result.unwrap_err(), InvalidCode(-1));
         }
         {
             let result = Code::from_str("Nul\0String");
             assert!(result.is_err());
-            assert_eq!(result.unwrap_err(), InvalidCode(-1));
         }
         {
             let result = Code::from_str("💩💩💩💩");
             assert!(result.is_err());
-            assert_eq!(result.unwrap_err(), InvalidCode(-1));
         }
     }
 

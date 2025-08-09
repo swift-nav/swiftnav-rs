@@ -15,6 +15,7 @@ chrono = { version = "0.4", optional = true }
 swiftnav-sys = { version = "^0.10.0", path = "../swiftnav-sys/" }
 strum = { version = "0.27", features = ["derive"] }
 nalgebra = "0.33.2"
+thiserror = "2.0"
 
 [dev-dependencies]
 float_eq = "1.0.1"
