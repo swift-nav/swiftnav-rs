@@ -44,56 +44,147 @@
 //! [`UtcParams`] object to handle the leap second conversion and one which doesn't
 //! take a [`UtcParams`] object but has `_hardcoded` appended to the function name.
 
-use std::error::Error;
 use std::fmt;
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 use std::time::Duration;
 
-pub const MINUTE: Duration = Duration::from_secs(swiftnav_sys::MINUTE_SECS as u64);
-pub const HOUR: Duration = Duration::from_secs(swiftnav_sys::HOUR_SECS as u64);
-pub const DAY: Duration = Duration::from_secs(swiftnav_sys::DAY_SECS as u64);
-pub const WEEK: Duration = Duration::from_secs(swiftnav_sys::WEEK_SECS as u64);
+pub mod consts {
+/// Number of days in a common (non-leap) year.
+pub const YEAR_DAYS: u32 = 365;
+
+/// Number of days in a leap year.
+pub const LEAP_YEAR_DAYS: u32 = YEAR_DAYS + 1;
+
+/// Number of days in a week.
+pub const WEEK_DAYS: u32 = 7;
+
+/// Number of months in a year.
+pub const YEAR_MONTHS: u32 = 12;
+
+/// Days in (leap) year 1980 since GPS epoch Jan 6th
+pub const YEAR_1980_GPS_DAYS: u32 = 361;
+
+/// Year of GPS epoch
+pub const GPS_EPOCH_YEAR: u32 = 1980;
+
+// /// UTC (SU) offset (hours)
+// pub const UTC_SU_OFFSET: u32 = 3;
+
+/// Number of seconds in a minute.
+pub const MINUTE_SECS: u32 = 60;
+
+/// Number of minutes in an hour.
+pub const HOUR_MINUTES: u32 = 60;
+
+/// Number of seconds in an hour.
+pub const HOUR_SECS: u32 = MINUTE_SECS * HOUR_MINUTES;
+
+/// Number of hours in a day.
+pub const DAY_HOURS: u32 = 24;
+
+/// Number of seconds in a day.
+pub const DAY_SECS: u32 =  DAY_HOURS * HOUR_MINUTES * MINUTE_SECS;
+
+/// Number of seconds in a week. 
+pub const WEEK_SECS: u32 = WEEK_DAYS * DAY_SECS;
+
+/// Number of nanoseconds in a second. 
+pub const SECS_NS: u32 = 1_000_000_000;
+
+/// Number of microseconds in a second. 
+pub const SECS_US: u32 = 1_000_000;
+
+/// Number of milliseconds in a second. 
+pub const SECS_MS: u32 = 1_000;
+
+/// Number of milliseconds in a week 
+pub const WEEK_MS: u32 = SECS_MS * WEEK_SECS;
+
+/// Number of days in four years. 
+pub const FOUR_YEARS_DAYS: u32 = 3 * YEAR_DAYS + LEAP_YEAR_DAYS;
+
+/// Number of days in 100 years. 
+pub const HUNDRED_YEARS_DAYS: u32 = 24 * FOUR_YEARS_DAYS + 4 * YEAR_DAYS;
+
+/// Number of days in 400 years. 
+pub const FOUR_HUNDRED_YEARS_DAYS: u32 = 3 * HUNDRED_YEARS_DAYS + 25 * FOUR_YEARS_DAYS;
+
+/** Number of rollovers in the 10-bit broadcast GPS week number.
+ * Update on next rollover on April 7, 2019.
+ * \todo Detect and handle rollover more gracefully. */
+pub const GPS_WEEK_CYCLE: u16 = 1;
+
+/** The GPS week reference number. The current GPS WN is always assumed to be
+ * later than this reference number. It will keep the WN calculated from the
+ * truncated 10-bit broadcast WN valid for ~20 years after this week.
+ *
+ * Current week number is set to 20 December 2015.
+ *
+ * TODO: update this from build date */
+pub const GPS_WEEK_REFERENCE: i16 = 1876;
+
+/** The GPS week number at which we won't be able to figure out what
+    time it is with the current reference. */
+pub const GPS_MAX_WEEK: i16 = 2899;
+
+/// Unix timestamp of the GPS epoch 1980-01-06 00:00:00 UTC 
+pub const GPS_EPOCH: i64 = 315964800;
+
+/// Modified Julian days of the GPS epoch 1980-01-06 00:00:00 UTC 
+pub const MJD_JAN_6_1980: i32 = 44244;
+
+/// Modified Julian days of 1601-01-01 
+pub const MJD_JAN_1_1601: i32 = -94187;
+
+/// Constant difference of Galileo time from GPS time 
+pub const GAL_WEEK_TO_GPS_WEEK: i16 = 1024;
+pub const GAL_SECOND_TO_GPS_SECOND: f64 = 0.0;
+
+/// Constant difference of Beidou time from GPS time 
+pub const BDS_WEEK_TO_GPS_WEEK: i16 = 1356;
+pub const BDS_SECOND_TO_GPS_SECOND: f64 = 14.0;
+}
+
+pub const MINUTE: Duration = Duration::from_secs(consts::MINUTE_SECS as u64);
+pub const HOUR: Duration = Duration::from_secs(consts::HOUR_SECS as u64);
+pub const DAY: Duration = Duration::from_secs(consts::DAY_SECS as u64);
+pub const WEEK: Duration = Duration::from_secs(consts::WEEK_SECS as u64);
 
 /// Representation of GPS Time
 #[derive(Copy, Clone)]
-pub struct GpsTime(swiftnav_sys::gps_time_t);
+pub struct GpsTime {
+    /// Seconds since the GPS start of week.
+    tow: f64,
+    /// GPS week number
+    wn: i16,
+}
 
 /// GPS timestamp of the start of Galileo time
 pub const GAL_TIME_START: GpsTime =
-    GpsTime::new_unchecked(swiftnav_sys::GAL_WEEK_TO_GPS_WEEK as i16, 0.0);
+    GpsTime {
+        wn: consts::GAL_WEEK_TO_GPS_WEEK,
+        tow: consts::GAL_SECOND_TO_GPS_SECOND,
+    };
+
 /// GPS timestamp of the start of Beidou time
-pub const BDS_TIME_START: GpsTime = GpsTime::new_unchecked(
-    swiftnav_sys::BDS_WEEK_TO_GPS_WEEK as i16,
-    swiftnav_sys::BDS_SECOND_TO_GPS_SECOND as f64,
-);
-/// GPS timestamp of the start of Glonass time
-pub const GLO_TIME_START: GpsTime = GpsTime::new_unchecked(
-    swiftnav_sys::GLO_EPOCH_WN as i16,
-    swiftnav_sys::GLO_EPOCH_TOW,
-);
+pub const BDS_TIME_START: GpsTime = GpsTime {
+    wn: consts::BDS_WEEK_TO_GPS_WEEK,
+    tow: consts::BDS_SECOND_TO_GPS_SECOND,
+};
 
 /// Error type when a given GPS time is not valid
-#[derive(Debug, Copy, Clone, PartialOrd, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialOrd, PartialEq, thiserror::Error)]
 pub enum InvalidGpsTime {
+    #[error("Invalid Week Number: {0}")]
     /// Indicates an invalid week number was given, with the invalid value returned
     InvalidWN(i16),
+    #[error("Invalid Time of Week: {0}")]
     /// Indicates an invalid time of week was given, with the invalid value returned
     InvalidTOW(f64),
 }
 
-impl fmt::Display for InvalidGpsTime {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            InvalidGpsTime::InvalidWN(wn) => write!(f, "Invalid Week Number: {wn}"),
-            InvalidGpsTime::InvalidTOW(tow) => write!(f, "Invalid Time of Week: {tow}"),
-        }
-    }
-}
-
-impl Error for InvalidGpsTime {}
-
 impl GpsTime {
-    const JIFFY: f64 = swiftnav_sys::FLOAT_EQUALITY_EPS;
+    const JIFFY: f64 = 1e-12;
 
     /// Makes a new GPS time object and checks the validity of the given values.
     ///
@@ -105,64 +196,168 @@ impl GpsTime {
         } else if !tow.is_finite() || tow < 0. || tow >= WEEK.as_secs_f64() {
             Err(InvalidGpsTime::InvalidTOW(tow))
         } else {
-            Ok(GpsTime::new_unchecked(wn, tow))
+            Ok(GpsTime{ wn, tow })
         }
-    }
-
-    /// Makes a new GPS time object without checking the validity of the given
-    /// values.
-    pub(crate) const fn new_unchecked(wn: i16, tow: f64) -> GpsTime {
-        GpsTime(swiftnav_sys::gps_time_t { wn, tow })
-    }
-
-    pub(crate) fn to_gps_time_t(self) -> swiftnav_sys::gps_time_t {
-        self.0
-    }
-
-    pub(crate) fn c_ptr(&self) -> *const swiftnav_sys::gps_time_t {
-        &self.0
-    }
-
-    pub(crate) fn mut_c_ptr(&mut self) -> *mut swiftnav_sys::gps_time_t {
-        &mut self.0
-    }
-
-    pub(crate) fn unknown() -> swiftnav_sys::gps_time_t {
-        swiftnav_sys::gps_time_t { tow: -1.0, wn: -1 }
     }
 
     /// Gets the week number
     pub fn wn(&self) -> i16 {
-        self.0.wn
+        self.wn
     }
 
     /// Gets the time of week
     pub fn tow(&self) -> f64 {
-        self.0.tow
+        self.tow
     }
 
     /// Checks if the stored time is valid
     pub fn is_valid(&self) -> bool {
-        unsafe { swiftnav_sys::gps_time_valid(&self.0) }
+        self.tow.is_finite() && self.tow >= 0.0 && self.tow < consts::WEEK_SECS as f64 && self.wn >= 0
+    }
+
+    fn normalize(&mut self) {
+        while self.tow < 0.0 {
+            self.tow += consts::WEEK_SECS as f64;
+            self.wn -= 1;
+        }
+
+        while self.tow >= consts::WEEK_SECS as f64 {
+            self.tow -= consts::WEEK_SECS as f64;
+            self.wn += 1;
+        }
     }
 
     /// Adds a duration to the time
     pub fn add_duration(&mut self, duration: &Duration) {
-        unsafe {
-            swiftnav_sys::add_secs(&mut self.0, duration.as_secs_f64());
-        }
+        self.tow += duration.as_secs_f64();
+        self.normalize();
     }
 
     /// Subtracts a duration from the time
     pub fn subtract_duration(&mut self, duration: &Duration) {
-        unsafe {
-            swiftnav_sys::add_secs(&mut self.0, -duration.as_secs_f64());
-        }
+        self.tow -= duration.as_secs_f64();
+        self.normalize();
     }
 
     /// Gets the difference between this and another time value in seconds
     pub fn diff(&self, other: &Self) -> f64 {
-        unsafe { swiftnav_sys::gpsdifftime(&self.0, &other.0) }
+        let dt = self.tow - other.tow;
+        dt + (self.wn - other.wn) as f64 * consts::WEEK_SECS as f64
+    }
+
+    fn to_utc_internal(self, params: Option<&UtcParams>) -> UtcTime {
+        // Is it during a (positive) leap second event
+        // Get the UTC offset at the time we're converting
+        let (is_lse, dt_utc) = params.map_or_else(
+            || (self.is_leap_second_event_hardcoded(), self.utc_offset_hardcoded()),
+            |p| (self.is_leap_second_event(p), self.utc_offset(p))
+        );
+
+        let mut tow_utc = self.tow - dt_utc;
+
+        if is_lse {
+            /* positive leap second event ongoing, so we are at 23:59:60.xxxx
+            * subtract one second from time for now to make the conversion
+            * into yyyy/mm/dd HH:MM:SS.sssss format, and add it back later */
+            tow_utc -= 1.0;
+        }
+
+        let mut t_u = GpsTime{ wn: self.wn, tow: tow_utc };
+        t_u.normalize();
+
+        /* break the time into components */
+        let mut u = t_u.make_utc();
+
+        if is_lse {
+            assert!(u.hour == 23);
+            assert!(u.minute == 59);
+            assert!(u.second_int == 59);
+            /* add the extra second back in*/
+            u.second_int += 1;
+        }
+
+        u
+    }
+
+    pub(self) fn make_utc(&self) -> UtcTime {
+        /* see http://www.ngs.noaa.gov/gps-toolbox/bwr-c.txt */
+
+        /* seconds of the day */
+        let t_utc = self.tow % (consts::DAY_SECS as f64);
+
+        /* Convert this into hours, minutes and seconds */
+        let second_int = t_utc.floor() as u32;   /* The integer part of the seconds */
+        let second_frac: f64 = t_utc % 1.0;    /* The fractional part of the seconds */
+        let hour: u8 = (second_int / consts::HOUR_SECS) as u8;     /* The hours (1 - 23) */
+        let second_int = second_int - ((hour as u32) * consts::HOUR_SECS);    /* Remove the hours from seconds */
+        let minute: u8 = (second_int / consts::MINUTE_SECS) as u8; /* The minutes (1 - 59) */
+        let second_int: u8 = (second_int - minute as u32 * consts::MINUTE_SECS) as u8; /* Remove the minutes from seconds */ /* The seconds (1 - 60) */
+
+        /* Calculate the years */
+
+        /* Days from 1 Jan 1980. GPS epoch is 6 Jan 1980 */
+        let modified_julian_days: i32 =
+            consts::MJD_JAN_6_1980 + self.wn as i32 * 7 + (self.tow / consts::DAY_SECS as f64).floor() as i32;
+        let days_since_1601: u32 = (modified_julian_days - consts::MJD_JAN_1_1601) as u32;
+
+        /* Calculate the number of leap years */
+        let num_400_years: u32 = days_since_1601 / consts::FOUR_HUNDRED_YEARS_DAYS;
+        let days_left: u32 = days_since_1601 - num_400_years * consts::FOUR_HUNDRED_YEARS_DAYS;
+        let num_100_years: u32 = days_left / consts::HUNDRED_YEARS_DAYS -
+                            days_left / (consts::FOUR_HUNDRED_YEARS_DAYS - 1);
+        let days_left: u32 = days_left - num_100_years * consts::HUNDRED_YEARS_DAYS;
+        let num_4_years: u32 = days_left / consts::FOUR_YEARS_DAYS;
+        let days_left: u32 = days_left - num_4_years * consts::FOUR_YEARS_DAYS;
+        let num_non_leap_years =
+            days_left / consts::YEAR_DAYS - days_left / (consts::FOUR_YEARS_DAYS - 1);
+
+        /* Calculate the total number of years from 1980 */
+        let year = (1601 + num_400_years * 400 + num_100_years * 100 + num_4_years * 4 +
+                    num_non_leap_years) as u16;
+
+        /* Calculate the month of the year */
+
+        /* Calculate the day of the current year */
+        let year_day = (days_left - num_non_leap_years * consts::YEAR_DAYS + 1) as u16;
+
+        /* Work out if it is currently a leap year, 0 = no, 1 = yes` */
+        let leap_year: usize = if is_leap_year(year) { 1 } else { 0 };
+
+        /* Roughly work out the month number */
+        let month_guess: u8 = (year_day as f32 * 0.032) as u8;
+
+        /* Lookup table of the total number of days in the year after each month */
+        /* First row is for a non-leap year, second row is for a leap year */
+        const DAYS_AFTER_MONTH: [[u16; 13]; 2] = [
+            [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365],
+            [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366]];
+
+        /* Check if our guess was out, and what the correction is, */
+        /* 0 = correct, 1 = wrong */
+        let month_correction: u8 =
+            if year_day > DAYS_AFTER_MONTH[leap_year][(month_guess + 1) as usize] { 1 } else { 0 };
+
+        /* Calculate the corrected number of months */
+        let month = month_guess + month_correction + 1;
+
+        /* Calculate the day of the month */
+        let month_day =
+            (year_day - DAYS_AFTER_MONTH[leap_year][(month_guess + month_correction) as usize]) as u8;
+
+        /* Calculate the day of the week. 1 Jan 1601 was a Monday */
+        let week_day = (days_since_1601 % 7 + 1) as u8;
+
+        UtcTime {
+            year,
+            year_day,
+            month,      
+            month_day,  
+            week_day,   
+            hour,       
+            minute,     
+            second_int, 
+            second_frac,
+        }
     }
 
     /// Converts the GPS time into UTC time
@@ -170,13 +365,7 @@ impl GpsTime {
     /// # Panics
     /// This function will panic if the GPS time is not valid
     pub fn to_utc(self, utc_params: &UtcParams) -> UtcTime {
-        assert!(self.is_valid());
-
-        let mut utc = UtcTime::default();
-        unsafe {
-            swiftnav_sys::gps2utc(self.c_ptr(), utc.mut_c_ptr(), utc_params.c_ptr());
-        }
-        utc
+        self.to_utc_internal(Some(utc_params))
     }
 
     /// Converts the GPS time into UTC time using the hardcoded list of leap
@@ -189,18 +378,24 @@ impl GpsTime {
     /// # Panics
     /// This function will panic if the GPS time is not valid
     pub fn to_utc_hardcoded(self) -> UtcTime {
-        assert!(self.is_valid());
-
-        let mut utc = UtcTime::default();
-        unsafe {
-            swiftnav_sys::gps2utc(self.c_ptr(), utc.mut_c_ptr(), std::ptr::null());
-        }
-        utc
+        self.to_utc_internal(None)
     }
 
     /// Gets the number of seconds difference between GPS and UTC times
     pub fn utc_offset(&self, utc_params: &UtcParams) -> f64 {
-        unsafe { swiftnav_sys::get_gps_utc_offset(self.c_ptr(), utc_params.c_ptr()) }
+        let dt = self.diff(&utc_params.tot());
+
+        /* The polynomial UTC to GPS correction */
+        let mut dt_utc: f64 = utc_params.a0() + (utc_params.a1() * dt) + (utc_params.a2() * dt * dt);
+
+        /* the new UTC offset takes effect after the leap second event */
+        if self.diff(&utc_params.t_lse()) >= 1.0 {
+            dt_utc += utc_params.dt_lsf() as f64;
+        } else {
+            dt_utc += utc_params.dt_ls() as f64;
+        }
+
+        dt_utc
     }
 
     /// Gets the number of seconds difference between GPS and UTC using the hardcoded
@@ -211,12 +406,24 @@ impl GpsTime {
     /// preferable to use [`GpsTime::utc_offset()`] with the newest set
     /// of UTC parameters
     pub fn utc_offset_hardcoded(&self) -> f64 {
-        unsafe { swiftnav_sys::get_gps_utc_offset(self.c_ptr(), std::ptr::null()) }
+        for (t_leap, offset) in UTC_LEAPS.iter().rev() {
+            if self.diff(t_leap) >= 1.0 {
+                return *offset as f64;
+            }
+        }
+
+        /* time is before the first known leap second event */
+        0.0
     }
 
     /// Checks to see if this point in time is a UTC leap second event
-    pub fn is_leap_second_event(&self, utc_params: &UtcParams) -> bool {
-        unsafe { swiftnav_sys::is_leap_second_event(self.c_ptr(), utc_params.c_ptr()) }
+    pub fn is_leap_second_event(&self, params: &UtcParams) -> bool {
+        /* the UTC offset takes effect exactly 1 second after the start of
+        * the (positive) leap second event */
+        let dt = self.diff(&params.t_lse);
+
+        /* True only when self is during the leap second event */
+        dt >= 0.0 && dt < 1.0
     }
 
     /// Checks to see if this point in time is a UTC leap second event using the
@@ -227,17 +434,21 @@ impl GpsTime {
     /// preferable to use [`GpsTime::is_leap_second_event()`] with the newest
     /// set of UTC parameters
     pub fn is_leap_second_event_hardcoded(&self) -> bool {
-        unsafe { swiftnav_sys::is_leap_second_event(self.c_ptr(), std::ptr::null()) }
-    }
+        for (t_leap, _offset) in UTC_LEAPS.iter().rev() {
+            let dt = self.diff(t_leap);
 
-    /// Gets the GPS time of the nearest solution epoch
-    pub fn round_to_epoch(&self, soln_freq: f64) -> GpsTime {
-        GpsTime(unsafe { swiftnav_sys::round_to_epoch(self.c_ptr(), soln_freq) })
-    }
+            if dt > 1.0 {
+                /* time is past the last known leap second event */
+                return false;
+            }
+            if dt >= 0.0 && dt < 1.0 {
+                /* time is during the leap second event */
+                return true;
+            }
+        }
 
-    /// Gets the GPS time of the previous solution epoch
-    pub fn floor_to_epoch(&self, soln_freq: f64) -> GpsTime {
-        GpsTime(unsafe { swiftnav_sys::floor_to_epoch(self.c_ptr(), soln_freq) })
+        /* time is before the first known leap second event */
+        false
     }
 
     /// Converts the GPS time into Galileo time
@@ -249,7 +460,7 @@ impl GpsTime {
         assert!(self.is_valid());
         assert!(self >= GAL_TIME_START);
         GalTime {
-            wn: self.wn() - swiftnav_sys::GAL_WEEK_TO_GPS_WEEK as i16,
+            wn: self.wn() - consts::GAL_WEEK_TO_GPS_WEEK,
             tow: self.tow(),
         }
     }
@@ -262,42 +473,15 @@ impl GpsTime {
     pub fn to_bds(self) -> BdsTime {
         assert!(self.is_valid());
         assert!(self >= BDS_TIME_START);
-        let bds = GpsTime::new_unchecked(
-            self.wn() - swiftnav_sys::BDS_WEEK_TO_GPS_WEEK as i16,
-            self.tow(),
-        );
-        let bds = bds - Duration::from_secs(swiftnav_sys::BDS_SECOND_TO_GPS_SECOND as u64);
+        let bds = GpsTime {
+            wn: self.wn() - consts::BDS_WEEK_TO_GPS_WEEK,
+            tow: self.tow(),
+        };
+        let bds = bds - Duration::from_secs_f64(consts::BDS_SECOND_TO_GPS_SECOND);
         BdsTime {
             wn: bds.wn(),
             tow: bds.tow(),
         }
-    }
-
-    /// Converts a GPS time into a Glonass time
-    ///
-    /// # Panics
-    /// This function will panic if the GPS time is before the start of Glonass
-    /// time, i.e. [`GLO_TIME_START`]
-    pub fn to_glo(self, utc_params: &UtcParams) -> GloTime {
-        assert!(self.is_valid());
-        assert!(self >= GLO_TIME_START);
-        GloTime(unsafe { swiftnav_sys::gps2glo(self.c_ptr(), utc_params.c_ptr()) })
-    }
-
-    /// Converts a GPS time into a Glonass time using the hardcoded list of leap
-    /// seconds.
-    ///
-    /// # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
-    /// The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use [`GpsTime::to_glo()`] with the newest set of UTC parameters
-    ///
-    /// # Panics
-    /// This function will panic if the GPS time is before the start of Glonass
-    /// time, i.e. [`GLO_TIME_START`]
-    pub fn to_glo_hardcoded(self) -> GloTime {
-        assert!(self.is_valid());
-        assert!(self >= GLO_TIME_START);
-        GloTime(unsafe { swiftnav_sys::gps2glo(self.c_ptr(), std::ptr::null()) })
     }
 
     #[rustversion::since(1.62)]
@@ -327,8 +511,8 @@ impl GpsTime {
 impl fmt::Debug for GpsTime {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("GpsTime")
-            .field("WN", &self.0.wn)
-            .field("TOW", &self.0.tow)
+            .field("WN", &self.wn)
+            .field("TOW", &self.tow)
             .finish()
     }
 }
@@ -365,22 +549,6 @@ impl Add<Duration> for GpsTime {
 impl AddAssign<Duration> for GpsTime {
     fn add_assign(&mut self, rhs: Duration) {
         self.add_duration(&rhs);
-    }
-}
-
-impl Sub<GpsTime> for GpsTime {
-    type Output = Duration;
-    fn sub(self, rhs: GpsTime) -> Duration {
-        let diff_seconds = self.diff(&rhs);
-        Duration::from_secs_f64(diff_seconds)
-    }
-}
-
-impl Sub<&GpsTime> for GpsTime {
-    type Output = Duration;
-    fn sub(self, rhs: &GpsTime) -> Duration {
-        let diff_seconds = self.diff(rhs);
-        Duration::from_secs_f64(diff_seconds)
     }
 }
 
@@ -437,10 +605,10 @@ impl GalTime {
     }
 
     pub fn to_gps(self) -> GpsTime {
-        GpsTime::new_unchecked(
-            self.wn + swiftnav_sys::GAL_WEEK_TO_GPS_WEEK as i16,
-            self.tow,
-        )
+        GpsTime {
+            wn: self.wn + consts::GAL_WEEK_TO_GPS_WEEK,
+            tow: self.tow,
+        }
     }
 
     pub fn to_bds(self) -> BdsTime {
@@ -487,11 +655,11 @@ impl BdsTime {
     }
 
     pub fn to_gps(self) -> GpsTime {
-        let gps = GpsTime::new_unchecked(
-            self.wn() + swiftnav_sys::BDS_WEEK_TO_GPS_WEEK as i16,
-            self.tow(),
-        );
-        gps + Duration::from_secs(swiftnav_sys::BDS_SECOND_TO_GPS_SECOND as u64)
+        let gps = GpsTime {
+            wn: self.wn() + consts::BDS_WEEK_TO_GPS_WEEK,
+            tow: self.tow(),
+        };
+        gps + Duration::from_secs_f64(consts::BDS_SECOND_TO_GPS_SECOND)
     }
 
     pub fn to_gal(self) -> GalTime {
@@ -511,97 +679,26 @@ impl From<GalTime> for BdsTime {
     }
 }
 
-/// Representation of Glonass Time
-#[derive(Copy, Clone)]
-pub struct GloTime(swiftnav_sys::glo_time_t);
-
-impl GloTime {
-    pub(crate) fn c_ptr(&self) -> *const swiftnav_sys::glo_time_t {
-        &self.0
-    }
-
-    /// Creates a new GloTime
-    /// nt - Day number within the four-year interval [1-1461].
-    ///      Comes from the field NT in the GLO string 4.
-    ///
-    /// n4 - Four-year interval number starting from 1996 [1- ].
-    ///      Comes from the field N4 in the GLO string 5.
-    ///
-    /// h/m/s come either from the field tb in the GLO string 2
-    ///      or the field tk in the GLO string 1
-    /// h - Hours [0-24]
-    /// m - Minutes [0-59]
-    /// s - Seconds [0-60]
-    pub fn new(nt: u16, n4: u8, h: u8, m: u8, s: f64) -> GloTime {
-        GloTime(swiftnav_sys::glo_time_t { nt, n4, h, m, s })
-    }
-
-    pub fn nt(&self) -> u16 {
-        self.0.nt
-    }
-
-    pub fn n4(&self) -> u8 {
-        self.0.n4
-    }
-
-    pub fn h(&self) -> u8 {
-        self.0.h
-    }
-
-    pub fn m(&self) -> u8 {
-        self.0.m
-    }
-
-    pub fn s(&self) -> f64 {
-        self.0.s
-    }
-
-    /// Converts a Glonass time into a GPS time
-    pub fn to_gps(self, utc_params: &UtcParams) -> GpsTime {
-        GpsTime(unsafe { swiftnav_sys::glo2gps(self.c_ptr(), utc_params.c_ptr()) })
-    }
-
-    /// Converts a Glonass time into a GPS time using the hardcoded list of leap
-    /// seconds.
-    ///
-    /// Note: The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use [`GloTime::to_gps()`] with the newest set of UTC parameters
-    pub fn to_gps_hardcoded(self) -> GpsTime {
-        GpsTime(unsafe { swiftnav_sys::glo2gps(self.c_ptr(), std::ptr::null()) })
-    }
-}
-
 /// GPS UTC correction parameters
 #[derive(Clone)]
-pub struct UtcParams(swiftnav_sys::utc_params_t);
+pub struct UtcParams {
+    /// Modulo 1 sec offset from GPS to UTC [s]
+    a0: f64,        
+    /// Drift of time offset from GPS to UTC [s/s]
+    a1: f64,        
+    /// Drift rate correction from GPS to UTC [s/s]
+    a2: f64,        
+    /// Reference time of UTC parameters.
+    tot: GpsTime,   
+    /// Time of leap second event.
+    t_lse: GpsTime, 
+    /// Leap second delta from GPS to UTC before LS event [s]
+    dt_ls: i8,         
+    /// Leap second delta from GPS to UTC after LS event [s]
+    dt_lsf: i8,       
+}
 
 impl UtcParams {
-    pub(crate) fn mut_c_ptr(&mut self) -> *mut swiftnav_sys::utc_params_t {
-        &mut self.0
-    }
-
-    pub(crate) fn c_ptr(&self) -> *const swiftnav_sys::utc_params_t {
-        &self.0
-    }
-
-    /// Decodes UTC parameters from GPS LNAV message subframe 4 words 6-10.
-    ///
-    /// Note: Fills out the full time of week from current gps week cycle. Also
-    /// sets t_lse to the exact GPS time at the start of the leap second event.
-    ///
-    /// # References
-    ///   * IS-GPS-200H, Section 20.3.3.5.1.6
-    pub fn decode(words: &[u32; 8]) -> Option<Self> {
-        let mut params = UtcParams::default();
-        let result = unsafe { swiftnav_sys::decode_utc_parameters(words, params.mut_c_ptr()) };
-
-        if result {
-            Some(params)
-        } else {
-            None
-        }
-    }
-
     /// Build the UTC parameters from the already decoded parameters
     ///
     /// # Panics
@@ -617,52 +714,44 @@ impl UtcParams {
     ) -> UtcParams {
         assert!(tot.is_valid() && t_lse.is_valid());
 
-        let tot = tot.to_gps_time_t();
-        let t_lse = t_lse.to_gps_time_t();
-        UtcParams(swiftnav_sys::utc_params_t {
+        UtcParams {
             a0,
             a1,
             a2,
-            tot,
-            t_lse,
+            tot: *tot,
+            t_lse: *t_lse,
             dt_ls,
             dt_lsf,
-        })
+        }
     }
 
     /// Modulo 1 sec offset from GPS to UTC \[s\]
     pub fn a0(&self) -> f64 {
-        self.0.a0
+        self.a0
     }
     /// Drift of time offset from GPS to UTC \[s/s\]
     pub fn a1(&self) -> f64 {
-        self.0.a1
+        self.a1
     }
     /// Drift rate correction from GPS to UTC \[s/s\]
     pub fn a2(&self) -> f64 {
-        self.0.a2
+        self.a2
     }
     /// Reference time of UTC parameters.
     pub fn tot(&self) -> GpsTime {
-        GpsTime(self.0.tot)
+        self.tot
     }
     /// Time of leap second event.
     pub fn t_lse(&self) -> GpsTime {
-        GpsTime(self.0.t_lse)
+        self.t_lse
     }
     /// Leap second delta from GPS to UTC before LS event \[s\]
     pub fn dt_ls(&self) -> i8 {
-        self.0.dt_ls
+        self.dt_ls
     }
     /// Leap second delta from GPS to UTC after LS event \[s\]
     pub fn dt_lsf(&self) -> i8 {
-        self.0.dt_lsf
-    }
-}
-
-impl Default for UtcParams {
-    fn default() -> Self {
-        unsafe { std::mem::zeroed::<UtcParams>() }
+        self.dt_lsf
     }
 }
 
@@ -673,74 +762,77 @@ impl Default for UtcParams {
 /// around. Specifically it shouldn't be relied on for dates significantly before January 6th 1980,
 /// the start of GPS time.
 #[derive(Clone)]
-pub struct UtcTime(swiftnav_sys::utc_tm);
+pub struct UtcTime{
+    /// Number of years AD. In four digit format.
+    year: u16,
+    /// Day of the year (1 - 366).
+    year_day: u16,
+    /// Month of the year (1 - 12). 1 = January, 12 = December.
+    month: u8,      
+    /// Day of the month (1 - 31).
+    month_day: u8,  
+    /// Day of the week (1 - 7). 1 = Monday, 7 = Sunday.
+    week_day: u8,   
+    /// Minutes of the hour (0 - 59).
+    hour: u8,       
+    /// Minutes of the hour (0 - 59).
+    minute: u8,     
+    /// Integer part of seconds of the minute (0 - 60).
+    second_int: u8, 
+    /// Fractional part of seconds (0 - .99...).
+    second_frac: f64, 
+}
 
 impl UtcTime {
-    pub(crate) fn mut_c_ptr(&mut self) -> *mut swiftnav_sys::utc_tm {
-        &mut self.0
-    }
-
-    pub(crate) fn c_ptr(&self) -> *const swiftnav_sys::utc_tm {
-        &self.0
-    }
-
     /// Creates a UTC time from its individual components
     pub fn from_date(year: u16, month: u8, day: u8, hour: u8, minute: u8, second: f64) -> UtcTime {
-        UtcTime(unsafe {
-            swiftnav_sys::date2utc(
-                year as i32,
-                month as i32,
-                day as i32,
-                hour as i32,
-                minute as i32,
-                second,
-            )
-        })
+        let mjd = MJD::from_date(year, month, day, hour, minute, second);
+        mjd.to_utc()
     }
 
     /// Number of years CE. In four digit format
     pub fn year(&self) -> u16 {
-        self.0.year
+        self.year
     }
 
     /// Day of the year (1 - 366)
     pub fn day_of_year(&self) -> u16 {
-        self.0.year_day
+        self.year_day
     }
 
     /// Month of the year (1 - 12). 1 = January, 12 = December
     pub fn month(&self) -> u8 {
-        self.0.month
+        self.month
     }
 
     /// Day of the month (1 - 31)
     pub fn day_of_month(&self) -> u8 {
-        self.0.month_day
+        self.month_day
     }
 
     /// Day of the week (1 - 7). 1 = Monday, 7 = Sunday
     pub fn day_of_week(&self) -> u8 {
-        self.0.week_day
+        self.week_day
     }
 
     /// Hour of the day (0 - 23)
     pub fn hour(&self) -> u8 {
-        self.0.hour
+        self.hour
     }
 
     /// Minutes of the hour (0 - 59)
     pub fn minute(&self) -> u8 {
-        self.0.minute
+        self.minute
     }
 
     /// seconds of the minute (0 - 60)
     pub fn seconds(&self) -> f64 {
-        (self.0.second_int as f64) + self.0.second_frac
+        (self.second_int as f64) + self.second_frac
     }
 
     /// Converts the UTC time into a modified julian date
     pub fn to_mjd(&self) -> MJD {
-        MJD(unsafe { swiftnav_sys::utc2mjd(self.c_ptr()) })
+        MJD::from_date(self.year(), self.month(), self.day_of_month(), self.hour(), self.minute(), self.seconds())
     }
 
     /// Makes an ISO8601 compatible date time string from the UTC time
@@ -756,13 +848,24 @@ impl UtcTime {
         )
     }
 
+    fn to_gps_internal(&self, utc_params: Option<&UtcParams>) -> GpsTime {
+        let is_lse = self.second_int >= 60;
+        let mjd = self.to_mjd();
+
+        let mut gps = mjd.to_gps_internal(utc_params);
+
+        // During a leap second event the MJD is wrong by a second, so remove the
+        // erroneous second here
+        if is_lse {
+            gps -= Duration::from_secs(1);
+        }
+
+        gps
+    }
+
     /// Converts the UTC time into GPS time
     pub fn to_gps(&self, utc_params: &UtcParams) -> GpsTime {
-        let mut gps = GpsTime::new_unchecked(0, 0.0);
-        unsafe {
-            swiftnav_sys::utc2gps(self.c_ptr(), gps.mut_c_ptr(), utc_params.c_ptr());
-        }
-        gps
+        self.to_gps_internal(Some(utc_params))
     }
 
     /// Converts the UTC time into GPS time using the hardcoded list of leap
@@ -772,11 +875,7 @@ impl UtcTime {
     /// The hard coded list of leap seconds will get out of date, it is
     /// preferable to use [`UtcTime::to_gps()`] with the newest set of UTC parameters
     pub fn to_gps_hardcoded(&self) -> GpsTime {
-        let mut gps = GpsTime::new_unchecked(0, 0.0);
-        unsafe {
-            swiftnav_sys::utc2gps(self.c_ptr(), gps.mut_c_ptr(), std::ptr::null());
-        }
-        gps
+        self.to_gps_internal(None)
     }
 
     pub fn to_fractional_year(&self) -> f64 {
@@ -785,19 +884,13 @@ impl UtcTime {
         let hours = self.hour() as f64;
         let minutes = self.minute() as f64;
         let seconds = self.seconds();
-        let total_days = days + hours / 24. + minutes / 1440. + seconds / 86400.;
+        let total_days = days + hours / consts::DAY_HOURS as f64 + (minutes / consts::MINUTE_SECS as f64 + seconds) / consts::DAY_SECS as f64;
 
         if is_leap_year(self.year()) {
-            year + total_days / 366.0
+            year + total_days / consts::LEAP_YEAR_DAYS as f64
         } else {
-            year + total_days / 365.0
+            year + total_days / consts::YEAR_DAYS as f64
         }
-    }
-}
-
-impl Default for UtcTime {
-    fn default() -> Self {
-        unsafe { std::mem::zeroed::<UtcTime>() }
     }
 }
 
@@ -864,26 +957,44 @@ impl MJD {
 
     /// Creates a modified julian date from a calendar date and time
     pub fn from_date(year: u16, month: u8, day: u8, hour: u8, minute: u8, seconds: f64) -> MJD {
-        MJD(unsafe {
-            swiftnav_sys::date2mjd(
-                year as i32,
-                month as i32,
-                day as i32,
-                hour as i32,
-                minute as i32,
-                seconds,
-            )
-        })
+        let full_days = 367 * year as i64 - 7 * (year as i64 + (month as i64 + 9) / 12) / 4 -
+            3 * ((year as i64 + (month as i64 - 9) / 7) / 100 + 1) / 4 +
+            275 * month as i64 / 9 + day as i64 + 1721028 - 2400000;
+        let frac_days = (hour as f64) / (consts::DAY_HOURS as f64) + (minute as f64) / ((consts::DAY_HOURS * consts::HOUR_MINUTES) as f64) + seconds / (consts::DAY_SECS as f64);
+        MJD(full_days as f64 + frac_days)
     }
 
     /// Gets the floating point value of the modified julian date
     pub fn as_f64(&self) -> f64 {
         self.0
     }
+    
+    fn to_gps_internal(self, params: Option<&UtcParams>) -> GpsTime {
+        let utc_days: f64 = self.0 - (consts::MJD_JAN_6_1980 as f64);
+        
+        let wn = (utc_days / consts::WEEK_DAYS as f64) as i16;
+        let tow = (utc_days - wn as f64 * consts::WEEK_DAYS as f64) * (consts::DAY_SECS as f64);
+        let mut utc_time = GpsTime { wn, tow };
+
+        let leap_secs = params.map_or_else(|| utc_time.utc_offset_hardcoded(), |p| utc_time.utc_offset(p));
+        if leap_secs >= 0.0 {
+            utc_time += Duration::from_secs_f64(leap_secs);
+            utc_time
+        } else {
+            utc_time -= Duration::from_secs_f64(-leap_secs);
+            utc_time
+        }
+    }
 
     /// Converts the modified julian date into a UTC time
     pub fn to_utc(&self) -> UtcTime {
-        UtcTime(unsafe { swiftnav_sys::mjd2utc(self.0) })
+        // utc_tm ret;
+        let utc_days: f64 = self.0 - consts::MJD_JAN_6_1980 as f64;
+        
+        let wn = (utc_days / consts::WEEK_DAYS as f64) as i16;
+        let tow = (utc_days - (wn as u32 * consts::WEEK_DAYS) as f64) * (consts::DAY_SECS as f64);
+        let utc_time = GpsTime { wn, tow };
+        utc_time.make_utc()
     }
 }
 
@@ -896,6 +1007,32 @@ impl From<UtcTime> for MJD {
 pub fn is_leap_year(year: u16) -> bool {
     ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0)
 }
+
+/**
+ * Start times of UTC leap second events given in GPS time {wn, tow, gps-utc}
+ * The leap second event lasts for one second from the start time, and after
+ * that the new offset is in effect.
+ */
+const UTC_LEAPS: [(GpsTime, i32); 18] = [
+    (GpsTime{ wn: 77, tow: 259200.}, 1),    /* 01-07-1981 */
+    (GpsTime{ wn: 129, tow: 345601.}, 2),   /* 01-07-1982 */
+    (GpsTime{ wn: 181, tow: 432002.}, 3),   /* 01-07-1983 */
+    (GpsTime{ wn: 286, tow: 86403.}, 4),    /* 01-07-1985 */
+    (GpsTime{ wn: 416, tow: 432004.}, 5),   /* 01-01-1988 */
+    (GpsTime{ wn: 521, tow: 86405.}, 6),    /* 01-01-1990 */
+    (GpsTime{ wn: 573, tow: 172806.}, 7),   /* 01-01-1991 */
+    (GpsTime{ wn: 651, tow: 259207.}, 8),   /* 01-07-1992 */
+    (GpsTime{ wn: 703, tow: 345608.}, 9),   /* 01-07-1993 */
+    (GpsTime{ wn: 755, tow: 432009.}, 10),  /* 01-07-1994 */
+    (GpsTime{ wn: 834, tow: 86410.}, 11),   /* 01-01-1996 */
+    (GpsTime{ wn: 912, tow: 172811.}, 12),  /* 01-07-1997 */
+    (GpsTime{ wn: 990, tow: 432012.}, 13),  /* 01-01-1999 */
+    (GpsTime{ wn: 1356, tow: 13.}, 14),     /* 01-01-2006 */
+    (GpsTime{ wn: 1512, tow: 345614.}, 15), /* 01-01-2009 */
+    (GpsTime{ wn: 1695, tow: 15.}, 16),     /* 01-07-2012 */
+    (GpsTime{ wn: 1851, tow: 259216.}, 17), /* 01-07-2015 */
+    (GpsTime{ wn: 1930, tow: 17.}, 18),     /* 01-01-2017 */
+];
 
 #[cfg(test)]
 mod tests {
@@ -1017,68 +1154,68 @@ mod tests {
         let test_cases: &[UtcOffsetTestdata] = &[
             /* July 1 1981 */
             UtcOffsetTestdata {
-                t: GpsTime::new_unchecked(77, 259199.0),
+                t: GpsTime{ wn: 77, tow:  259199.0 },
                 d_utc: 0.0,
                 is_lse: false,
             },
             UtcOffsetTestdata {
-                t: GpsTime::new_unchecked(77, 259199.5),
+                t: GpsTime{ wn: 77, tow:  259199.5 },
                 d_utc: 0.0,
                 is_lse: false,
             },
             UtcOffsetTestdata {
-                t: GpsTime::new_unchecked(77, 259200.0),
+                t: GpsTime{ wn: 77, tow:  259200.0 },
                 d_utc: 0.0,
                 is_lse: true,
             },
             UtcOffsetTestdata {
-                t: GpsTime::new_unchecked(77, 259200.5),
+                t: GpsTime{ wn: 77, tow:  259200.5 },
                 d_utc: 0.0,
                 is_lse: true,
             },
             UtcOffsetTestdata {
-                t: GpsTime::new_unchecked(77, 259201.0),
+                t: GpsTime{ wn: 77, tow:  259201.0 },
                 d_utc: 1.0,
                 is_lse: false,
             },
             UtcOffsetTestdata {
-                t: GpsTime::new_unchecked(77, 259202.0),
+                t: GpsTime{ wn: 77, tow:  259202.0 },
                 d_utc: 1.0,
                 is_lse: false,
             },
             /* Jan 1 2017 */
             UtcOffsetTestdata {
-                t: GpsTime::new_unchecked(1930, 16.0),
+                t: GpsTime{ wn: 1930, tow:  16.0 },
                 d_utc: 17.0,
                 is_lse: false,
             },
             UtcOffsetTestdata {
-                t: GpsTime::new_unchecked(1930, 16.5),
+                t: GpsTime{ wn: 1930, tow:  16.5 },
                 d_utc: 17.0,
                 is_lse: false,
             },
             UtcOffsetTestdata {
-                t: GpsTime::new_unchecked(1930, 17.0),
-                d_utc: 17.0,
-                is_lse: true,
-            },
-            UtcOffsetTestdata {
-                t: GpsTime::new_unchecked(1930, 17.5),
+                t: GpsTime{ wn: 1930, tow:  17.0 },
                 d_utc: 17.0,
                 is_lse: true,
             },
             UtcOffsetTestdata {
-                t: GpsTime::new_unchecked(1930, 18.0),
+                t: GpsTime{ wn: 1930, tow:  17.5 },
+                d_utc: 17.0,
+                is_lse: true,
+            },
+            UtcOffsetTestdata {
+                t: GpsTime{ wn: 1930, tow:  18.0 },
                 d_utc: 18.0,
                 is_lse: false,
             },
             UtcOffsetTestdata {
-                t: GpsTime::new_unchecked(1930, 18.5),
+                t: GpsTime{ wn: 1930, tow:  18.5 },
                 d_utc: 18.0,
                 is_lse: false,
             },
             UtcOffsetTestdata {
-                t: GpsTime::new_unchecked(1930, 19.0),
+                t: GpsTime{ wn: 1930, tow:  19.0 },
                 d_utc: 18.0,
                 is_lse: false,
             },
@@ -1087,7 +1224,7 @@ mod tests {
             let d_utc = test_case.t.utc_offset_hardcoded();
             let is_lse = test_case.t.is_leap_second_event_hardcoded();
 
-            assert!(d_utc == test_case.d_utc && is_lse == test_case.is_lse);
+            assert!(d_utc == test_case.d_utc && is_lse == test_case.is_lse, "test_case.t: {:?}, test_case.d_utc: {}, test_case.is_lse: {}, d_utc: {}, is_lse: {}", test_case.t, test_case.d_utc, test_case.is_lse, d_utc, is_lse);
         }
     }
 
@@ -1098,8 +1235,8 @@ mod tests {
             -0.125,
             0.0,
             0.0,
-            &GpsTime::new_unchecked(2080, 0.0),
-            &GpsTime::new_unchecked(2086, 259218.0 - 0.125),
+            &GpsTime{ wn: 2080, tow:  0.0 },
+            &GpsTime{ wn: 2086, tow:  259218.0 - 0.125 },
             18,
             19,
         )
@@ -1110,8 +1247,8 @@ mod tests {
             0.125,
             0.0,
             0.0,
-            &GpsTime::new_unchecked(2080, 0.0),
-            &GpsTime::new_unchecked(2086, 259218.125),
+            &GpsTime{ wn: 2080, tow:  0.0 },
+            &GpsTime{ wn: 2086, tow:  259218.125 },
             18,
             19,
         )
@@ -1122,11 +1259,11 @@ mod tests {
             0.0,
             1e-12,
             0.0,
-            &GpsTime::new_unchecked(2080, 0.0),
-            &GpsTime::new_unchecked(
-                2086,
-                259218.0 + 1e-12 * (6.0 * swiftnav_sys::WEEK_SECS as f64 + 259218.0),
-            ),
+            &GpsTime{ wn: 2080, tow:  0.0 },
+            &GpsTime{
+                wn: 2086,
+                tow: 259218.0 + 1e-12 * (6.0 * consts::WEEK_SECS as f64 + 259218.0),
+            },
             18,
             19,
         )
@@ -1137,11 +1274,11 @@ mod tests {
             0.0,
             -1e-12,
             0.0,
-            &GpsTime::new_unchecked(2080, 0.0),
-            &GpsTime::new_unchecked(
-                2086,
-                259218.0 - 1e-12 * (6.0 * swiftnav_sys::WEEK_SECS as f64 + 259218.0),
-            ),
+            &GpsTime{ wn: 2080, tow:  0.0 },
+            &GpsTime{
+                wn: 2086,
+                tow: 259218.0 - 1e-12 * (6.0 * consts::WEEK_SECS as f64 + 259218.0),
+            },
             18,
             19,
         )
@@ -1159,148 +1296,148 @@ mod tests {
         let test_cases = [
             /* Jan 1 2020 (constant negative UTC offset) */
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.0 - 0.125),
+                t: GpsTime{ wn: 2086, tow:  259217.0 - 0.125 },
                 d_utc: 18.0 - 0.125,
                 is_lse: false,
                 params: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.5 - 0.125),
+                t: GpsTime{ wn: 2086, tow:  259217.5 - 0.125 },
                 d_utc: 18.0 - 0.125,
                 is_lse: false,
                 params: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.0 - 0.125),
+                t: GpsTime{ wn: 2086, tow:  259218.0 - 0.125 },
                 d_utc: 18.0 - 0.125,
                 is_lse: true,
                 params: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.5 - 0.125),
+                t: GpsTime{ wn: 2086, tow:  259218.5 - 0.125 },
                 d_utc: 18.0 - 0.125,
                 is_lse: true,
                 params: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.0 - 0.125),
+                t: GpsTime{ wn: 2086, tow:  259219.0 - 0.125 },
                 d_utc: 19.0 - 0.125,
                 is_lse: false,
                 params: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.5 - 0.125),
+                t: GpsTime{ wn: 2086, tow:  259219.5 - 0.125 },
                 d_utc: 19.0 - 0.125,
                 is_lse: false,
                 params: Some(make_p_neg_offset()),
             },
             /* Jan 1 2020 (constant positive UTC offset) */
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.125),
+                t: GpsTime{ wn: 2086, tow:  259217.125 },
                 d_utc: 18.125,
                 is_lse: false,
                 params: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.5 + 0.125),
+                t: GpsTime{ wn: 2086, tow:  259217.5 + 0.125 },
                 d_utc: 18.125,
                 is_lse: false,
                 params: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.125),
+                t: GpsTime{ wn: 2086, tow:  259218.125 },
                 d_utc: 18.125,
                 is_lse: true,
                 params: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.5 + 0.125),
+                t: GpsTime{ wn: 2086, tow:  259218.5 + 0.125 },
                 d_utc: 18.125,
                 is_lse: true,
                 params: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.125),
+                t: GpsTime{ wn: 2086, tow:  259219.125 },
                 d_utc: 19.125,
                 is_lse: false,
                 params: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.5 + 0.125),
+                t: GpsTime{ wn: 2086, tow:  259219.5 + 0.125 },
                 d_utc: 19.125,
                 is_lse: false,
                 params: Some(make_p_pos_offset()),
             },
             /* Jan 1 2020 (positive UTC linear correction) */
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.0),
+                t: GpsTime{ wn: 2086, tow:  259217.0 },
                 d_utc: 18.0,
                 is_lse: false,
                 params: Some(make_p_pos_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.5),
+                t: GpsTime{ wn: 2086, tow:  259217.5 },
                 d_utc: 18.0,
                 is_lse: false,
                 params: Some(make_p_pos_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.0001),
+                t: GpsTime{ wn: 2086, tow:  259218.0001 },
                 d_utc: 18.0,
                 is_lse: true,
                 params: Some(make_p_pos_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.5),
+                t: GpsTime{ wn: 2086, tow:  259218.5 },
                 d_utc: 18.0,
                 is_lse: true,
                 params: Some(make_p_pos_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.0001),
+                t: GpsTime{ wn: 2086, tow:  259219.0001 },
                 d_utc: 19.0,
                 is_lse: false,
                 params: Some(make_p_pos_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.5),
+                t: GpsTime{ wn: 2086, tow:  259219.5 },
                 d_utc: 19.0,
                 is_lse: false,
                 params: Some(make_p_pos_trend()),
             },
             /* Jan 1 2020 (negative UTC linear correction) */
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.0),
+                t: GpsTime{ wn: 2086, tow:  259217.0 },
                 d_utc: 18.0,
                 is_lse: false,
                 params: Some(make_p_neg_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.5),
+                t: GpsTime{ wn: 2086, tow:  259217.5 },
                 d_utc: 18.0,
                 is_lse: false,
                 params: Some(make_p_neg_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.0),
+                t: GpsTime{ wn: 2086, tow:  259218.0 },
                 d_utc: 18.0,
                 is_lse: true,
                 params: Some(make_p_neg_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.5),
+                t: GpsTime{ wn: 2086, tow:  259218.5 },
                 d_utc: 18.0,
                 is_lse: true,
                 params: Some(make_p_neg_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.0),
+                t: GpsTime{ wn: 2086, tow:  259219.0 },
                 d_utc: 19.0,
                 is_lse: false,
                 params: Some(make_p_neg_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.5),
+                t: GpsTime{ wn: 2086, tow:  259219.5 },
                 d_utc: 19.0,
                 is_lse: false,
                 params: Some(make_p_neg_trend()),
@@ -1322,7 +1459,7 @@ mod tests {
             };
             assert!(
                 (d_utc - test_case.d_utc).abs() < 1e-5,
-                "{} {} {}",
+                "d_utc: {} test_case.d_utc: {} test_case.t.tow: {}",
                 d_utc,
                 test_case.d_utc,
                 test_case.t.tow()
@@ -1373,187 +1510,187 @@ mod tests {
         let test_cases = [
             /* July 1 1981 */
             TestCase {
-                t: GpsTime::new_unchecked(77, 259199.0),
+                t: GpsTime{ wn: 77, tow:  259199.0 },
                 u: UtcExpectation::new(1981, 6, 30, 23, 59, 59.0),
                 p: None,
             },
             TestCase {
-                t: GpsTime::new_unchecked(77, 259199.5),
+                t: GpsTime{ wn: 77, tow:  259199.5 },
                 u: UtcExpectation::new(1981, 6, 30, 23, 59, 59.5),
                 p: None,
             },
             TestCase {
-                t: GpsTime::new_unchecked(77, 259200.0),
+                t: GpsTime{ wn: 77, tow:  259200.0 },
                 u: UtcExpectation::new(1981, 6, 30, 23, 59, 60.0),
                 p: None,
             },
             TestCase {
-                t: GpsTime::new_unchecked(77, 259200.5),
+                t: GpsTime{ wn: 77, tow:  259200.5 },
                 u: UtcExpectation::new(1981, 6, 30, 23, 59, 60.5),
                 p: None,
             },
             TestCase {
-                t: GpsTime::new_unchecked(77, 259201.0),
+                t: GpsTime{ wn: 77, tow:  259201.0 },
                 u: UtcExpectation::new(1981, 7, 01, 00, 00, 00.0),
                 p: None,
             },
             /* Jan 1 2017 */
             TestCase {
-                t: GpsTime::new_unchecked(1930, 16.0),
+                t: GpsTime{ wn: 1930, tow:  16.0 },
                 u: UtcExpectation::new(2016, 12, 31, 23, 59, 59.0),
                 p: None,
             },
             TestCase {
-                t: GpsTime::new_unchecked(1930, 16.5),
+                t: GpsTime{ wn: 1930, tow:  16.5 },
                 u: UtcExpectation::new(2016, 12, 31, 23, 59, 59.5),
                 p: None,
             },
             TestCase {
-                t: GpsTime::new_unchecked(1930, 17.0),
+                t: GpsTime{ wn: 1930, tow:  17.0 },
                 u: UtcExpectation::new(2016, 12, 31, 23, 59, 60.0),
                 p: None,
             },
             TestCase {
-                t: GpsTime::new_unchecked(1930, 17.5),
+                t: GpsTime{ wn: 1930, tow:  17.5 },
                 u: UtcExpectation::new(2016, 12, 31, 23, 59, 60.5),
                 p: None,
             },
             TestCase {
-                t: GpsTime::new_unchecked(1930, 18.0),
+                t: GpsTime{ wn: 1930, tow:  18.0 },
                 u: UtcExpectation::new(2017, 01, 01, 00, 00, 00.0),
                 p: None,
             },
             /* Jan 8 2017 */
             TestCase {
-                t: GpsTime::new_unchecked(1931, 17.0),
+                t: GpsTime{ wn: 1931, tow:  17.0 },
                 u: UtcExpectation::new(2017, 01, 7, 23, 59, 59.0),
                 p: None,
             },
             TestCase {
-                t: GpsTime::new_unchecked(1931, 17.5),
+                t: GpsTime{ wn: 1931, tow:  17.5 },
                 u: UtcExpectation::new(2017, 01, 7, 23, 59, 59.5),
                 p: None,
             },
             TestCase {
-                t: GpsTime::new_unchecked(1931, 18.0 - 6e-11),
+                t: GpsTime{ wn: 1931, tow:  18.0 - 6e-11 },
                 u: UtcExpectation::new(2017, 01, 7, 23, 59, 59.0 + 1.0 - 6e-11),
                 p: None,
             },
             TestCase {
-                t: GpsTime::new_unchecked(1931, 18.0 - 5e-11),
+                t: GpsTime{ wn: 1931, tow:  18.0 - 5e-11 },
                 u: UtcExpectation::new(2017, 01, 8, 00, 00, 00.0),
                 p: None,
             },
             TestCase {
-                t: GpsTime::new_unchecked(1931, 18.0),
+                t: GpsTime{ wn: 1931, tow:  18.0 },
                 u: UtcExpectation::new(2017, 01, 8, 00, 00, 00.0),
                 p: None,
             },
             /* Jan 1 2020 (leap second announced in utc_params_t above, constant
             negative offset) */
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.0 - 0.125),
+                t: GpsTime{ wn: 2086, tow:  259217.0 - 0.125 },
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 59.0),
                 p: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.5 - 0.125),
+                t: GpsTime{ wn: 2086, tow:  259217.5 - 0.125 },
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 59.5),
                 p: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.0 - 0.125),
+                t: GpsTime{ wn: 2086, tow:  259218.0 - 0.125 },
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 60.0),
                 p: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.5 - 0.125),
+                t: GpsTime{ wn: 2086, tow:  259218.5 - 0.125 },
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 60.5),
                 p: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.0 - 0.125),
+                t: GpsTime{ wn: 2086, tow:  259219.0 - 0.125 },
                 u: UtcExpectation::new(2020, 01, 01, 00, 00, 00.0),
                 p: Some(make_p_neg_offset()),
             },
             /* Jan 1 2020 (leap second announced in utc_params_t above, constant
             positive offset) */
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.125),
+                t: GpsTime{ wn: 2086, tow:  259217.125 },
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 59.0),
                 p: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.5 + 0.125),
+                t: GpsTime{ wn: 2086, tow:  259217.5 + 0.125 },
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 59.5),
                 p: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.125),
+                t: GpsTime{ wn: 2086, tow:  259218.125 },
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 60.0),
                 p: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.5 + 0.125),
+                t: GpsTime{ wn: 2086, tow:  259218.5 + 0.125 },
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 60.5),
                 p: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.125),
+                t: GpsTime{ wn: 2086, tow:  259219.125 },
                 u: UtcExpectation::new(2020, 01, 01, 00, 00, 00.0),
                 p: Some(make_p_pos_offset()),
             },
             /* Jan 1 2020 (leap second announced in utc_params_t above, positive UTC
             linear correction) */
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.0),
+                t: GpsTime{ wn: 2086, tow:  259217.0 },
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 59.0),
                 p: Some(make_p_pos_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.5),
+                t: GpsTime{ wn: 2086, tow:  259217.5 },
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 59.5),
                 p: Some(make_p_pos_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.0),
+                t: GpsTime{ wn: 2086, tow:  259218.0 },
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 60.0),
                 p: Some(make_p_pos_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.5),
+                t: GpsTime{ wn: 2086, tow:  259218.5 },
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 60.5),
                 p: Some(make_p_pos_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.00001),
+                t: GpsTime{ wn: 2086, tow:  259219.00001 },
                 u: UtcExpectation::new(2020, 01, 01, 00, 00, 00.0),
                 p: Some(make_p_pos_trend()),
             },
             /* Jan 1 2020 (leap second announced in utc_params_t above, negative UTC
             linear correction) */
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.0),
+                t: GpsTime{ wn: 2086, tow:  259217.0 },
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 59.0),
                 p: Some(make_p_neg_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.5),
+                t: GpsTime{ wn: 2086, tow:  259217.5 },
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 59.5),
                 p: Some(make_p_neg_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.0),
+                t: GpsTime{ wn: 2086, tow:  259218.0 },
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 60.0),
                 p: Some(make_p_neg_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.5),
+                t: GpsTime{ wn: 2086, tow:  259218.5 },
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 60.5),
                 p: Some(make_p_neg_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.0),
+                t: GpsTime{ wn: 2086, tow:  259219.0 },
                 u: UtcExpectation::new(2020, 01, 01, 00, 00, 00.0),
                 p: Some(make_p_neg_trend()),
             },
@@ -1567,11 +1704,11 @@ mod tests {
                 test_case.t.to_utc_hardcoded()
             };
 
-            assert_eq!(u.year(), expected.year);
-            assert_eq!(u.month(), expected.month);
-            assert_eq!(u.day_of_month(), expected.day);
-            assert_eq!(u.hour(), expected.hour);
-            assert_eq!(u.minute(), expected.minute);
+            assert_eq!(u.year(), expected.year, "u.year: {}, expected.year: {}, tow: {}", u.year(), expected.year, test_case.t.tow());
+            assert_eq!(u.month(), expected.month, "u.month: {}, expected.month: {}, tow: {}", u.month(), expected.month, test_case.t.tow());
+            assert_eq!(u.day_of_month(), expected.day, "u.day_of_month: {}, expected.day: {}, tow: {}", u.day_of_month(), expected.day, test_case.t.tow());
+            assert_eq!(u.hour(), expected.hour, "u.hour: {}, expected.hour: {}, tow: {}", u.hour(), expected.hour, test_case.t.tow());
+            assert_eq!(u.minute(), expected.minute, "u.minute: {}, expected.minute: {}, tow: {}", u.minute(), expected.minute, test_case.t.tow());
             assert!(
                 (u.seconds() - expected.second).abs() < 1e-5,
                 "{} {} {}",
@@ -1579,58 +1716,6 @@ mod tests {
                 expected.second,
                 test_case.t.tow()
             );
-        }
-    }
-
-    #[test]
-    fn round_to_epoch() {
-        let soln_freq = 10.0;
-        let epsilon = std::time::Duration::from_secs_f64(1e-5);
-
-        let test_cases = [
-            GpsTime::new_unchecked(1234, 567890.01),
-            GpsTime::new_unchecked(1234, 567890.0501),
-            GpsTime::new_unchecked(1234, 604800.06),
-        ];
-
-        let expectations = [
-            GpsTime::new_unchecked(1234, 567890.00),
-            GpsTime::new_unchecked(1234, 567890.10),
-            GpsTime::new_unchecked(1235, 0.1),
-        ];
-
-        for (test_case, expectation) in test_cases.iter().zip(expectations.iter()) {
-            let rounded = test_case.round_to_epoch(soln_freq);
-
-            let diff = if &rounded >= expectation {
-                rounded - expectation
-            } else {
-                *expectation - rounded
-            };
-            assert!(diff < epsilon);
-        }
-    }
-
-    #[test]
-    fn floor_to_epoch() {
-        let soln_freq = 10.0;
-        let epsilon = std::time::Duration::from_secs_f64(1e-6);
-
-        let test_cases = [
-            GpsTime::new_unchecked(1234, 567890.01),
-            GpsTime::new_unchecked(1234, 567890.0501),
-            GpsTime::new_unchecked(1234, 604800.06),
-        ];
-
-        let expectations = [
-            GpsTime::new_unchecked(1234, 567890.00),
-            GpsTime::new_unchecked(1234, 567890.00),
-            GpsTime::new_unchecked(1235, 0.0),
-        ];
-
-        for (test_case, expectation) in test_cases.iter().zip(expectations.iter()) {
-            let rounded = test_case.floor_to_epoch(soln_freq);
-            assert!((rounded - expectation) < epsilon);
         }
     }
 
@@ -1664,12 +1749,12 @@ mod tests {
         assert_eq!(gal.wn(), 0);
         assert!(gal.tow().abs() < 1e-9);
         let gps = gal.to_gps();
-        assert_eq!(gps.wn(), swiftnav_sys::GAL_WEEK_TO_GPS_WEEK as i16);
+        assert_eq!(gps.wn(), consts::GAL_WEEK_TO_GPS_WEEK as i16);
         assert!(gps.tow().abs() < 1e-9);
 
         assert!(GalTime::new(-1, 0.0).is_err());
         assert!(GalTime::new(0, -1.0).is_err());
-        assert!(GalTime::new(0, swiftnav_sys::WEEK_SECS as f64 + 1.0).is_err());
+        assert!(GalTime::new(0, consts::WEEK_SECS as f64 + 1.0).is_err());
     }
 
     #[test]
@@ -1678,25 +1763,12 @@ mod tests {
         assert_eq!(bds.wn(), 0);
         assert!(bds.tow().abs() < 1e-9);
         let gps = bds.to_gps();
-        assert_eq!(gps.wn(), swiftnav_sys::BDS_WEEK_TO_GPS_WEEK as i16);
-        assert!((gps.tow() - swiftnav_sys::BDS_SECOND_TO_GPS_SECOND as f64).abs() < 1e-9);
+        assert_eq!(gps.wn(), consts::BDS_WEEK_TO_GPS_WEEK as i16);
+        assert!((gps.tow() - consts::BDS_SECOND_TO_GPS_SECOND).abs() < 1e-9);
 
         assert!(BdsTime::new(-1, 0.0).is_err());
         assert!(BdsTime::new(0, -1.0).is_err());
-        assert!(BdsTime::new(0, swiftnav_sys::WEEK_SECS as f64 + 1.0).is_err());
-    }
-
-    #[test]
-    fn gps_to_glo() {
-        let glo = GLO_TIME_START.to_glo_hardcoded();
-        assert_eq!(glo.nt(), 1);
-        assert_eq!(glo.n4(), 1);
-        assert_eq!(glo.h(), 0);
-        assert_eq!(glo.m(), 0);
-        assert!(glo.s().abs() < 1e-9);
-        let gps = glo.to_gps_hardcoded();
-        assert_eq!(gps.wn(), swiftnav_sys::GLO_EPOCH_WN as i16);
-        assert!((gps.tow() - swiftnav_sys::GLO_EPOCH_TOW as f64).abs() < 1e-9);
+        assert!(BdsTime::new(0, consts::WEEK_SECS as f64 + 1.0).is_err());
     }
 
     #[test]
