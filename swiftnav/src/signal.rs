@@ -19,15 +19,19 @@ use std::fmt;
 pub mod consts {
     use crate::math::compile_time_max_u16;
 
-    /* Number of satellites in each constellation. */
+    /// Number of satellites in the GPS constellation.
     pub const NUM_SATS_GPS: u16 = 32;
+    /// Number of satellites in the SBAS constellation.
     pub const NUM_SATS_SBAS: u16 = 19;
-    /// Number of GLO SV.
-    /// refer to https://igscb.jpl.nasa.gov/pipermail/igsmail/2012/007771.html and
-    /// https://igscb.jpl.nasa.gov/pipermail/igsmail/2015/008391.html */
+    /// Number of satellites in the GLONASS constellation.
+    /// refer to <https://igscb.jpl.nasa.gov/pipermail/igsmail/2012/007771.html> and
+    /// <https://igscb.jpl.nasa.gov/pipermail/igsmail/2015/008391.html>
     pub const NUM_SATS_GLO: u16 = 28;
+    /// Number of satellites in the BeiDou constellation.
     pub const NUM_SATS_BDS: u16 = 64;
+    /// Number of satellites in the Galileo constellation.
     pub const NUM_SATS_GAL: u16 = 36;
+    /// Number of satellites in the QZSS constellation.
     pub const NUM_SATS_QZS: u16 = 10;
 
     pub const NUM_SATS: u16 =
@@ -198,6 +202,8 @@ impl Constellation {
     }
 }
 
+/// An error encountered when converting an integer into a [`Constellation`]
+/// and no constellation is associated with the given value
 #[derive(thiserror::Error, Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 #[error("Invalid integer for GNSS Constellation ({0})")]
 pub struct InvalidConstellationInt(u8);
@@ -454,6 +460,7 @@ impl Code {
         }
     }
 
+    /// Checks if this ia a GPS code
     pub fn is_gps(&self) -> bool {
         self.to_constellation() == Constellation::Gps
     }
@@ -479,6 +486,8 @@ impl Code {
     }
 }
 
+/// An error encountered when converting an integer into a [`Code`]
+/// and no code is associated with the given value
 #[derive(thiserror::Error, Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 #[error("Invalid integer for GNSS Code ({0})")]
 pub struct InvalidCodeInt(u8);
@@ -563,7 +572,8 @@ pub struct GnssSignal{
     sat: u16,
 }
 
-/// The satellite number is not in the valid range for the associated constellation
+/// An error encountered when converting an integer into a [`GnssSignal`]
+/// and satellite number is not in the valid range for the associated constellation
 #[derive(thiserror::Error, Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
 #[error("The satellite number is not valid for the associated constellation ({0})")]
 pub struct InvalidSatellite(u16);
@@ -578,15 +588,17 @@ impl GnssSignal {
         }
     }
 
+    /// Get the satellite PRN of the signal
     pub fn sat(&self) -> u16 {
         self.sat
     }
 
+    /// Get the [`Code`] of the signal
     pub fn code(&self) -> Code {
         self.code
     }
 
-    /// Get the constellation of the signal
+    /// Get the [`Constellation`] of the signal
     pub fn to_constellation(&self) -> Constellation {
         self.code.to_constellation()
     }

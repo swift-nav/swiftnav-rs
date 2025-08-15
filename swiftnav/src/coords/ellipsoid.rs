@@ -104,10 +104,10 @@ pub trait Ellipsoid {
             // bears more thought?
 
             if s > c {
-                c = c / s;
+                c /= s;
                 s = 1.0;
             } else {
-                s = s / c;
+                s /= c;
                 c = 1.0;
             }
 
@@ -180,7 +180,8 @@ fn ecef2ned_matrix<T: Into<LLHRadians>>(llh: T) -> Matrix3<f64> {
     )
 }
 
-/// \defgroup WGS84_params WGS84 Parameters
+/// WGS84 Parameters
+///
 /// Parameters defining the WGS84 ellipsoid. The ellipsoid is defined in terms
 /// of the semi-major axis and the inverse flattening. We also calculate some
 /// derived parameters which are useful for the implementation of the coordinate
@@ -188,6 +189,19 @@ fn ecef2ned_matrix<T: Into<LLHRadians>>(llh: T) -> Matrix3<f64> {
 pub struct WGS84;
 
 impl Ellipsoid for WGS84 {
-    const A: f64 = 6378137.0;
+    const A: f64 = 6_378_137.0;
     const IF: f64 = 298.257_223_563;
+}
+
+/// GRS80 Parameters
+///
+/// Parameters defining the GRS80 ellipsoid. The ellipsoid is defined in terms
+/// of the semi-major axis and 3 physical constants making the inverse flattening
+/// a derived value. We use the calulated value of the inverse flattening here as
+/// if it were a defining value.
+pub struct GRS80;
+
+impl Ellipsoid for GRS80 {
+    const A: f64 = 6_378_137.0;
+    const IF: f64 = 298.257_222_100_882_7;
 }
