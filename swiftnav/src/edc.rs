@@ -14,15 +14,15 @@
 //!
 //! # Examples
 //!
-//! To generate a CRC value in one shot you can simply give the [`crc24q`]
+//! To generate a CRC value in one shot you can simply give the [`compute_crc24q`]
 //! function all of the data as a slice of bytes and the initial value:
 //!
 //! ```
-//! # use swiftnav::edc::crc24q;
+//! # use swiftnav::edc::compute_crc24q;
 //! let msg_data = vec![0xD3, 0x00, 0x13, 0x3E, 0xD7, 0xD3, 0x02, 0x02, 0x98, 0x0E, 0xDE, 0xEF, 0x34, 0xB4, 0xBD, 0x62, 0xAC, 0x09, 0x41, 0x98, 0x6F, 0x33];
 //! let init = 0;
 //!
-//! let crc = crc24q(&msg_data, init);
+//! let crc = compute_crc24q(&msg_data, init);
 //! assert_eq!(crc, 0x00360B98);
 //! ```
 //!
@@ -30,13 +30,13 @@
 //! value for a subsequent invokation:
 //!
 //! ```
-//! # use swiftnav::edc::crc24q;
+//! # use swiftnav::edc::compute_crc24q;
 //! let block1 = vec![0xD3, 0x00, 0x13, 0x3E, 0xD7, 0xD3, 0x02, 0x02, 0x98, 0x0E];
 //! let block2 = vec![0xDE, 0xEF, 0x34, 0xB4, 0xBD, 0x62, 0xAC, 0x09, 0x41, 0x98, 0x6F, 0x33];
 //! let init = 0;
 //!
-//! let intermediate = crc24q(&block1, init);
-//! let crc = crc24q(&block2, intermediate);
+//! let intermediate = compute_crc24q(&block1, init);
+//! let crc = compute_crc24q(&block2, intermediate);
 //! assert_eq!(crc, 0x00360B98);
 //! ```
 
@@ -88,19 +88,13 @@ const CRC24Q_TABLE: [u32; 256] = [
 ///
 /// Only the lower 24 bits of the initial value are used!
 #[must_use]
-pub fn crc24q(buf: &[u8], initial_value: u32) -> u32 {
+pub fn compute_crc24q(buf: &[u8], initial_value: u32) -> u32 {
     let mut crc = initial_value & 0xFFFFFF;
     for &byte in buf {
         let index = ((crc >> 16) ^ byte as u32) as usize & 0xFF;
         crc = ((crc << 8) & 0xFFFFFF) ^ CRC24Q_TABLE[index];
     }
     crc
-}
-
-#[deprecated(since = "0.11.0", note = "Use edc::crc24q instead")]
-#[must_use]
-pub fn compute_crc24q(buf: &[u8], initial_value: u32) -> u32 {
-    crc24q(buf, initial_value)
 }
 
 #[cfg(test)]
@@ -111,14 +105,14 @@ mod tests {
 
     #[test]
     fn test_crc24q() {
-        let crc = crc24q(&TEST_DATA[0..0], 0);
+        let crc = compute_crc24q(&TEST_DATA[0..0], 0);
         assert!(
             crc == 0,
             "CRC of empty buffer with starting value 0 should be 0, not {}",
             crc
         );
 
-        let crc = crc24q(&TEST_DATA[0..0], 22);
+        let crc = compute_crc24q(&TEST_DATA[0..0], 22);
         assert!(
             crc == 22,
             "CRC of empty buffer with starting value 22 should be 22, not {}",
@@ -127,7 +121,7 @@ mod tests {
 
         /* Test value taken from python crcmod package tests, see:
          * http://crcmod.sourceforge.net/crcmod.predefined.html */
-        let crc = crc24q(TEST_DATA, 0xB704CE);
+        let crc = compute_crc24q(TEST_DATA, 0xB704CE);
         assert!(
             crc == 0x21CF02,
             "CRC of \"123456789\" with init value 0xB704CE should be 0x21CF02, not {}",
