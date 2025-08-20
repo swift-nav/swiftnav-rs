@@ -100,8 +100,25 @@ pub fn compute_crc24q(buf: &[u8], initial_value: u32) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use proptest::prelude::*;
 
     const TEST_DATA: &[u8] = "123456789".as_bytes();
+
+    /// Helper function to append a CRC-24Q value as 3 bytes (big-endian) to a buffer
+    fn append_crc24q(data: &mut Vec<u8>, crc: u32) {
+        data.push((crc >> 16) as u8);
+        data.push((crc >> 8) as u8);
+        data.push(crc as u8);
+    }
+
+    /// Helper function to flip a single bit in the data at the given bit position
+    fn flip_bit(data: &mut [u8], bit_position: usize) {
+        if !data.is_empty() {
+            let byte_index = (bit_position / 8) % data.len();
+            let bit_index = bit_position % 8;
+            data[byte_index] ^= 1 << bit_index;
+        }
+    }
 
     #[test]
     fn test_crc24q() {
@@ -127,5 +144,120 @@ mod tests {
             "CRC of \"123456789\" with init value 0xB704CE should be 0x21CF02, not {}",
             crc
         );
+    }
+
+    // Property-based tests using proptest
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1000))]
+
+        /// Property: Appending the CRC to data and recalculating should yield zero.
+        /// This is the fundamental property used for error detection in protocols.
+        #[test]
+        fn prop_crc_append_yields_zero(data in prop::collection::vec(any::<u8>(), 0..1000)) {
+            let crc = compute_crc24q(&data, 0);
+            let mut data_with_crc = data.clone();
+            append_crc24q(&mut data_with_crc, crc);
+
+            let verification_crc = compute_crc24q(&data_with_crc, 0);
+            prop_assert_eq!(verification_crc, 0,
+                "CRC of data with appended CRC should be 0, got 0x{:06X} for data length {}",
+                verification_crc, data.len());
+        }
+
+        /// Property: CRC calculation is deterministic - same input always produces same output.
+        #[test]
+        fn prop_crc_is_deterministic(data in prop::collection::vec(any::<u8>(), 0..1000), init in any::<u32>()) {
+            let crc1 = compute_crc24q(&data, init);
+            let crc2 = compute_crc24q(&data, init);
+            prop_assert_eq!(crc1, crc2, "CRC calculation should be deterministic");
+        }
+
+        /// Property: CRC result always stays within 24-bit bounds (0x000000 to 0xFFFFFF).
+        #[test]
+        fn prop_crc_stays_within_24_bits(data in prop::collection::vec(any::<u8>(), 0..1000), init in any::<u32>()) {
+            let crc = compute_crc24q(&data, init);
+            prop_assert!(crc <= 0xFFFFFF, "CRC result 0x{:08X} exceeds 24-bit maximum", crc);
+        }
+
+        /// Property: Incremental CRC calculation equals full calculation.
+        /// CRC(data1 + data2) should equal CRC(data2, initial=CRC(data1))
+        #[test]
+        fn prop_crc_incremental_calculation(
+            data1 in prop::collection::vec(any::<u8>(), 0..500),
+            data2 in prop::collection::vec(any::<u8>(), 0..500),
+            init in any::<u32>()
+        ) {
+            // Calculate CRC on combined data
+            let mut combined_data = data1.clone();
+            combined_data.extend_from_slice(&data2);
+            let full_crc = compute_crc24q(&combined_data, init);
+
+            // Calculate CRC incrementally
+            let intermediate_crc = compute_crc24q(&data1, init);
+            let incremental_crc = compute_crc24q(&data2, intermediate_crc);
+
+            prop_assert_eq!(full_crc, incremental_crc,
+                "Incremental CRC calculation should match full calculation");
+        }
+
+        /// Property: Initial values are properly masked to 24 bits.
+        /// init and (init & 0xFFFFFF) should produce the same result.
+        #[test]
+        fn prop_crc_initial_value_masked(data in prop::collection::vec(any::<u8>(), 0..100), init in any::<u32>()) {
+            let crc1 = compute_crc24q(&data, init);
+            let crc2 = compute_crc24q(&data, init & 0xFFFFFF);
+            prop_assert_eq!(crc1, crc2,
+                "CRC with init 0x{:08X} should equal CRC with masked init 0x{:06X}",
+                init, init & 0xFFFFFF);
+        }
+
+        /// Property: Single bit errors are detected (CRC changes).
+        /// Flipping any single bit in non-empty data should change the CRC.
+        #[test]
+        fn prop_crc_detects_single_bit_errors(
+            mut data in prop::collection::vec(any::<u8>(), 1..100),
+            bit_position in any::<usize>(),
+            init in any::<u32>()
+        ) {
+            let original_crc = compute_crc24q(&data, init);
+            flip_bit(&mut data, bit_position);
+            let modified_crc = compute_crc24q(&data, init);
+
+            prop_assert_ne!(original_crc, modified_crc,
+                "CRC should change when a bit is flipped (original: 0x{:06X}, modified: 0x{:06X})",
+                original_crc, modified_crc);
+        }
+
+        /// Property: CRC calculation is associative when split into arbitrary chunks.
+        #[test]
+        fn prop_crc_associative_chunks(
+            data in prop::collection::vec(any::<u8>(), 1..200),
+            chunk_sizes in prop::collection::vec(1usize..50, 1..10),
+            init in any::<u32>()
+        ) {
+            // Calculate CRC on full data
+            let full_crc = compute_crc24q(&data, init);
+
+            // Calculate CRC in chunks
+            let mut current_crc = init;
+            let mut pos = 0;
+
+            for &chunk_size in &chunk_sizes {
+                if pos >= data.len() {
+                    break;
+                }
+                let end = std::cmp::min(pos + chunk_size, data.len());
+                current_crc = compute_crc24q(&data[pos..end], current_crc);
+                pos = end;
+            }
+
+            // Process any remaining data
+            if pos < data.len() {
+                current_crc = compute_crc24q(&data[pos..], current_crc);
+            }
+
+            prop_assert_eq!(full_crc, current_crc,
+                "CRC calculated in chunks should match full calculation");
+        }
     }
 }
