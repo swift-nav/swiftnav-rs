@@ -252,7 +252,7 @@ impl GpsTime {
         let dt = self.diff(&params.t_lse());
 
         /* True only when self is during the leap second event */
-        dt >= 0.0 && dt < 1.0
+        (0.0..1.0).contains(&dt)
     }
 
     /// Checks to see if this point in time is a UTC leap second event using the
@@ -271,7 +271,7 @@ impl GpsTime {
                 /* time is past the last known leap second event */
                 return false;
             }
-            if dt >= 0.0 && dt < 1.0 {
+            if (0.0..1.0).contains(&dt) {
                 /* time is during the leap second event */
                 return true;
             }
@@ -568,8 +568,8 @@ mod tests {
         assert!(GpsTime::new(-1, -1.0).is_err());
         assert!(GpsTime::new(-1, -1.0).is_err());
         assert!(GpsTime::new(12, WEEK.as_secs_f64()).is_err());
-        assert!(GpsTime::new(12, std::f64::NAN).is_err());
-        assert!(GpsTime::new(12, std::f64::INFINITY).is_err());
+        assert!(GpsTime::new(12, f64::NAN).is_err());
+        assert!(GpsTime::new(12, f64::INFINITY).is_err());
     }
 
     #[test]
@@ -674,7 +674,7 @@ mod tests {
         assert_eq!(gal.wn(), 0);
         assert!(gal.tow().abs() < 1e-9);
         let gps = gal.to_gps();
-        assert_eq!(gps.wn(), consts::GAL_WEEK_TO_GPS_WEEK as i16);
+        assert_eq!(gps.wn(), consts::GAL_WEEK_TO_GPS_WEEK);
         assert!(gps.tow().abs() < 1e-9);
 
         assert!(GalTime::new(-1, 0.0).is_err());
@@ -688,7 +688,7 @@ mod tests {
         assert_eq!(bds.wn(), 0);
         assert!(bds.tow().abs() < 1e-9);
         let gps = bds.to_gps();
-        assert_eq!(gps.wn(), consts::BDS_WEEK_TO_GPS_WEEK as i16);
+        assert_eq!(gps.wn(), consts::BDS_WEEK_TO_GPS_WEEK);
         assert!((gps.tow() - consts::BDS_SECOND_TO_GPS_SECOND).abs() < 1e-9);
 
         assert!(BdsTime::new(-1, 0.0).is_err());

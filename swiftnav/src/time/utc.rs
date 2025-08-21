@@ -792,7 +792,7 @@ mod tests {
             },
             TestCase {
                 t: GpsTime::new_unchecked(77, 259201.0),
-                u: UtcExpectation::new(1981, 7, 01, 00, 00, 00.0),
+                u: UtcExpectation::new(1981, 7, 1, 00, 00, 00.0),
                 p: None,
             },
             /* Jan 1 2017 */
@@ -818,33 +818,33 @@ mod tests {
             },
             TestCase {
                 t: GpsTime::new_unchecked(1930, 18.0),
-                u: UtcExpectation::new(2017, 01, 01, 00, 00, 00.0),
+                u: UtcExpectation::new(2017, 1, 1, 00, 00, 00.0),
                 p: None,
             },
             /* Jan 8 2017 */
             TestCase {
                 t: GpsTime::new_unchecked(1931, 17.0),
-                u: UtcExpectation::new(2017, 01, 7, 23, 59, 59.0),
+                u: UtcExpectation::new(2017, 1, 7, 23, 59, 59.0),
                 p: None,
             },
             TestCase {
                 t: GpsTime::new_unchecked(1931, 17.5),
-                u: UtcExpectation::new(2017, 01, 7, 23, 59, 59.5),
+                u: UtcExpectation::new(2017, 1, 7, 23, 59, 59.5),
                 p: None,
             },
             TestCase {
                 t: GpsTime::new_unchecked(1931, 18.0 - 6e-11),
-                u: UtcExpectation::new(2017, 01, 7, 23, 59, 59.0 + 1.0 - 6e-11),
+                u: UtcExpectation::new(2017, 1, 7, 23, 59, 59.0 + 1.0 - 6e-11),
                 p: None,
             },
             TestCase {
                 t: GpsTime::new_unchecked(1931, 18.0 - 5e-11),
-                u: UtcExpectation::new(2017, 01, 8, 00, 00, 00.0),
+                u: UtcExpectation::new(2017, 1, 8, 00, 00, 00.0),
                 p: None,
             },
             TestCase {
                 t: GpsTime::new_unchecked(1931, 18.0),
-                u: UtcExpectation::new(2017, 01, 8, 00, 00, 00.0),
+                u: UtcExpectation::new(2017, 1, 8, 00, 00, 00.0),
                 p: None,
             },
             /* Jan 1 2020 (leap second announced in utc_params_t above, constant
@@ -871,7 +871,7 @@ mod tests {
             },
             TestCase {
                 t: GpsTime::new_unchecked(2086,  259219.0 - 0.125),
-                u: UtcExpectation::new(2020, 01, 01, 00, 00, 00.0),
+                u: UtcExpectation::new(2020, 1, 1, 00, 00, 00.0),
                 p: Some(make_p_neg_offset()),
             },
             /* Jan 1 2020 (leap second announced in utc_params_t above, constant
@@ -898,7 +898,7 @@ mod tests {
             },
             TestCase {
                 t: GpsTime::new_unchecked(2086, 259219.125),
-                u: UtcExpectation::new(2020, 01, 01, 00, 00, 00.0),
+                u: UtcExpectation::new(2020, 1, 1, 00, 00, 00.0),
                 p: Some(make_p_pos_offset()),
             },
             /* Jan 1 2020 (leap second announced in utc_params_t above, positive UTC
@@ -925,7 +925,7 @@ mod tests {
             },
             TestCase {
                 t: GpsTime::new_unchecked(2086, 259219.00001),
-                u: UtcExpectation::new(2020, 01, 01, 00, 00, 00.0),
+                u: UtcExpectation::new(2020, 1, 1, 00, 00, 00.0),
                 p: Some(make_p_pos_trend()),
             },
             /* Jan 1 2020 (leap second announced in utc_params_t above, negative UTC
@@ -952,7 +952,7 @@ mod tests {
             },
             TestCase {
                 t: GpsTime::new_unchecked(2086, 259219.0),
-                u: UtcExpectation::new(2020, 01, 01, 00, 00, 00.0),
+                u: UtcExpectation::new(2020, 1, 1, 00, 00, 00.0),
                 p: Some(make_p_neg_trend()),
             },
         ];

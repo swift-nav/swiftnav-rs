@@ -225,7 +225,7 @@ mod tests {
     /* Semi-major axis. */
     const EARTH_A: f64 = 6378137.0;
     /* Semi-minor axis. */
-    const EARTH_B: f64 = 6356752.31424517929553985595703125;
+    const EARTH_B: f64 = 6_356_752.314_245_179;
 
     const ECEF_VALUES: [ECEF; 10] = [
         ECEF::from_array(&[EARTH_A, 0.0, 0.0]),

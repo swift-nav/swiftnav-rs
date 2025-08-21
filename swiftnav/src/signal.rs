@@ -1036,12 +1036,12 @@ mod tests {
         let first = consts::GPS_FIRST_PRN;
         let last = consts::GPS_FIRST_PRN + consts::NUM_SATS_GPS;
         for sat in (first - 1)..(last + 2) {
-            let result = GnssSignal::new(sat as u16, Code::GpsL1ca);
+            let result = GnssSignal::new(sat, Code::GpsL1ca);
             if sat < first || sat >= last {
                 assert!(result.is_err());
                 assert_eq!(
                     result.unwrap_err(),
-                    InvalidSatellite(sat as u16)
+                    InvalidSatellite(sat)
                 );
             } else {
                 assert!(result.is_ok());
@@ -1051,12 +1051,12 @@ mod tests {
         let first = consts::SBAS_FIRST_PRN;
         let last = consts::SBAS_FIRST_PRN + consts::NUM_SATS_SBAS;
         for sat in (first - 1)..(last + 2) {
-            let result = GnssSignal::new(sat as u16, Code::SbasL1ca);
+            let result = GnssSignal::new(sat, Code::SbasL1ca);
             if sat < first || sat >= last {
                 assert!(result.is_err());
                 assert_eq!(
                     result.unwrap_err(),
-                    InvalidSatellite(sat as u16)
+                    InvalidSatellite(sat)
                 );
             } else {
                 assert!(result.is_ok());
@@ -1066,12 +1066,12 @@ mod tests {
         let first = consts::GLO_FIRST_PRN;
         let last = consts::GLO_FIRST_PRN + consts::NUM_SATS_GLO;
         for sat in (first - 1)..(last + 2) {
-            let result = GnssSignal::new(sat as u16, Code::GloL1of);
+            let result = GnssSignal::new(sat, Code::GloL1of);
             if sat < first || sat >= last {
                 assert!(result.is_err());
                 assert_eq!(
                     result.unwrap_err(),
-                    InvalidSatellite(sat as u16)
+                    InvalidSatellite(sat)
                 );
             } else {
                 assert!(result.is_ok());
@@ -1081,12 +1081,12 @@ mod tests {
         let first = consts::BDS_FIRST_PRN;
         let last = consts::BDS_FIRST_PRN + consts::NUM_SATS_BDS;
         for sat in (first - 1)..(last + 2) {
-            let result = GnssSignal::new(sat as u16, Code::Bds2B1);
+            let result = GnssSignal::new(sat, Code::Bds2B1);
             if sat < first || sat >= last {
                 assert!(result.is_err());
                 assert_eq!(
                     result.unwrap_err(),
-                    InvalidSatellite(sat as u16)
+                    InvalidSatellite(sat)
                 );
             } else {
                 assert!(result.is_ok());
@@ -1096,12 +1096,12 @@ mod tests {
         let first = consts::GAL_FIRST_PRN;
         let last = consts::GAL_FIRST_PRN + consts::NUM_SATS_GAL;
         for sat in (first - 1)..(last + 2) {
-            let result = GnssSignal::new(sat as u16, Code::GalE1b);
+            let result = GnssSignal::new(sat, Code::GalE1b);
             if sat < first || sat >= last {
                 assert!(result.is_err());
                 assert_eq!(
                     result.unwrap_err(),
-                    InvalidSatellite(sat as u16)
+                    InvalidSatellite(sat)
                 );
             } else {
                 assert!(result.is_ok());
@@ -1111,12 +1111,12 @@ mod tests {
         let first = consts::QZS_FIRST_PRN;
         let last = consts::QZS_FIRST_PRN + consts::NUM_SATS_QZS;
         for sat in (first - 1)..(last + 2) {
-            let result = GnssSignal::new(sat as u16, Code::QzsL1ca);
+            let result = GnssSignal::new(sat, Code::QzsL1ca);
             if sat < first || sat >= last {
                 assert!(result.is_err());
                 assert_eq!(
                     result.unwrap_err(),
-                    InvalidSatellite(sat as u16)
+                    InvalidSatellite(sat)
                 );
             } else {
                 assert!(result.is_ok());
