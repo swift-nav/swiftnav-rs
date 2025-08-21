@@ -1,5 +1,8 @@
-use std::{ops::{Add, AddAssign, Sub, SubAssign}, time::Duration};
-use crate::time::{consts, MJD, UTC_LEAPS, UtcTime, UtcParams, WEEK};
+use crate::time::{consts, UtcParams, UtcTime, MJD, UTC_LEAPS, WEEK};
+use std::{
+    ops::{Add, AddAssign, Sub, SubAssign},
+    time::Duration,
+};
 
 /// Representation of GPS Time
 #[derive(Debug, Copy, Clone)]
@@ -11,11 +14,10 @@ pub struct GpsTime {
 }
 
 /// GPS timestamp of the start of Galileo time
-pub const GAL_TIME_START: GpsTime =
-    GpsTime {
-        wn: consts::GAL_WEEK_TO_GPS_WEEK,
-        tow: consts::GAL_SECOND_TO_GPS_SECOND,
-    };
+pub const GAL_TIME_START: GpsTime = GpsTime {
+    wn: consts::GAL_WEEK_TO_GPS_WEEK,
+    tow: consts::GAL_SECOND_TO_GPS_SECOND,
+};
 
 /// GPS timestamp of the start of Beidou time
 pub const BDS_TIME_START: GpsTime = GpsTime {
@@ -47,7 +49,7 @@ impl GpsTime {
         } else if !tow.is_finite() || tow < 0. || tow >= WEEK.as_secs_f64() {
             Err(InvalidGpsTime::InvalidTOW(tow))
         } else {
-            Ok(GpsTime{ wn, tow })
+            Ok(GpsTime { wn, tow })
         }
     }
 
@@ -55,8 +57,16 @@ impl GpsTime {
         GpsTime { wn, tow }
     }
 
-    /// Makes a new GPS time object from a date and time, using 
-    pub fn from_date(year: u16, month: u8, day: u8, hour: u8, minute: u8, seconds: f64, utc_params: &UtcParams) -> GpsTime {
+    /// Makes a new GPS time object from a date and time, using
+    pub fn from_date(
+        year: u16,
+        month: u8,
+        day: u8,
+        hour: u8,
+        minute: u8,
+        seconds: f64,
+        utc_params: &UtcParams,
+    ) -> GpsTime {
         MJD::from_date(year, month, day, hour, minute, seconds).to_gps(utc_params)
     }
 
@@ -66,7 +76,14 @@ impl GpsTime {
     ///
     /// The hard coded list of leap seconds will get out of date, it is
     /// preferable to use [`GpsTime::from_date()`] with the newest set of UTC parameters
-    pub fn from_date_hardcoded(year: u16, month: u8, day: u8, hour: u8, minute: u8, seconds: f64) -> GpsTime {
+    pub fn from_date_hardcoded(
+        year: u16,
+        month: u8,
+        day: u8,
+        hour: u8,
+        minute: u8,
+        seconds: f64,
+    ) -> GpsTime {
         MJD::from_date(year, month, day, hour, minute, seconds).to_gps_hardcoded()
     }
 
@@ -82,7 +99,10 @@ impl GpsTime {
 
     /// Checks if the stored time is valid
     pub fn is_valid(&self) -> bool {
-        self.tow.is_finite() && self.tow >= 0.0 && self.tow < consts::WEEK_SECS as f64 && self.wn >= 0
+        self.tow.is_finite()
+            && self.tow >= 0.0
+            && self.tow < consts::WEEK_SECS as f64
+            && self.wn >= 0
     }
 
     fn normalize(&mut self) {
@@ -119,20 +139,28 @@ impl GpsTime {
         // Is it during a (positive) leap second event
         // Get the UTC offset at the time we're converting
         let (is_lse, dt_utc) = params.map_or_else(
-            || (self.is_leap_second_event_hardcoded(), self.gps_utc_offset_hardcoded()),
-            |p| (self.is_leap_second_event(p), self.gps_utc_offset(p))
+            || {
+                (
+                    self.is_leap_second_event_hardcoded(),
+                    self.gps_utc_offset_hardcoded(),
+                )
+            },
+            |p| (self.is_leap_second_event(p), self.gps_utc_offset(p)),
         );
 
         let mut tow_utc = self.tow - dt_utc;
 
         if is_lse {
             /* positive leap second event ongoing, so we are at 23:59:60.xxxx
-            * subtract one second from time for now to make the conversion
-            * into yyyy/mm/dd HH:MM:SS.sssss format, and add it back later */
+             * subtract one second from time for now to make the conversion
+             * into yyyy/mm/dd HH:MM:SS.sssss format, and add it back later */
             tow_utc -= 1.0;
         }
 
-        let mut t_u = GpsTime{ wn: self.wn, tow: tow_utc };
+        let mut t_u = GpsTime {
+            wn: self.wn,
+            tow: tow_utc,
+        };
         t_u.normalize();
 
         /* break the time into components */
@@ -178,7 +206,8 @@ impl GpsTime {
         let dt = self.diff(&utc_params.tot());
 
         /* The polynomial UTC to GPS correction */
-        let mut dt_utc: f64 = utc_params.a0() + (utc_params.a1() * dt) + (utc_params.a2() * dt * dt);
+        let mut dt_utc: f64 =
+            utc_params.a0() + (utc_params.a1() * dt) + (utc_params.a2() * dt * dt);
 
         /* the new UTC offset takes effect after the leap second event */
         if self.diff(&utc_params.t_lse()) >= 1.0 {
@@ -248,7 +277,7 @@ impl GpsTime {
     /// Checks to see if this point in time is a UTC leap second event
     pub fn is_leap_second_event(&self, params: &UtcParams) -> bool {
         /* the UTC offset takes effect exactly 1 second after the start of
-        * the (positive) leap second event */
+         * the (positive) leap second event */
         let dt = self.diff(&params.t_lse());
 
         /* True only when self is during the leap second event */
@@ -347,9 +376,9 @@ impl GpsTime {
     }
 
     /// Converts the GPS time into a fractional year
-    /// 
+    ///
     /// # Notes
-    /// 
+    ///
     /// A fractional year is a decimal representation of the date. For example
     /// January 1, 2025 has a fractional year value of $2025.0$, while January
     /// 30, 2025 is 30 days into the year so has a fractional year value of
@@ -359,11 +388,10 @@ impl GpsTime {
         utc.to_fractional_year()
     }
 
-
     /// Converts the GPS time into a fractional year
-    /// 
+    ///
     /// # Notes
-    /// 
+    ///
     /// A fractional year is a decimal representation of the date. For example
     /// January 1, 2025 has a fractional year value of $2025.0$, while January
     /// 30, 2025 is 30 days into the year so has a fractional year value of

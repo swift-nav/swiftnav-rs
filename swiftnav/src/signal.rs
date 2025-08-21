@@ -43,7 +43,10 @@ pub mod consts {
             NUM_SATS_SBAS,
             compile_time_max_u16(
                 NUM_SATS_GLO,
-                compile_time_max_u16(NUM_SATS_BDS, compile_time_max_u16(NUM_SATS_QZS, NUM_SATS_GAL)),
+                compile_time_max_u16(
+                    NUM_SATS_BDS,
+                    compile_time_max_u16(NUM_SATS_QZS, NUM_SATS_GAL),
+                ),
             ),
         ),
     );
@@ -56,8 +59,12 @@ pub mod consts {
     pub const NUM_CODES_QZS: u16 = 11;
     pub const NUM_CODES_GAL: u16 = 16;
 
-    pub const NUM_CODES: u16 =
-        NUM_CODES_GPS + NUM_CODES_SBAS + NUM_CODES_GLO + NUM_CODES_BDS + NUM_CODES_GAL + NUM_CODES_QZS;
+    pub const NUM_CODES: u16 = NUM_CODES_GPS
+        + NUM_CODES_SBAS
+        + NUM_CODES_GLO
+        + NUM_CODES_BDS
+        + NUM_CODES_GAL
+        + NUM_CODES_QZS;
 
     /// Max number of GLO frequency slot, correspond to frequency slot 6
     pub const GLO_MAX_FCN: u16 = 14;
@@ -154,7 +161,19 @@ pub mod consts {
 }
 
 /// GNSS satellite constellations
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, strum::Display, strum::EnumString, strum::IntoStaticStr)]
+#[derive(
+    Debug,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    Hash,
+    strum::Display,
+    strum::EnumString,
+    strum::IntoStaticStr,
+)]
 #[strum(serialize_all = "UPPERCASE")]
 pub enum Constellation {
     /// GPS
@@ -224,7 +243,19 @@ impl std::convert::TryFrom<u8> for Constellation {
 }
 
 /// Code identifiers
-#[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash, strum::Display, strum::EnumString, strum::IntoStaticStr)]
+#[derive(
+    Debug,
+    Copy,
+    Clone,
+    Ord,
+    PartialOrd,
+    Eq,
+    PartialEq,
+    Hash,
+    strum::Display,
+    strum::EnumString,
+    strum::IntoStaticStr,
+)]
 pub enum Code {
     #[strum(to_string = "GPS L1CA")]
     /// GPS L1CA: BPSK(1)
@@ -560,14 +591,14 @@ impl std::convert::TryFrom<u8> for Code {
             61 => Ok(Code::AuxGal),
             62 => Ok(Code::AuxQzs),
             63 => Ok(Code::AuxBds),
-            _ => Err(InvalidCodeInt(value))
+            _ => Err(InvalidCodeInt(value)),
         }
     }
 }
 
 /// GNSS Signal identifier
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
-pub struct GnssSignal{
+pub struct GnssSignal {
     code: Code,
     sat: u16,
 }
@@ -581,10 +612,12 @@ pub struct InvalidSatellite(u16);
 impl GnssSignal {
     pub fn new(sat: u16, code: Code) -> Result<GnssSignal, InvalidSatellite> {
         let constellation = code.to_constellation();
-        if sat < constellation.first_prn() || sat >= (constellation.first_prn() + constellation.sat_count()) {
+        if sat < constellation.first_prn()
+            || sat >= (constellation.first_prn() + constellation.sat_count())
+        {
             Err(InvalidSatellite(sat))
         } else {
-            Ok(GnssSignal{code, sat})
+            Ok(GnssSignal { code, sat })
         }
     }
 
@@ -1039,10 +1072,7 @@ mod tests {
             let result = GnssSignal::new(sat, Code::GpsL1ca);
             if sat < first || sat >= last {
                 assert!(result.is_err());
-                assert_eq!(
-                    result.unwrap_err(),
-                    InvalidSatellite(sat)
-                );
+                assert_eq!(result.unwrap_err(), InvalidSatellite(sat));
             } else {
                 assert!(result.is_ok());
             }
@@ -1054,10 +1084,7 @@ mod tests {
             let result = GnssSignal::new(sat, Code::SbasL1ca);
             if sat < first || sat >= last {
                 assert!(result.is_err());
-                assert_eq!(
-                    result.unwrap_err(),
-                    InvalidSatellite(sat)
-                );
+                assert_eq!(result.unwrap_err(), InvalidSatellite(sat));
             } else {
                 assert!(result.is_ok());
             }
@@ -1069,10 +1096,7 @@ mod tests {
             let result = GnssSignal::new(sat, Code::GloL1of);
             if sat < first || sat >= last {
                 assert!(result.is_err());
-                assert_eq!(
-                    result.unwrap_err(),
-                    InvalidSatellite(sat)
-                );
+                assert_eq!(result.unwrap_err(), InvalidSatellite(sat));
             } else {
                 assert!(result.is_ok());
             }
@@ -1084,10 +1108,7 @@ mod tests {
             let result = GnssSignal::new(sat, Code::Bds2B1);
             if sat < first || sat >= last {
                 assert!(result.is_err());
-                assert_eq!(
-                    result.unwrap_err(),
-                    InvalidSatellite(sat)
-                );
+                assert_eq!(result.unwrap_err(), InvalidSatellite(sat));
             } else {
                 assert!(result.is_ok());
             }
@@ -1099,10 +1120,7 @@ mod tests {
             let result = GnssSignal::new(sat, Code::GalE1b);
             if sat < first || sat >= last {
                 assert!(result.is_err());
-                assert_eq!(
-                    result.unwrap_err(),
-                    InvalidSatellite(sat)
-                );
+                assert_eq!(result.unwrap_err(), InvalidSatellite(sat));
             } else {
                 assert!(result.is_ok());
             }
@@ -1114,10 +1132,7 @@ mod tests {
             let result = GnssSignal::new(sat, Code::QzsL1ca);
             if sat < first || sat >= last {
                 assert!(result.is_err());
-                assert_eq!(
-                    result.unwrap_err(),
-                    InvalidSatellite(sat)
-                );
+                assert_eq!(result.unwrap_err(), InvalidSatellite(sat));
             } else {
                 assert!(result.is_ok());
             }

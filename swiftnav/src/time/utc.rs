@@ -1,23 +1,23 @@
+use crate::time::{consts, is_leap_year, GpsTime, MJD};
 use std::time::Duration;
-use crate::time::{consts, GpsTime, is_leap_year, MJD};
 
 /// GPS UTC correction parameters
 #[derive(Clone)]
 pub struct UtcParams {
     /// Modulo 1 sec offset from GPS to UTC [s]
-    a0: f64,        
+    a0: f64,
     /// Drift of time offset from GPS to UTC [s/s]
-    a1: f64,        
+    a1: f64,
     /// Drift rate correction from GPS to UTC [s/s]
-    a2: f64,        
+    a2: f64,
     /// Reference time of UTC parameters.
-    tot: GpsTime,   
+    tot: GpsTime,
     /// Time of leap second event.
-    t_lse: GpsTime, 
+    t_lse: GpsTime,
     /// Leap second delta from GPS to UTC before LS event [s]
-    dt_ls: i8,         
+    dt_ls: i8,
     /// Leap second delta from GPS to UTC after LS event [s]
-    dt_lsf: i8,       
+    dt_lsf: i8,
 }
 
 impl UtcParams {
@@ -84,25 +84,25 @@ impl UtcParams {
 /// around. Specifically it shouldn't be relied on for dates significantly before January 6th 1980,
 /// the start of GPS time.
 #[derive(Debug, Clone, Copy)]
-pub struct UtcTime{
+pub struct UtcTime {
     /// Number of years AD. In four digit format.
     year: u16,
     /// Day of the year (1 - 366).
     year_day: u16,
     /// Month of the year (1 - 12). 1 = January, 12 = December.
-    month: u8,      
+    month: u8,
     /// Day of the month (1 - 31).
-    month_day: u8,  
+    month_day: u8,
     /// Day of the week (1 - 7). 1 = Monday, 7 = Sunday.
-    week_day: u8,   
+    week_day: u8,
     /// Minutes of the hour (0 - 59).
-    hour: u8,       
+    hour: u8,
     /// Minutes of the hour (0 - 59).
-    minute: u8,     
+    minute: u8,
     /// Integer part of seconds of the minute (0 - 60).
-    second_int: u8, 
+    second_int: u8,
     /// Fractional part of seconds (0 - .99...).
-    second_frac: f64, 
+    second_frac: f64,
 }
 
 impl UtcTime {
@@ -119,25 +119,27 @@ impl UtcTime {
         let t_utc = gps.tow() % (consts::DAY_SECS as f64);
 
         /* Convert this into hours, minutes and seconds */
-        let second_int = t_utc.floor() as u32;   /* The integer part of the seconds */
-        let second_frac: f64 = t_utc % 1.0;    /* The fractional part of the seconds */
-        let hour: u8 = (second_int / consts::HOUR_SECS) as u8;     /* The hours (1 - 23) */
-        let second_int = second_int - ((hour as u32) * consts::HOUR_SECS);    /* Remove the hours from seconds */
+        let second_int = t_utc.floor() as u32; /* The integer part of the seconds */
+        let second_frac: f64 = t_utc % 1.0; /* The fractional part of the seconds */
+        let hour: u8 = (second_int / consts::HOUR_SECS) as u8; /* The hours (1 - 23) */
+        let second_int = second_int - ((hour as u32) * consts::HOUR_SECS); /* Remove the hours from seconds */
         let minute: u8 = (second_int / consts::MINUTE_SECS) as u8; /* The minutes (1 - 59) */
-        let second_int: u8 = (second_int - minute as u32 * consts::MINUTE_SECS) as u8; /* Remove the minutes from seconds */ /* The seconds (1 - 60) */
+        let second_int: u8 = (second_int - minute as u32 * consts::MINUTE_SECS) as u8; /* Remove the minutes from seconds */
+ /* The seconds (1 - 60) */
 
         /* Calculate the years */
 
         /* Days from 1 Jan 1980. GPS epoch is 6 Jan 1980 */
-        let modified_julian_days: i32 =
-            consts::MJD_JAN_6_1980 + gps.wn() as i32 * 7 + (gps.tow() / consts::DAY_SECS as f64).floor() as i32;
+        let modified_julian_days: i32 = consts::MJD_JAN_6_1980
+            + gps.wn() as i32 * 7
+            + (gps.tow() / consts::DAY_SECS as f64).floor() as i32;
         let days_since_1601: u32 = (modified_julian_days - consts::MJD_JAN_1_1601) as u32;
 
         /* Calculate the number of leap years */
         let num_400_years: u32 = days_since_1601 / consts::FOUR_HUNDRED_YEARS_DAYS;
         let days_left: u32 = days_since_1601 - num_400_years * consts::FOUR_HUNDRED_YEARS_DAYS;
-        let num_100_years: u32 = days_left / consts::HUNDRED_YEARS_DAYS -
-                            days_left / (consts::FOUR_HUNDRED_YEARS_DAYS - 1);
+        let num_100_years: u32 = days_left / consts::HUNDRED_YEARS_DAYS
+            - days_left / (consts::FOUR_HUNDRED_YEARS_DAYS - 1);
         let days_left: u32 = days_left - num_100_years * consts::HUNDRED_YEARS_DAYS;
         let num_4_years: u32 = days_left / consts::FOUR_YEARS_DAYS;
         let days_left: u32 = days_left - num_4_years * consts::FOUR_YEARS_DAYS;
@@ -145,8 +147,11 @@ impl UtcTime {
             days_left / consts::YEAR_DAYS - days_left / (consts::FOUR_YEARS_DAYS - 1);
 
         /* Calculate the total number of years from 1980 */
-        let year = (1601 + num_400_years * 400 + num_100_years * 100 + num_4_years * 4 +
-                    num_non_leap_years) as u16;
+        let year = (1601
+            + num_400_years * 400
+            + num_100_years * 100
+            + num_4_years * 4
+            + num_non_leap_years) as u16;
 
         /* Calculate the month of the year */
 
@@ -163,19 +168,25 @@ impl UtcTime {
         /* First row is for a non-leap year, second row is for a leap year */
         const DAYS_AFTER_MONTH: [[u16; 13]; 2] = [
             [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365],
-            [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366]];
+            [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366],
+        ];
 
         /* Check if our guess was out, and what the correction is, */
         /* 0 = correct, 1 = wrong */
         let month_correction: u8 =
-            if year_day > DAYS_AFTER_MONTH[leap_year][(month_guess + 1) as usize] { 1 } else { 0 };
+            if year_day > DAYS_AFTER_MONTH[leap_year][(month_guess + 1) as usize] {
+                1
+            } else {
+                0
+            };
 
         /* Calculate the corrected number of months */
         let month = month_guess + month_correction + 1;
 
         /* Calculate the day of the month */
-        let month_day =
-            (year_day - DAYS_AFTER_MONTH[leap_year][(month_guess + month_correction) as usize]) as u8;
+        let month_day = (year_day
+            - DAYS_AFTER_MONTH[leap_year][(month_guess + month_correction) as usize])
+            as u8;
 
         /* Calculate the day of the week. 1 Jan 1601 was a Monday */
         let week_day = (days_since_1601 % 7 + 1) as u8;
@@ -183,12 +194,12 @@ impl UtcTime {
         UtcTime {
             year,
             year_day,
-            month,      
-            month_day,  
-            week_day,   
-            hour,       
-            minute,     
-            second_int, 
+            month,
+            month_day,
+            week_day,
+            hour,
+            minute,
+            second_int,
             second_frac,
         }
     }
@@ -240,12 +251,26 @@ impl UtcTime {
 
     /// Converts the UTC time into a modified julian date
     pub fn to_mjd(&self) -> MJD {
-        MJD::from_date(self.year(), self.month(), self.day_of_month(), self.hour(), self.minute(), self.seconds())
+        MJD::from_date(
+            self.year(),
+            self.month(),
+            self.day_of_month(),
+            self.hour(),
+            self.minute(),
+            self.seconds(),
+        )
     }
 
     /// Converts the UTC time into a date and time
     pub fn to_date(self) -> (u16, u8, u8, u8, u8, f64) {
-        (self.year(), self.month(), self.day_of_month(), self.hour(), self.minute(), self.seconds())
+        (
+            self.year(),
+            self.month(),
+            self.day_of_month(),
+            self.hour(),
+            self.minute(),
+            self.seconds(),
+        )
     }
 
     /// Makes an ISO8601 compatible date time string from the UTC time
@@ -278,9 +303,9 @@ impl UtcTime {
     }
 
     /// Converts the UTC time into GPS time
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// This function will panic if the [`UtcTime`] does not represent a valid
     /// GPS time.
     pub fn to_gps(self, utc_params: &UtcParams) -> GpsTime {
@@ -289,9 +314,9 @@ impl UtcTime {
 
     /// Converts the UTC time into GPS time using the hardcoded list of leap
     /// seconds.
-    /// 
+    ///
     /// # Panics
-    /// 
+    ///
     /// This function will panic if the [`UtcTime`] does not represent a valid
     /// GPS time.
     ///
@@ -303,9 +328,9 @@ impl UtcTime {
     }
 
     /// Converts the UTC time into a fractional year
-    /// 
+    ///
     /// # Notes
-    /// 
+    ///
     /// A fractional year is a decimal representation of the date. For example
     /// January 1, 2025 has a fractional year value of $2025.0$, while January
     /// 30, 2025 is 30 days into the year so has a fractional year value of
@@ -316,7 +341,9 @@ impl UtcTime {
         let hours = self.hour() as f64;
         let minutes = self.minute() as f64;
         let seconds = self.seconds();
-        let total_days = days + hours / consts::DAY_HOURS as f64 + (minutes / consts::MINUTE_SECS as f64 + seconds) / consts::DAY_SECS as f64;
+        let total_days = days
+            + hours / consts::DAY_HOURS as f64
+            + (minutes / consts::MINUTE_SECS as f64 + seconds) / consts::DAY_SECS as f64;
 
         if is_leap_year(self.year()) {
             year + total_days / consts::LEAP_YEAR_DAYS as f64
@@ -387,24 +414,24 @@ impl<Tz: chrono::offset::TimeZone> From<chrono::DateTime<Tz>> for UtcTime {
  * that the new offset is in effect.
  */
 pub(super) const UTC_LEAPS: [(GpsTime, f64); 18] = [
-    (GpsTime::new_unchecked(77, 259200.), 1.),    /* 01-07-1981 */
-    (GpsTime::new_unchecked(129, 345601.), 2.),   /* 01-07-1982 */
-    (GpsTime::new_unchecked(181, 432002.), 3.),   /* 01-07-1983 */
-    (GpsTime::new_unchecked(286, 86403.), 4.),    /* 01-07-1985 */
-    (GpsTime::new_unchecked(416, 432004.), 5.),   /* 01-01-1988 */
-    (GpsTime::new_unchecked(521, 86405.), 6.),    /* 01-01-1990 */
-    (GpsTime::new_unchecked(573, 172806.), 7.),   /* 01-01-1991 */
-    (GpsTime::new_unchecked(651, 259207.), 8.),   /* 01-07-1992 */
-    (GpsTime::new_unchecked(703, 345608.), 9.),   /* 01-07-1993 */
-    (GpsTime::new_unchecked(755, 432009.), 10.),  /* 01-07-1994 */
-    (GpsTime::new_unchecked(834, 86410.), 11.),   /* 01-01-1996 */
-    (GpsTime::new_unchecked(912, 172811.), 12.),  /* 01-07-1997 */
-    (GpsTime::new_unchecked(990, 432012.), 13.),  /* 01-01-1999 */
-    (GpsTime::new_unchecked(1356, 13.), 14.),     /* 01-01-2006 */
+    (GpsTime::new_unchecked(77, 259200.), 1.),  /* 01-07-1981 */
+    (GpsTime::new_unchecked(129, 345601.), 2.), /* 01-07-1982 */
+    (GpsTime::new_unchecked(181, 432002.), 3.), /* 01-07-1983 */
+    (GpsTime::new_unchecked(286, 86403.), 4.),  /* 01-07-1985 */
+    (GpsTime::new_unchecked(416, 432004.), 5.), /* 01-01-1988 */
+    (GpsTime::new_unchecked(521, 86405.), 6.),  /* 01-01-1990 */
+    (GpsTime::new_unchecked(573, 172806.), 7.), /* 01-01-1991 */
+    (GpsTime::new_unchecked(651, 259207.), 8.), /* 01-07-1992 */
+    (GpsTime::new_unchecked(703, 345608.), 9.), /* 01-07-1993 */
+    (GpsTime::new_unchecked(755, 432009.), 10.), /* 01-07-1994 */
+    (GpsTime::new_unchecked(834, 86410.), 11.), /* 01-01-1996 */
+    (GpsTime::new_unchecked(912, 172811.), 12.), /* 01-07-1997 */
+    (GpsTime::new_unchecked(990, 432012.), 13.), /* 01-01-1999 */
+    (GpsTime::new_unchecked(1356, 13.), 14.),   /* 01-01-2006 */
     (GpsTime::new_unchecked(1512, 345614.), 15.), /* 01-01-2009 */
-    (GpsTime::new_unchecked(1695, 15.), 16.),     /* 01-07-2012 */
+    (GpsTime::new_unchecked(1695, 15.), 16.),   /* 01-07-2012 */
     (GpsTime::new_unchecked(1851, 259216.), 17.), /* 01-07-2015 */
-    (GpsTime::new_unchecked(1930, 17.), 18.),     /* 01-01-2017 */
+    (GpsTime::new_unchecked(1930, 17.), 18.),   /* 01-01-2017 */
 ];
 
 #[cfg(test)]
@@ -503,7 +530,7 @@ mod tests {
             0.0,
             0.0,
             &GpsTime::new_unchecked(2080, 0.0),
-            &GpsTime::new_unchecked(2086,  259218.0 - 0.125),
+            &GpsTime::new_unchecked(2086, 259218.0 - 0.125),
             18,
             19,
         )
@@ -527,7 +554,10 @@ mod tests {
             1e-12,
             0.0,
             &GpsTime::new_unchecked(2080, 0.0),
-            &GpsTime::new_unchecked(2086, 259218.0 + 1e-12 * (6.0 * consts::WEEK_SECS as f64 + 259218.0)),
+            &GpsTime::new_unchecked(
+                2086,
+                259218.0 + 1e-12 * (6.0 * consts::WEEK_SECS as f64 + 259218.0),
+            ),
             18,
             19,
         )
@@ -539,7 +569,10 @@ mod tests {
             -1e-12,
             0.0,
             &GpsTime::new_unchecked(2080, 0.0),
-            &GpsTime::new_unchecked(2086, 259218.0 - 1e-12 * (6.0 * consts::WEEK_SECS as f64 + 259218.0)),
+            &GpsTime::new_unchecked(
+                2086,
+                259218.0 - 1e-12 * (6.0 * consts::WEEK_SECS as f64 + 259218.0),
+            ),
             18,
             19,
         )
@@ -557,37 +590,37 @@ mod tests {
         let test_cases = [
             /* Jan 1 2020 (constant negative UTC offset) */
             TestCase {
-                t: GpsTime::new_unchecked(2086,  259217.0 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259217.0 - 0.125),
                 d_utc: 18.0 - 0.125,
                 is_lse: false,
                 params: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086,  259217.5 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259217.5 - 0.125),
                 d_utc: 18.0 - 0.125,
                 is_lse: false,
                 params: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086,  259218.0 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259218.0 - 0.125),
                 d_utc: 18.0 - 0.125,
                 is_lse: true,
                 params: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086,  259218.5 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259218.5 - 0.125),
                 d_utc: 18.0 - 0.125,
                 is_lse: true,
                 params: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086,  259219.0 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259219.0 - 0.125),
                 d_utc: 19.0 - 0.125,
                 is_lse: false,
                 params: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086,  259219.5 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259219.5 - 0.125),
                 d_utc: 19.0 - 0.125,
                 is_lse: false,
                 params: Some(make_p_neg_offset()),
@@ -600,7 +633,7 @@ mod tests {
                 params: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086,  259217.5 + 0.125),
+                t: GpsTime::new_unchecked(2086, 259217.5 + 0.125),
                 d_utc: 18.125,
                 is_lse: false,
                 params: Some(make_p_pos_offset()),
@@ -612,7 +645,7 @@ mod tests {
                 params: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086,  259218.5 + 0.125),
+                t: GpsTime::new_unchecked(2086, 259218.5 + 0.125),
                 d_utc: 18.125,
                 is_lse: true,
                 params: Some(make_p_pos_offset()),
@@ -624,7 +657,7 @@ mod tests {
                 params: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086,  259219.5 + 0.125),
+                t: GpsTime::new_unchecked(2086, 259219.5 + 0.125),
                 d_utc: 19.125,
                 is_lse: false,
                 params: Some(make_p_pos_offset()),
@@ -850,27 +883,27 @@ mod tests {
             /* Jan 1 2020 (leap second announced in utc_params_t above, constant
             negative offset) */
             TestCase {
-                t: GpsTime::new_unchecked(2086,  259217.0 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259217.0 - 0.125),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 59.0),
                 p: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086,  259217.5 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259217.5 - 0.125),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 59.5),
                 p: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086,  259218.0 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259218.0 - 0.125),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 60.0),
                 p: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086,  259218.5 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259218.5 - 0.125),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 60.5),
                 p: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086,  259219.0 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259219.0 - 0.125),
                 u: UtcExpectation::new(2020, 1, 1, 00, 00, 00.0),
                 p: Some(make_p_neg_offset()),
             },
@@ -882,7 +915,7 @@ mod tests {
                 p: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086,  259217.5 + 0.125),
+                t: GpsTime::new_unchecked(2086, 259217.5 + 0.125),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 59.5),
                 p: Some(make_p_pos_offset()),
             },
@@ -892,7 +925,7 @@ mod tests {
                 p: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086,  259218.5 + 0.125),
+                t: GpsTime::new_unchecked(2086, 259218.5 + 0.125),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 60.5),
                 p: Some(make_p_pos_offset()),
             },
@@ -965,11 +998,46 @@ mod tests {
                 test_case.t.to_utc_hardcoded()
             };
 
-            assert_eq!(u.year(), expected.year, "u.year: {}, expected.year: {}, tow: {}", u.year(), expected.year, test_case.t.tow());
-            assert_eq!(u.month(), expected.month, "u.month: {}, expected.month: {}, tow: {}", u.month(), expected.month, test_case.t.tow());
-            assert_eq!(u.day_of_month(), expected.day, "u.day_of_month: {}, expected.day: {}, tow: {}", u.day_of_month(), expected.day, test_case.t.tow());
-            assert_eq!(u.hour(), expected.hour, "u.hour: {}, expected.hour: {}, tow: {}", u.hour(), expected.hour, test_case.t.tow());
-            assert_eq!(u.minute(), expected.minute, "u.minute: {}, expected.minute: {}, tow: {}", u.minute(), expected.minute, test_case.t.tow());
+            assert_eq!(
+                u.year(),
+                expected.year,
+                "u.year: {}, expected.year: {}, tow: {}",
+                u.year(),
+                expected.year,
+                test_case.t.tow()
+            );
+            assert_eq!(
+                u.month(),
+                expected.month,
+                "u.month: {}, expected.month: {}, tow: {}",
+                u.month(),
+                expected.month,
+                test_case.t.tow()
+            );
+            assert_eq!(
+                u.day_of_month(),
+                expected.day,
+                "u.day_of_month: {}, expected.day: {}, tow: {}",
+                u.day_of_month(),
+                expected.day,
+                test_case.t.tow()
+            );
+            assert_eq!(
+                u.hour(),
+                expected.hour,
+                "u.hour: {}, expected.hour: {}, tow: {}",
+                u.hour(),
+                expected.hour,
+                test_case.t.tow()
+            );
+            assert_eq!(
+                u.minute(),
+                expected.minute,
+                "u.minute: {}, expected.minute: {}, tow: {}",
+                u.minute(),
+                expected.minute,
+                test_case.t.tow()
+            );
             assert!(
                 (u.seconds() - expected.second).abs() < 1e-5,
                 "{} {} {}",
