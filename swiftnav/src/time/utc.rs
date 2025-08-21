@@ -125,7 +125,7 @@ impl UtcTime {
         let second_int = second_int - ((hour as u32) * consts::HOUR_SECS); /* Remove the hours from seconds */
         let minute: u8 = (second_int / consts::MINUTE_SECS) as u8; /* The minutes (1 - 59) */
         let second_int: u8 = (second_int - minute as u32 * consts::MINUTE_SECS) as u8; /* Remove the minutes from seconds */
- /* The seconds (1 - 60) */
+        /* The seconds (1 - 60) */
 
         /* Calculate the years */
 
