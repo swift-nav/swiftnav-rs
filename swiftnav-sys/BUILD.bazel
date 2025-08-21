@@ -3,7 +3,7 @@ package(default_visibility = ["//visibility:public"])
 load("@rules_rust//rust:defs.bzl", "rust_library")
 
 rust_library(
-    name = "lib",
+    name = "swiftnav-sys",
     srcs = ["src/lib.rs"],
     deps = [],
     edition = "2018"

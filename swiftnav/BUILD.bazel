@@ -1,10 +1,7 @@
-package(default_visibility = ["//visibility:public"])
-
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test", "rust_clippy", "rust_doc", "rustfmt_test")
-# load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
 
 rust_library(
-    name = "lib",
+    name = "swiftnav",
     srcs = [
         "src/lib.rs",
         "src/coords/ecef.rs",
@@ -33,35 +30,37 @@ rust_library(
     ],
     edition = "2018",
     # crate_features = ["chrono"],
+    visibility = ["//visibility:public"],
 )
 
 rust_test(
-    name = "unit_test",
-    crate = ":lib",
+    name = "swiftnav_unit_test",
+    crate = ":swiftnav",
     deps = [
         "@crate_index//:float_eq",
         "@crate_index//:proptest",
     ],
 )
 
+rustfmt_test(
+    name = "swiftnav_fmt_test",
+    targets = [
+        ":swiftnav",
+        ":swiftnav_unit_test",
+    ]
+)
+
 rust_clippy(
-    name = "clippy",
+    name = "swiftnav_clippy",
     testonly = True,
     deps = [
-        ":lib",
-        ":unit_test",
+        ":swiftnav",
+        ":swiftnav_unit_test",
     ],
 )
 
 rust_doc(
-    name = "doc",
-    crate = ":lib",
-)
-
-rustfmt_test(
-    name = "fmt_test",
-    targets = [
-        ":lib",
-        ":unit_test",
-    ]
+    name = "swiftnav_doc",
+    crate = ":swiftnav",
+    visibility = ["//visibility:public"],
 )
