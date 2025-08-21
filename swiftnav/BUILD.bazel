@@ -1,6 +1,6 @@
 package(default_visibility = ["//visibility:public"])
 
-load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test", "rust_clippy", "rust_doc")
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test", "rust_clippy", "rust_doc", "rustfmt_test")
 # load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
 
 rust_library(
@@ -56,4 +56,12 @@ rust_clippy(
 rust_doc(
     name = "doc",
     crate = ":lib",
+)
+
+rustfmt_test(
+    name = "fmt_test",
+    targets = [
+        ":lib",
+        ":unit_test",
+    ]
 )
