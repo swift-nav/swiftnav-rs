@@ -1,0 +1,3 @@
+# Don't let environment variables pollute the build
+# PATH is part of the action input and can lead to massive cache misses
+build --incompatible_strict_action_env

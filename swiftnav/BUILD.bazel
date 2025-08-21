@@ -1,0 +1,66 @@
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test", "rust_clippy", "rust_doc", "rustfmt_test")
+
+rust_library(
+    name = "swiftnav",
+    srcs = [
+        "src/lib.rs",
+        "src/coords/ecef.rs",
+        "src/coords/ned.rs",
+        "src/reference_frame/mod.rs",
+        "src/time/mjd.rs",
+        "src/coords/ellipsoid.rs",
+        "src/edc.rs",
+        "src/reference_frame/params.rs",
+        "src/time/mod.rs",
+        "src/coords/llh.rs",
+        "src/signal.rs",
+        "src/time/utc.rs",
+        "src/coords/mod.rs",
+        "src/math.rs",
+        "src/time/gnss.rs",
+    ],
+    deps = [
+        # "@crate_index//:chrono",
+        "@crate_index//:strum",
+        "@crate_index//:nalgebra",
+        "@crate_index//:thiserror",
+    ],
+    proc_macro_deps = [
+        "@crate_index//:rustversion",
+    ],
+    edition = "2018",
+    # crate_features = ["chrono"],
+    visibility = ["//visibility:public"],
+)
+
+rust_test(
+    name = "swiftnav_unit_test",
+    crate = ":swiftnav",
+    deps = [
+        "@crate_index//:float_eq",
+        "@crate_index//:proptest",
+    ],
+)
+
+rustfmt_test(
+    name = "swiftnav_fmt_test",
+    targets = [
+        ":swiftnav",
+        ":swiftnav_unit_test",
+    ]
+)
+
+rust_clippy(
+    name = "swiftnav_clippy",
+    testonly = True,
+    deps = [
+        ":swiftnav",
+        ":swiftnav_unit_test",
+    ],
+)
+
+rust_doc(
+    name = "swiftnav_doc",
+    crate = ":swiftnav",
+    visibility = ["//visibility:public"],
+)
