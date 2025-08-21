@@ -37,7 +37,7 @@ jobs:
         run: cargo doc --package swiftnav --all-features --no-deps --verbose
 
   build:
-    name: Cargo ${{ matrix.binary_target }} build and test
+    name: Cargo ${{ matrix.toolchain }}-${{ matrix.binary_target }} build and test
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
