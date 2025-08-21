@@ -40,6 +40,7 @@ rust_test(
     crate = ":lib",
     deps = [
         "@crate_index//:float_eq",
+        "@crate_index//:proptest",
     ],
 )
 

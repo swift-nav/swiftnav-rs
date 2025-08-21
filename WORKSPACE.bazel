@@ -25,11 +25,15 @@ crates_repository(
     name = "crate_index",
     cargo_lockfile = "//:Cargo.lock",
     lockfile = "//:Cargo.Bazel.lock",
-    manifests = [
-        "//:Cargo.toml",
-        "//swiftnav-sys:Cargo.toml",
-        "//swiftnav:Cargo.toml",
-    ],
+    packages = {
+        "rustversion": crate.spec(version = "1.0"),
+        "chrono": crate.spec(version = "0.4"),
+        "strum": crate.spec(version = "0.27", features = ["derive"]),
+        "nalgebra": crate.spec(version = "0.33.2"),
+        "thiserror": crate.spec(version = "2.0"),
+        "float_eq": crate.spec(version = "1.0.1"),
+        "proptest": crate.spec(version = "1.5"),
+    },
 )
 
 load("@crate_index//:defs.bzl", "crate_repositories")
