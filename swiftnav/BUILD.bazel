@@ -1,0 +1,58 @@
+package(default_visibility = ["//visibility:public"])
+
+load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test", "rust_clippy", "rust_doc")
+# load("@rules_rust//cargo:defs.bzl", "cargo_build_script")
+
+rust_library(
+    name = "lib",
+    srcs = [
+        "src/lib.rs",
+        "src/coords/ecef.rs",
+        "src/coords/ned.rs",
+        "src/reference_frame/mod.rs",
+        "src/time/mjd.rs",
+        "src/coords/ellipsoid.rs",
+        "src/edc.rs",
+        "src/reference_frame/params.rs",
+        "src/time/mod.rs",
+        "src/coords/llh.rs",
+        "src/signal.rs",
+        "src/time/utc.rs",
+        "src/coords/mod.rs",
+        "src/math.rs",
+        "src/time/gnss.rs",
+    ],
+    deps = [
+        # "@crate_index//:chrono",
+        "@crate_index//:strum",
+        "@crate_index//:nalgebra",
+        "@crate_index//:thiserror",
+    ],
+    proc_macro_deps = [
+        "@crate_index//:rustversion",
+    ],
+    edition = "2018",
+    # crate_features = ["chrono"],
+)
+
+rust_test(
+    name = "unit_test",
+    crate = ":lib",
+    deps = [
+        "@crate_index//:float_eq",
+    ],
+)
+
+rust_clippy(
+    name = "clippy",
+    testonly = True,
+    deps = [
+        ":lib",
+        ":unit_test",
+    ],
+)
+
+rust_doc(
+    name = "doc",
+    crate = ":lib",
+)

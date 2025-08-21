@@ -101,3 +101,14 @@ jobs:
 
       - name: Test
         run: cargo test --workspace --all-features --verbose
+
+  bazel:
+    name: Bazel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: bazel-contrib/setup-bazel@0.15.0
+
+      - name: Build and test
+        run: bazel test //...
