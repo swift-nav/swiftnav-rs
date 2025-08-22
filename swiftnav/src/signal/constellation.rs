@@ -29,7 +29,7 @@ use super::consts;
 pub enum Constellation {
     /// GPS
     Gps,
-    /// SBAS - Space based  augmentation systems
+    /// SBAS - Space based augmentation systems
     Sbas,
     /// GLONASS
     Glo,
