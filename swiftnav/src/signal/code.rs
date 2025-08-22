@@ -607,7 +607,9 @@ mod tests {
 
     #[test]
     fn swiftnav_sys_int_values() {
-        for (i, e) in ((swiftnav_sys::code_e_CODE_INVALID + 1)..(swiftnav_sys::code_e_CODE_COUNT)).zip(Code::iter()) {
+        for (i, e) in ((swiftnav_sys::code_e_CODE_INVALID + 1)..(swiftnav_sys::code_e_CODE_COUNT))
+            .zip(Code::iter())
+        {
             assert_eq!(i, e as i32);
         }
     }
