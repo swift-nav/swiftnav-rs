@@ -22,6 +22,7 @@ use super::{consts, Constellation};
     Hash,
     strum::AsRefStr,
     strum::Display,
+    strum::EnumIter,
     strum::EnumString,
     strum::FromRepr,
     strum::IntoStaticStr,
@@ -364,6 +365,11 @@ impl Code {
             _ => panic!("You can't call get_glo_channel_frequency() on a non-GLONASS FDMA code!"),
         }
     }
+
+    /// Get an iterator through the codes
+    pub fn iter() -> impl Iterator<Item = Self> {
+        <Self as strum::IntoEnumIterator>::iter()
+    }
 }
 
 /// An error encountered when converting an integer into a [`Code`]
@@ -596,6 +602,13 @@ mod tests {
         {
             let result = Code::from_str("💩💩💩💩");
             assert!(result.is_err());
+        }
+    }
+
+    #[test]
+    fn swiftnav_sys_int_values() {
+        for (i, e) in ((swiftnav_sys::code_e_CODE_INVALID + 1)..(swiftnav_sys::code_e_CODE_COUNT)).zip(Code::iter()) {
+            assert_eq!(i, e as i32);
         }
     }
 }

@@ -22,6 +22,7 @@ use super::consts;
     Hash,
     strum::AsRefStr,
     strum::Display,
+    strum::EnumIter,
     strum::EnumString,
     strum::FromRepr,
     strum::IntoStaticStr,
@@ -68,6 +69,11 @@ impl Constellation {
             Constellation::Gal => consts::GAL_FIRST_PRN,
             Constellation::Qzs => consts::QZS_FIRST_PRN,
         }
+    }
+
+    /// Get an iterator through the constellations
+    pub fn iter() -> impl Iterator<Item = Self> {
+        <Self as strum::IntoEnumIterator>::iter()
     }
 }
 
@@ -186,6 +192,13 @@ mod tests {
         {
             let result = Constellation::from_str("💩💩💩💩");
             assert!(result.is_err());
+        }
+    }
+
+    #[test]
+    fn swiftnav_sys_int_values() {
+        for (i, e) in ((swiftnav_sys::constellation_e_CONSTELLATION_INVALID + 1)..(swiftnav_sys::constellation_e_CONSTELLATION_COUNT)).zip(Constellation::iter()) {
+            assert_eq!(i, e as i32);
         }
     }
 }
