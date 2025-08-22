@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2021 Swift Navigation Inc.
+// Copyright (c) 2025 Swift Navigation Inc.
 // Contact: Swift Navigation <dev@swiftnav.com>
 //
 // This source is subject to the license found in the file 'LICENSE' which must
@@ -23,8 +23,10 @@ use super::consts;
     strum::AsRefStr,
     strum::Display,
     strum::EnumString,
+    strum::FromRepr,
     strum::IntoStaticStr,
 )]
+#[repr(u8)]
 #[strum(serialize_all = "UPPERCASE")]
 pub enum Constellation {
     /// GPS
@@ -78,15 +80,7 @@ pub struct InvalidConstellationInt(u8);
 impl std::convert::TryFrom<u8> for Constellation {
     type Error = InvalidConstellationInt;
     fn try_from(value: u8) -> Result<Constellation, Self::Error> {
-        match value {
-            0 => Ok(Constellation::Gps),
-            1 => Ok(Constellation::Sbas),
-            2 => Ok(Constellation::Glo),
-            3 => Ok(Constellation::Bds),
-            4 => Ok(Constellation::Qzs),
-            5 => Ok(Constellation::Gal),
-            _ => Err(InvalidConstellationInt(value)),
-        }
+        Constellation::from_repr(value).ok_or(InvalidConstellationInt(value))
     }
 }
 

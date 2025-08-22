@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2021 Swift Navigation Inc.
+// Copyright (c) 2025 Swift Navigation Inc.
 // Contact: Swift Navigation <dev@swiftnav.com>
 //
 // This source is subject to the license found in the file 'LICENSE' which must
@@ -23,8 +23,10 @@ use super::{consts, Constellation};
     strum::AsRefStr,
     strum::Display,
     strum::EnumString,
+    strum::FromRepr,
     strum::IntoStaticStr,
 )]
+#[repr(u8)]
 pub enum Code {
     #[strum(to_string = "GPS L1CA")]
     /// GPS L1CA: BPSK(1)
@@ -293,72 +295,7 @@ impl Code {
 
     #[must_use]
     pub(crate) fn to_code_t(self) -> i32 {
-        match self {
-            Code::GpsL1ca => 0,
-            Code::GpsL2cm => 1,
-            Code::SbasL1ca => 2,
-            Code::GloL1of => 3,
-            Code::GloL2of => 4,
-            Code::GpsL1p => 5,
-            Code::GpsL2p => 6,
-            Code::GpsL2cl => 7,
-            Code::GpsL2cx => 8,
-            Code::GpsL5i => 9,
-            Code::GpsL5q => 10,
-            Code::GpsL5x => 11,
-            Code::Bds2B1 => 12,
-            Code::Bds2B2 => 13,
-            Code::GalE1b => 14,
-            Code::GalE1c => 15,
-            Code::GalE1x => 16,
-            Code::GalE6b => 17,
-            Code::GalE6c => 18,
-            Code::GalE6x => 19,
-            Code::GalE7i => 20,
-            Code::GalE7q => 21,
-            Code::GalE7x => 22,
-            Code::GalE8i => 23,
-            Code::GalE8q => 24,
-            Code::GalE8x => 25,
-            Code::GalE5i => 26,
-            Code::GalE5q => 27,
-            Code::GalE5x => 28,
-            Code::GloL1p => 29,
-            Code::GloL2p => 30,
-            Code::QzsL1ca => 31,
-            Code::QzsL1ci => 32,
-            Code::QzsL1cq => 33,
-            Code::QzsL1cx => 34,
-            Code::QzsL2cm => 35,
-            Code::QzsL2cl => 36,
-            Code::QzsL2cx => 37,
-            Code::QzsL5i => 38,
-            Code::QzsL5q => 39,
-            Code::QzsL5x => 40,
-            Code::SbasL5i => 41,
-            Code::SbasL5q => 42,
-            Code::SbasL5x => 43,
-            Code::Bds3B1ci => 44,
-            Code::Bds3B1cq => 45,
-            Code::Bds3B1cx => 46,
-            Code::Bds3B5i => 47,
-            Code::Bds3B5q => 48,
-            Code::Bds3B5x => 49,
-            Code::Bds3B7i => 50,
-            Code::Bds3B7q => 51,
-            Code::Bds3B7x => 52,
-            Code::Bds3B3i => 53,
-            Code::Bds3B3q => 54,
-            Code::Bds3B3x => 55,
-            Code::GpsL1ci => 56,
-            Code::GpsL1cq => 57,
-            Code::GpsL1cx => 58,
-            Code::AuxGps => 59,
-            Code::AuxSbas => 60,
-            Code::AuxGal => 61,
-            Code::AuxQzs => 62,
-            Code::AuxBds => 63,
-        }
+        self as i32
     }
 
     /// Get the carrier frequency of the given code
@@ -367,6 +304,7 @@ impl Code {
     ///
     /// GLONASS FDMA codes return the center frequency. To get the channel
     /// frequency use [`Code::get_glo_channel_frequency()`] instead
+    #[must_use]
     pub fn get_carrier_frequency(&self) -> f64 {
         match &self {
             Code::GpsL1ca
@@ -409,6 +347,7 @@ impl Code {
     ///
     /// This function will panic if the code is not a GLONASS FDMA code, or if the channel slot
     /// is invalid.
+    #[must_use]
     pub fn get_glo_channel_frequency(&self, slot: i16) -> f64 {
         assert!(*self == Code::GloL1of || *self == Code::GloL2of);
 
@@ -436,73 +375,7 @@ pub struct InvalidCodeInt(u8);
 impl std::convert::TryFrom<u8> for Code {
     type Error = InvalidCodeInt;
     fn try_from(value: u8) -> Result<Code, Self::Error> {
-        match value {
-            0 => Ok(Code::GpsL1ca),
-            1 => Ok(Code::GpsL2cm),
-            2 => Ok(Code::SbasL1ca),
-            3 => Ok(Code::GloL1of),
-            4 => Ok(Code::GloL2of),
-            5 => Ok(Code::GpsL1p),
-            6 => Ok(Code::GpsL2p),
-            7 => Ok(Code::GpsL2cl),
-            8 => Ok(Code::GpsL2cx),
-            9 => Ok(Code::GpsL5i),
-            10 => Ok(Code::GpsL5q),
-            11 => Ok(Code::GpsL5x),
-            12 => Ok(Code::Bds2B1),
-            13 => Ok(Code::Bds2B2),
-            14 => Ok(Code::GalE1b),
-            15 => Ok(Code::GalE1c),
-            16 => Ok(Code::GalE1x),
-            17 => Ok(Code::GalE6b),
-            18 => Ok(Code::GalE6c),
-            19 => Ok(Code::GalE6x),
-            20 => Ok(Code::GalE7i),
-            21 => Ok(Code::GalE7q),
-            22 => Ok(Code::GalE7x),
-            23 => Ok(Code::GalE8i),
-            24 => Ok(Code::GalE8q),
-            25 => Ok(Code::GalE8x),
-            26 => Ok(Code::GalE5i),
-            27 => Ok(Code::GalE5q),
-            28 => Ok(Code::GalE5x),
-            29 => Ok(Code::GloL1p),
-            30 => Ok(Code::GloL2p),
-            31 => Ok(Code::QzsL1ca),
-            32 => Ok(Code::QzsL1ci),
-            33 => Ok(Code::QzsL1cq),
-            34 => Ok(Code::QzsL1cx),
-            35 => Ok(Code::QzsL2cm),
-            36 => Ok(Code::QzsL2cl),
-            37 => Ok(Code::QzsL2cx),
-            38 => Ok(Code::QzsL5i),
-            39 => Ok(Code::QzsL5q),
-            40 => Ok(Code::QzsL5x),
-            41 => Ok(Code::SbasL5i),
-            42 => Ok(Code::SbasL5q),
-            43 => Ok(Code::SbasL5x),
-            44 => Ok(Code::Bds3B1ci),
-            45 => Ok(Code::Bds3B1cq),
-            46 => Ok(Code::Bds3B1cx),
-            47 => Ok(Code::Bds3B5i),
-            48 => Ok(Code::Bds3B5q),
-            49 => Ok(Code::Bds3B5x),
-            50 => Ok(Code::Bds3B7i),
-            51 => Ok(Code::Bds3B7q),
-            52 => Ok(Code::Bds3B7x),
-            53 => Ok(Code::Bds3B3i),
-            54 => Ok(Code::Bds3B3q),
-            55 => Ok(Code::Bds3B3x),
-            56 => Ok(Code::GpsL1ci),
-            57 => Ok(Code::GpsL1cq),
-            58 => Ok(Code::GpsL1cx),
-            59 => Ok(Code::AuxGps),
-            60 => Ok(Code::AuxSbas),
-            61 => Ok(Code::AuxGal),
-            62 => Ok(Code::AuxQzs),
-            63 => Ok(Code::AuxBds),
-            _ => Err(InvalidCodeInt(value)),
-        }
+        Code::from_repr(value).ok_or(InvalidCodeInt(value))
     }
 }
 

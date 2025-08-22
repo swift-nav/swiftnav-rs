@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2021 Swift Navigation Inc.
+// Copyright (c) 2025 Swift Navigation Inc.
 // Contact: Swift Navigation <dev@swiftnav.com>
 //
 // This source is subject to the license found in the file 'LICENSE' which must
