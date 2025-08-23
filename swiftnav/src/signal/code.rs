@@ -367,7 +367,7 @@ impl Code {
     }
 
     /// Get an iterator through the codes
-    pub fn iter() -> impl Iterator<Item = Self> {
+    pub fn iter() -> CodeIter {
         <Self as strum::IntoEnumIterator>::iter()
     }
 }

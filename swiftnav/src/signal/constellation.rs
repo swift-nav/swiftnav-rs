@@ -72,7 +72,7 @@ impl Constellation {
     }
 
     /// Get an iterator through the constellations
-    pub fn iter() -> impl Iterator<Item = Self> {
+    pub fn iter() -> ConstellationIter {
         <Self as strum::IntoEnumIterator>::iter()
     }
 }
