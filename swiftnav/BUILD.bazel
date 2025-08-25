@@ -20,13 +20,13 @@ rust_library(
         "src/time/gnss.rs",
     ],
     deps = [
-        # "@crate_index//:chrono",
-        "@crate_index//:strum",
-        "@crate_index//:nalgebra",
-        "@crate_index//:thiserror",
+        # "@crates//:chrono",
+        "@crates//:strum",
+        "@crates//:nalgebra",
+        "@crates//:thiserror",
     ],
     proc_macro_deps = [
-        "@crate_index//:rustversion",
+        "@crates//:rustversion",
     ],
     edition = "2018",
     # crate_features = ["chrono"],
@@ -37,8 +37,8 @@ rust_test(
     name = "swiftnav_unit_test",
     crate = ":swiftnav",
     deps = [
-        "@crate_index//:float_eq",
-        "@crate_index//:proptest",
+        "@crates//:float_eq",
+        "@crates//:proptest",
     ],
 )
 

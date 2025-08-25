@@ -4,3 +4,19 @@
 #
 # For more details, please check https://github.com/bazelbuild/bazel/issues/18958
 ###############################################################################
+module(name = "swiftnav-rs", version = "0.1.0", compatibility_level = 1)
+
+bazel_dep(name = "rules_rust", version = "0.56.0")
+
+crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
+
+crate.spec(package = "rustversion", version = "1.0")
+crate.spec(package = "chrono", version = "0.4")
+crate.spec(package = "strum", version = "0.27", features = ["derive"])
+crate.spec(package = "nalgebra", version = "0.33.2")
+crate.spec(package = "thiserror", version = "2.0")
+crate.spec(package = "float_eq", version = "1.0.1")
+crate.spec(package = "proptest", version = "1.5")
+
+crate.from_specs()
+use_repo(crate, "crates")
