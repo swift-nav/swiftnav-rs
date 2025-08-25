@@ -320,7 +320,7 @@ impl Ephemeris {
         let result = unsafe {
             swiftnav_sys::calc_sat_state(
                 &self.0,
-                t.c_ptr(),
+                &t.to_gps_time_t(),
                 sat.pos.as_mut_array_ref(),
                 sat.vel.as_mut_array_ref(),
                 sat.acc.as_mut_array_ref(),
@@ -348,7 +348,7 @@ impl Ephemeris {
         let result = unsafe {
             swiftnav_sys::calc_sat_az_el(
                 &self.0,
-                t.c_ptr(),
+                &t.to_gps_time_t(),
                 pos.as_array_ref(),
                 swiftnav_sys::satellite_orbit_type_t_MEO,
                 &mut sat.az,
@@ -377,7 +377,7 @@ impl Ephemeris {
         let result = unsafe {
             swiftnav_sys::calc_sat_doppler(
                 &self.0,
-                t.c_ptr(),
+                &t.to_gps_time_t(),
                 pos.as_array_ref(),
                 vel.as_array_ref(),
                 swiftnav_sys::satellite_orbit_type_t_MEO,
@@ -401,13 +401,13 @@ impl Ephemeris {
 
     pub fn detailed_status(&self, t: GpsTime) -> Status {
         Status::from_ephemeris_status_t(unsafe {
-            swiftnav_sys::ephemeris_valid_detailed(&self.0, t.c_ptr())
+            swiftnav_sys::ephemeris_valid_detailed(&self.0, &t.to_gps_time_t())
         })
     }
 
     /// Is this ephemeris usable?
     pub fn is_valid_at_time(&self, t: GpsTime) -> bool {
-        let result = unsafe { swiftnav_sys::ephemeris_valid(&self.0, t.c_ptr()) };
+        let result = unsafe { swiftnav_sys::ephemeris_valid(&self.0, &t.to_gps_time_t()) };
         result == 1
     }
 
