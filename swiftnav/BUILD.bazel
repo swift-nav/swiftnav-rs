@@ -1,4 +1,17 @@
+load("@bazel_skylib//rules:common_settings.bzl", "bool_flag")
 load("@rules_rust//rust:defs.bzl", "rust_library", "rust_test", "rust_clippy", "rust_doc", "rustfmt_test")
+
+# Define a build flag
+bool_flag(
+    name = "enable_chrono",
+    build_setting_default = False,
+)
+
+# Create a config setting that references the flag
+config_setting(
+    name = "chrono_enabled",
+    flag_values = {":enable_chrono": "True"},
+)
 
 rust_library(
     name = "swiftnav",
@@ -20,16 +33,21 @@ rust_library(
         "src/time/gnss.rs",
     ],
     deps = [
-        # "@crates//:chrono",
         "@crates//:strum",
         "@crates//:nalgebra",
         "@crates//:thiserror",
-    ],
+    ] + select({
+          ":chrono_enabled": ["@crates//:chrono"],
+          "//conditions:default": [],
+    }),
     proc_macro_deps = [
         "@crates//:rustversion",
     ],
     edition = "2018",
-    # crate_features = ["chrono"],
+    crate_features = select({
+          ":chrono_enabled": ["chrono"],
+          "//conditions:default": [],
+    }),
     visibility = ["//visibility:public"],
 )
 
@@ -40,6 +58,10 @@ rust_test(
         "@crates//:float_eq",
         "@crates//:proptest",
     ],
+    crate_features = select({
+          ":chrono_enabled": ["chrono"],
+          "//conditions:default": [],
+    }),
 )
 
 rustfmt_test(

@@ -6,6 +6,8 @@
 ###############################################################################
 module(name = "swiftnav-rs", version = "0.1.0", compatibility_level = 1)
 
+bazel_dep(name = "bazel_skylib", version = "1.8.1")
+
 bazel_dep(name = "rules_rust", version = "0.56.0")
 
 crate = use_extension("@rules_rust//crate_universe:extensions.bzl", "crate")
