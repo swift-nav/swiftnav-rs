@@ -7,7 +7,35 @@
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
 // EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
-
+//! GNSS Signals and related functionality
+//!
+//! Signals are specific to a satellite and code combination. A satellite is
+//! identified by it's assigned number and the constellation it belongs to. Each
+//! satellite can send out multiple signals.
+//!
+//! This module provides:
+//! - [`Constellation`] - Representing the supporting GNSS constellations
+//! - [`Code`] - Representing the codes broadcast from the GNSS satellites
+//! - [`GnssSignal`] - Represents a [`Code`] broadcast by a specific satellite, using the satellite PRN as the identifier
+//!
+//! # Examples
+//!
+//! ```rust
+//! # use std::str::FromStr;
+//! # use swiftnav::signal::{Code, Constellation, GnssSignal};
+//!
+//! let sid = GnssSignal::new(22, Code::GpsL1ca).unwrap();
+//!
+//! assert_eq!(sid.to_constellation(), Constellation::Gps);
+//! assert_eq!(sid.to_string(), "GPS L1CA 22");
+//!
+//! assert_eq!(Constellation::Gal.sat_count(), 36);
+//!
+//! let code = Code::from_str("BDS3 B1C").unwrap();
+//! assert_eq!(code.get_carrier_frequency(), 1575.42e6);
+//!
+//!
+//! ```
 mod code;
 mod constellation;
 pub mod consts;
@@ -52,6 +80,7 @@ impl GnssSignal {
         }
     }
 
+    /// Convert a C `gnss_signal_t` object into a Rust [`GnssSignal`]
     pub(crate) fn from_gnss_signal_t(
         sid: swiftnav_sys::gnss_signal_t,
     ) -> Result<GnssSignal, InvalidGnssSignal> {
@@ -60,6 +89,7 @@ impl GnssSignal {
         Ok(Self::new(sid.sat, (sid.code as u8).try_into()?)?)
     }
 
+    /// Convert a Rust [`GnssSignal`] object into a C `gnss_signal_t`
     pub(crate) fn to_gnss_signal_t(self) -> swiftnav_sys::gnss_signal_t {
         swiftnav_sys::gnss_signal_t {
             sat: self.sat,
