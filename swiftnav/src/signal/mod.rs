@@ -23,7 +23,6 @@
 //! ```rust
 //! # use std::str::FromStr;
 //! # use swiftnav::signal::{Code, Constellation, GnssSignal};
-//!
 //! let sid = GnssSignal::new(22, Code::GpsL1ca).unwrap();
 //!
 //! assert_eq!(sid.to_constellation(), Constellation::Gps);
@@ -33,8 +32,6 @@
 //!
 //! let code = Code::from_str("BDS3 B1C").unwrap();
 //! assert_eq!(code.get_carrier_frequency(), 1575.42e6);
-//!
-//!
 //! ```
 mod code;
 mod constellation;
