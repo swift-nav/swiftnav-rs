@@ -95,7 +95,7 @@ impl GpsTime {
     ) -> GpsTime {
         MJD::from_date(year, month, day, hour, minute, seconds).to_gps_hardcoded()
     }
-
+    /// Converts a Rust GPS time to its C equivalent
     pub(crate) fn to_gps_time_t(self) -> swiftnav_sys::gps_time_t {
         swiftnav_sys::gps_time_t {
             tow: self.tow,
