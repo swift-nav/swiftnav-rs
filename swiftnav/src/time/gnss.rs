@@ -152,6 +152,8 @@ impl GpsTime {
         dt + (self.wn - other.wn) as f64 * consts::WEEK_SECS as f64
     }
 
+    /// Convert a [`GpsTime`] into a [`UtcTime`] using the [`UtcParams`] if
+    /// available, or hardcoded leap seconds otherwise
     fn internal_to_utc(self, params: Option<&UtcParams>) -> UtcTime {
         // Is it during a (positive) leap second event
         // Get the UTC offset at the time we're converting

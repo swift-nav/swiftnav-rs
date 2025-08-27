@@ -88,10 +88,14 @@ impl UtcParams {
 
 /// Representation of UTC time
 ///
-/// Note: This implementation does not aim to be able to represent arbitrary dates and times.
-/// It is only meant to represent dates and times over the period that GNSS systems have been
-/// around. Specifically it shouldn't be relied on for dates significantly before January 6th 1980,
-/// the start of GPS time.
+/// # Note
+///
+/// This implementation mostly aims to represent dates and times over the period
+/// that GNSS systems have been around, and is only tested for that time period.
+/// If you require correctness for dates before January 6th 1980, the start of
+/// GPS time, please consider using the [`chrono`] crate. Conversions between
+/// [`UtcTime`] and [`chrono::DateTime<chrono::offset::Utc>`] are provided with
+/// the `chrono` feature.
 #[derive(Debug, Clone, Copy)]
 pub struct UtcTime {
     /// Number of years AD. In four digit format.

@@ -26,6 +26,15 @@ impl MJD {
     }
 
     /// Creates a modified julian date from a calendar date and time
+    ///
+    /// Taken with permission from <http://www.leapsecond.com/tools/gpsdate.c>
+    ///
+    /// - Valid for Gregorian dates from 17-Nov-1858.
+    /// - Adapted from sci.astro FAQ.
+    ///
+    /// # Note
+    ///
+    /// This function will be inaccurate by up to a second on the day of a leap second
     pub fn from_date(year: u16, month: u8, day: u8, hour: u8, minute: u8, seconds: f64) -> MJD {
         let full_days = 367 * year as i64
             - 7 * (year as i64 + (month as i64 + 9) / 12) / 4
