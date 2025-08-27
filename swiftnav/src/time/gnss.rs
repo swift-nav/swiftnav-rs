@@ -66,7 +66,7 @@ impl GpsTime {
         GpsTime { wn, tow }
     }
 
-    /// Makes a new GPS time object from a date and time, using
+    /// Makes a new GPS time object from a date and time
     pub fn from_date(
         year: u16,
         month: u8,
