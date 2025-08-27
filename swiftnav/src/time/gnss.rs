@@ -61,7 +61,7 @@ impl GpsTime {
             Ok(GpsTime { wn, tow })
         }
     }
-
+    /// Makes a new GPS time object without checking the validity of the given values.
     pub(crate) const fn new_unchecked(wn: i16, tow: f64) -> GpsTime {
         GpsTime { wn, tow }
     }
