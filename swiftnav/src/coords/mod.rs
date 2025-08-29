@@ -239,6 +239,7 @@ mod tests {
     use crate::time::UtcTime;
 
     use super::*;
+    use proptest::prelude::*;
 
     const D2R: f64 = std::f64::consts::PI / 180.0;
     /* Maximum allowable error in quantities with units of length (in meters). */
@@ -342,6 +343,96 @@ mod tests {
     }
 
     #[test]
+    fn llh2ecef2llh() {
+        for llh_input in LLH_VALUES.iter() {
+            let llh_output = llh_input.to_ecef().to_llh();
+
+            assert!(!llh_output.latitude().is_nan());
+            assert!(!llh_output.longitude().is_nan());
+            assert!(!llh_output.height().is_nan());
+
+            let lat_err = llh_input.latitude() - llh_output.latitude();
+            assert!(lat_err.abs() < MAX_ANGLE_ERROR_RAD);
+
+            let lon_err = llh_input.longitude() - llh_output.longitude();
+            assert!(lon_err.abs() < MAX_ANGLE_ERROR_RAD);
+
+            let hgt_err = llh_input.height() - llh_output.height();
+            assert!(hgt_err.abs() < MAX_DIST_ERROR_M);
+        }
+    }
+
+    #[test]
+    fn ecef2llh2ecef() {
+        for ecef_input in ECEF_VALUES.iter() {
+            let ecef_output = ecef_input.to_llh().to_ecef();
+
+            assert!(!ecef_output.x().is_nan());
+            assert!(!ecef_output.y().is_nan());
+            assert!(!ecef_output.z().is_nan());
+
+            let x_err = ecef_input.x() - ecef_output.x();
+            assert!(x_err.abs() < MAX_DIST_ERROR_M);
+
+            let y_err = ecef_input.y() - ecef_output.y();
+            assert!(y_err.abs() < MAX_DIST_ERROR_M);
+
+            let z_err = ecef_input.z() - ecef_output.z();
+            assert!(z_err.abs() < MAX_DIST_ERROR_M);
+        }
+    }
+
+    #[test]
+    fn ecef2ned() {
+        let ecef_position = LLHDegrees::new(0.0, 0.0, 0.0).to_ecef();
+
+        // Make sure that the X unit vector at null-island points up
+        let ecef_vec = ECEF::new(1.0, 0.0, 0.0);
+        let ned_vec = ecef_vec.ned_vector_at(&ecef_position);
+        assert_float_eq!(ned_vec.n(), 0.0, abs <= MAX_DIST_ERROR_M);
+        assert_float_eq!(ned_vec.e(), 0.0, abs <= MAX_DIST_ERROR_M);
+        assert_float_eq!(ned_vec.d(), -1.0, abs <= MAX_DIST_ERROR_M);
+
+        // Make sure that the Y unit vector at null-island points east
+        let ecef_vec = ECEF::new(0.0, 1.0, 0.0);
+        let ned_vec = ecef_vec.ned_vector_at(&ecef_position);
+        assert_float_eq!(ned_vec.n(), 0.0, abs <= MAX_DIST_ERROR_M);
+        assert_float_eq!(ned_vec.e(), 1.0, abs <= MAX_DIST_ERROR_M);
+        assert_float_eq!(ned_vec.d(), 0.0, abs <= MAX_DIST_ERROR_M);
+
+        // Make sure that the Z unit vector at null-island points north
+        let ecef_vec = ECEF::new(0.0, 0.0, 1.0);
+        let ned_vec = ecef_vec.ned_vector_at(&ecef_position);
+        assert_float_eq!(ned_vec.n(), 1.0, abs <= MAX_DIST_ERROR_M);
+        assert_float_eq!(ned_vec.e(), 0.0, abs <= MAX_DIST_ERROR_M);
+        assert_float_eq!(ned_vec.d(), 0.0, abs <= MAX_DIST_ERROR_M);
+
+        // Move to the north pole
+        let ecef_position = LLHDegrees::new(90.0, 0.0, 0.0).to_ecef();
+
+        // Make sure that the X unit vector at null-island points south
+        let ecef_vec = ECEF::new(1.0, 0.0, 0.0);
+        let ned_vec = ecef_vec.ned_vector_at(&ecef_position);
+        assert_float_eq!(ned_vec.n(), -1.0, abs <= MAX_DIST_ERROR_M);
+        assert_float_eq!(ned_vec.e(), 0.0, abs <= MAX_DIST_ERROR_M);
+        assert_float_eq!(ned_vec.d(), 0.0, abs <= MAX_DIST_ERROR_M);
+
+        // Make sure that the Y unit vector at null-island points east
+        let ecef_vec = ECEF::new(0.0, 1.0, 0.0);
+        let ned_vec = ecef_vec.ned_vector_at(&ecef_position);
+        assert_float_eq!(ned_vec.n(), 0.0, abs <= MAX_DIST_ERROR_M);
+        assert_float_eq!(ned_vec.e(), 1.0, abs <= MAX_DIST_ERROR_M);
+        assert_float_eq!(ned_vec.d(), 0.0, abs <= MAX_DIST_ERROR_M);
+
+        // Make sure that the Z unit vector at null-island points up
+        let ecef_vec = ECEF::new(0.0, 0.0, 1.0);
+        let ned_vec = ecef_vec.ned_vector_at(&ecef_position);
+        assert_float_eq!(ned_vec.n(), 0.0, abs <= MAX_DIST_ERROR_M);
+        assert_float_eq!(ned_vec.e(), 0.0, abs <= MAX_DIST_ERROR_M);
+        assert_float_eq!(ned_vec.d(), -1.0, abs <= MAX_DIST_ERROR_M);
+    }
+
+    #[test]
     fn coordinate_epoch() {
         let initial_epoch = UtcTime::from_parts(2020, 1, 1, 0, 0, 0.).to_gps_hardcoded();
         let new_epoch = UtcTime::from_parts(2021, 1, 1, 0, 0, 0.).to_gps_hardcoded();
@@ -362,5 +453,82 @@ mod tests {
         assert_float_eq!(new_coord.velocity.unwrap().y(), 2.0, abs <= 0.001);
         assert_float_eq!(new_coord.velocity.unwrap().z(), 3.0, abs <= 0.001);
         assert_eq!(new_epoch, new_coord.epoch());
+    }
+
+    // Property-based tests using proptest
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1000))]
+
+        /// Property: Converting LLH->ECEF->LLH should always result in the original value
+        #[test]
+        fn prop_llh2ecef2llh_identity(lat in -90.0..90.0, lon in -180.0..180.0, height in (-0.5*EARTH_A)..(4.0*EARTH_A)) {
+            let llh_input = LLHDegrees::new(lat, lon, height).to_radians();
+            let ecef = llh_input.to_ecef();
+            let llh_output = ecef.to_llh();
+
+            assert!(!llh_output.latitude().is_nan());
+            assert!(!llh_output.longitude().is_nan());
+            assert!(!llh_output.height().is_nan());
+
+            let lat_err = llh_input.latitude() - llh_output.latitude();
+            assert!(lat_err.abs() < MAX_ANGLE_ERROR_RAD,
+                "Converting random WGS84 LLH to ECEF and back again does not return the original values. Initial: {:?}, ECEF: {:?}, Final: {:?}, Lat error (rad): {}", llh_input, ecef, llh_output, lat_err);
+
+            let lon_err = llh_input.longitude() - llh_output.longitude();
+            assert!(lon_err.abs() < MAX_ANGLE_ERROR_RAD,
+                "Converting random WGS84 LLH to ECEF and back again does not return the original values. Initial: {:?}, ECEF: {:?}, Final: {:?}, Lon error (rad): {}", llh_input, ecef, llh_output, lon_err);
+
+            let hgt_err = llh_input.height() - llh_output.height();
+            assert!(hgt_err.abs() < MAX_DIST_ERROR_M,
+                "Converting random WGS84 LLH to ECEF and back again does not return the original values. Initial: {:?}, ECEF: {:?}, Final: {:?}, Height error (mm): {}", llh_input, ecef, llh_output, hgt_err*1000.0);
+        }
+
+        /// Property: Converting ECEF->LLH->ECEF should always result in the original value
+        #[test]
+        fn prop_ecef2llh2ecef_identity(x in (-4.0*EARTH_A)..(4.0*EARTH_A), y in (-4.0*EARTH_A)..(4.0*EARTH_A), z in (-4.0*EARTH_A)..(4.0*EARTH_A)) {
+            let ecef_input = ECEF::new(x, y, z);
+            let llh = ecef_input.to_llh();
+            let ecef_output = llh.to_ecef();
+
+            assert!(!ecef_output.x().is_nan());
+            assert!(!ecef_output.y().is_nan());
+            assert!(!ecef_output.z().is_nan());
+
+            let x_err = ecef_input.x() - ecef_output.x();
+            assert!(x_err.abs() < MAX_DIST_ERROR_M,
+                "Converting random WGS84 ECEF to LLH and back again does not return the original values. Initial: {:?}, LLH: {:?}, Final: {:?}, X error (mm): {}", ecef_input, llh, ecef_output, x_err*1000.0);
+
+            let y_err = ecef_input.y() - ecef_output.y();
+            assert!(y_err.abs() < MAX_DIST_ERROR_M,
+                "Converting random WGS84 ECEF to LLH and back again does not return the original values. Initial: {:?}, LLH: {:?}, Final: {:?}, Y error (mm): {}", ecef_input, llh, ecef_output, y_err*1000.0);
+
+            let z_err = ecef_input.z() - ecef_output.z();
+            assert!(z_err.abs() < MAX_DIST_ERROR_M,
+                "Converting random WGS84 ECEF to LLH and back again does not return the original values. Initial: {:?}, LLH: {:?}, Final: {:?}, Z error (mm): {}", ecef_input, llh, ecef_output, z_err*1000.0);
+        }
+
+        /// Property: Converting ECEF->NED using the same point should always result in a value of 0 NED
+        #[test]
+        fn prop_ecef2ned_identity(x in -1e8..1e8, y in -1e8..1e8, z in -1e8..1e8) {
+            let ecef = ECEF::new(x, y, z);
+            let ned_output = ecef.ned_to(&ecef);
+
+            assert!(!ned_output.n().is_nan());
+            assert!(!ned_output.e().is_nan());
+            assert!(!ned_output.d().is_nan());
+
+            assert!(ned_output.n().abs() < 1e-8,
+                "NED vector to reference ECEF point has nonzero element north: {} mm (point was {:?})",
+                ned_output.n()*1000.0,
+                ecef);
+            assert!(ned_output.e().abs() < 1e-8,
+                "NED vector to reference ECEF point has nonzero element east: {} mm (point was {:?})",
+                ned_output.e()*1000.0,
+                ecef);
+            assert!(ned_output.d().abs() < 1e-8,
+                "NED vector to reference ECEF point has nonzero element down: {} mm (point was {:?})",
+                ned_output.d()*1000.0,
+                ecef);
+        }
     }
 }

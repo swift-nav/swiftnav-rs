@@ -81,6 +81,10 @@ impl ECEF {
         WGS84::ecef2azel(point, self)
     }
 
+    pub fn ned_to(&self, point: &ECEF) -> NED {
+        WGS84::ecef2ned_d(point, self)
+    }
+
     /// Rotate a vector from ECEF coordinates into NED coordinates, at a given
     /// reference point. This is approporiate for converting velocity vectors.
     ///
