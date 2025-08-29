@@ -538,7 +538,7 @@ impl GalTime {
     pub fn new(wn: i16, tow: f64) -> Result<GalTime, InvalidGpsTime> {
         if wn < 0 {
             Err(InvalidGpsTime::InvalidWN(wn))
-        } else if !tow.is_finite() || tow < 0. || tow >= WEEK.as_secs_f64() {
+        } else if !tow.is_finite() || tow < 0.0 || tow >= WEEK.as_secs_f64() {
             Err(InvalidGpsTime::InvalidTOW(tow))
         } else {
             Ok(GalTime { wn, tow })
@@ -588,7 +588,7 @@ impl BdsTime {
     pub fn new(wn: i16, tow: f64) -> Result<BdsTime, InvalidGpsTime> {
         if wn < 0 {
             Err(InvalidGpsTime::InvalidWN(wn))
-        } else if !tow.is_finite() || tow < 0. || tow >= WEEK.as_secs_f64() {
+        } else if !tow.is_finite() || tow < 0.0 || tow >= WEEK.as_secs_f64() {
             Err(InvalidGpsTime::InvalidTOW(tow))
         } else {
             Ok(BdsTime { wn, tow })
