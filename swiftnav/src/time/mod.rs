@@ -118,16 +118,12 @@ mod tests {
             let diff = test_case.diff(&round_trip).abs();
             assert!(
                 diff < TOW_TOL,
-                "gps2mjd2gps failure. original: {:?}, round trip: {:?}, diff: {}, TOW_TOL: {}",
-                test_case,
-                round_trip,
-                diff,
-                TOW_TOL
+                "gps2mjd2gps failure. original: {test_case:?}, round trip: {round_trip:?}, diff: {diff}, TOW_TOL: {TOW_TOL}"
             );
 
             // test mjd -> date -> mjd
             let (year, month, day, hour, minute, second) = mjd.to_date();
-            let round_trip = MJD::from_date(year, month, day, hour, minute, second);
+            let round_trip = MJD::from_parts(year, month, day, hour, minute, second);
             let diff = (mjd.as_f64() - round_trip.as_f64()).abs();
             assert!(
                 diff < TOW_TOL,
@@ -153,7 +149,7 @@ mod tests {
 
             // test gps -> date -> gps
             let (year, month, day, hour, minute, second) = test_case.to_date_hardcoded();
-            let round_trip = GpsTime::from_date_hardcoded(year, month, day, hour, minute, second);
+            let round_trip = GpsTime::from_parts_hardcoded(year, month, day, hour, minute, second);
             let diff = test_case.diff(&round_trip).abs();
             assert!(
                 diff < TOW_TOL,
@@ -166,7 +162,7 @@ mod tests {
 
             // test utc -> date -> utc
             let (year, month, day, hour, minute, second) = utc.to_date();
-            let round_trip = UtcTime::from_date(year, month, day, hour, minute, second);
+            let round_trip = UtcTime::from_parts(year, month, day, hour, minute, second);
             let diff = utc.to_mjd().as_f64() - mjd.as_f64();
             assert!(
                 diff < TOW_TOL,

@@ -73,7 +73,7 @@ impl Ionosphere {
     ///   * IS-GPS-200H, Section 20.3.3.5.1.7
     pub fn decode_parameters(words: &[u32; 8]) -> Result<Ionosphere, IonoDecodeFailure> {
         let mut iono = Ionosphere(swiftnav_sys::ionosphere_t {
-            toa: GpsTime::new_unchecked(0, 0.0).to_gps_time_t(),
+            toa: GpsTime::default().to_gps_time_t(),
             a0: 0.0,
             a1: 0.0,
             a2: 0.0,
@@ -193,7 +193,7 @@ mod tests {
         ];
         let result = Ionosphere::new(
             /* reference data provided by u-blox receiver */
-            GpsTime::new_unchecked(0, 0.),
+            GpsTime::default(),
             0.0000000111758,
             0.0000000223517,
             -0.0000000596046,

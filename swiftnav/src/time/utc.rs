@@ -120,8 +120,8 @@ pub struct UtcTime {
 
 impl UtcTime {
     /// Creates a UTC time from its individual components
-    pub fn from_date(year: u16, month: u8, day: u8, hour: u8, minute: u8, second: f64) -> UtcTime {
-        let mjd = MJD::from_date(year, month, day, hour, minute, second);
+    pub fn from_parts(year: u16, month: u8, day: u8, hour: u8, minute: u8, second: f64) -> UtcTime {
+        let mjd = MJD::from_parts(year, month, day, hour, minute, second);
         mjd.to_utc()
     }
 
@@ -264,7 +264,7 @@ impl UtcTime {
 
     /// Converts the UTC time into a modified julian date
     pub fn to_mjd(&self) -> MJD {
-        MJD::from_date(
+        MJD::from_parts(
             self.year(),
             self.month(),
             self.day_of_month(),
@@ -410,7 +410,7 @@ impl<Tz: chrono::offset::TimeZone> From<chrono::DateTime<Tz>> for UtcTime {
         let datetime = chrono.naive_utc();
         let seconds = datetime.second() as f64 + (datetime.nanosecond() as f64 / 1_000_000_000.0);
 
-        UtcTime::from_date(
+        UtcTime::from_parts(
             datetime.year() as u16,
             datetime.month() as u8,
             datetime.day() as u8,
@@ -1066,7 +1066,7 @@ mod tests {
     fn chrono_conversions() {
         use chrono::prelude::*;
         let epsilon = std::time::Duration::from_secs_f64(1e-6);
-        let swift_date = UtcTime::from_date(2021, 8, 1, 00, 11, 0.0);
+        let swift_date = UtcTime::from_parts(2021, 8, 1, 00, 11, 0.0);
         let expected_utc = DateTime::from_naive_utc_and_offset(
             NaiveDateTime::new(
                 NaiveDate::from_ymd_opt(2021, 8, 1).unwrap(),

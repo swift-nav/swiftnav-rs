@@ -764,8 +764,8 @@ mod tests {
 
     #[test]
     fn coordinate_epoch() {
-        let initial_epoch = UtcTime::from_date(2020, 1, 1, 0, 0, 0.).to_gps_hardcoded();
-        let new_epoch = UtcTime::from_date(2021, 1, 1, 0, 0, 0.).to_gps_hardcoded();
+        let initial_epoch = UtcTime::from_parts(2020, 1, 1, 0, 0, 0.).to_gps_hardcoded();
+        let new_epoch = UtcTime::from_parts(2021, 1, 1, 0, 0, 0.).to_gps_hardcoded();
         let initial_coord = Coordinate::with_velocity(
             ReferenceFrame::ITRF2020,
             ECEF::new(0.0, 0.0, 0.0),

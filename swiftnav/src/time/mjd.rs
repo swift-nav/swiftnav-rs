@@ -35,7 +35,10 @@ impl MJD {
     /// # Note
     ///
     /// This function will be inaccurate by up to a second on the day of a leap second
-    pub fn from_date(year: u16, month: u8, day: u8, hour: u8, minute: u8, seconds: f64) -> MJD {
+    pub fn from_parts(year: u16, month: u8, day: u8, hour: u8, minute: u8, seconds: f64) -> MJD {
+        // Enforce our assumption that the date is just the MJD period
+        assert!(year > 1858 || (year == 1858 && month > 11) || (year == 1858 && month == 11 && day >= 17), "Attempting to convert a date prior to the start of the Modified Julian Date system ({}-{}-{}T{}:{}:{}Z", year, month, day, hour, minute, seconds);
+
         let full_days = 367 * year as i64
             - 7 * (year as i64 + (month as i64 + 9) / 12) / 4
             - 3 * ((year as i64 + (month as i64 - 9) / 7) / 100 + 1) / 4

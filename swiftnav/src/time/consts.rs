@@ -83,3 +83,7 @@ pub const GAL_SECOND_TO_GPS_SECOND: f64 = 0.0;
 /// Constant difference of Beidou time from GPS time
 pub const BDS_WEEK_TO_GPS_WEEK: i16 = 1356;
 pub const BDS_SECOND_TO_GPS_SECOND: f64 = 14.0;
+
+/// The threshold for considering two time values as equivalent
+/// in [`PartialEq`] and [`PartialOrd`]
+pub const JIFFY: f64 = 1e-12;

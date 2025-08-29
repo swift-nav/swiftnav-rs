@@ -46,8 +46,6 @@ pub enum InvalidGpsTime {
 }
 
 impl GpsTime {
-    const JIFFY: f64 = 1e-12;
-
     /// Makes a new GPS time object and checks the validity of the given values.
     ///
     /// Invalid values include negative week values, negative, non-finite, or to
@@ -55,7 +53,7 @@ impl GpsTime {
     pub fn new(wn: i16, tow: f64) -> Result<GpsTime, InvalidGpsTime> {
         if wn < 0 {
             Err(InvalidGpsTime::InvalidWN(wn))
-        } else if !tow.is_finite() || tow < 0. || tow >= WEEK.as_secs_f64() {
+        } else if !tow.is_finite() || tow < 0.0 || tow >= WEEK.as_secs_f64() {
             Err(InvalidGpsTime::InvalidTOW(tow))
         } else {
             Ok(GpsTime { wn, tow })
@@ -67,7 +65,7 @@ impl GpsTime {
     }
 
     /// Makes a new GPS time object from a date and time
-    pub fn from_date(
+    pub fn from_parts(
         year: u16,
         month: u8,
         day: u8,
@@ -76,7 +74,7 @@ impl GpsTime {
         seconds: f64,
         utc_params: &UtcParams,
     ) -> GpsTime {
-        MJD::from_date(year, month, day, hour, minute, seconds).to_gps(utc_params)
+        MJD::from_parts(year, month, day, hour, minute, seconds).to_gps(utc_params)
     }
 
     /// Makes a new GPS time object from a date and time using a hardcoded list of leap seconds
@@ -84,8 +82,8 @@ impl GpsTime {
     /// # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
     ///
     /// The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use [`GpsTime::from_date()`] with the newest set of UTC parameters
-    pub fn from_date_hardcoded(
+    /// preferable to use [`GpsTime::from_parts()`] with the newest set of UTC parameters
+    pub fn from_parts_hardcoded(
         year: u16,
         month: u8,
         day: u8,
@@ -93,7 +91,7 @@ impl GpsTime {
         minute: u8,
         seconds: f64,
     ) -> GpsTime {
-        MJD::from_date(year, month, day, hour, minute, seconds).to_gps_hardcoded()
+        MJD::from_parts(year, month, day, hour, minute, seconds).to_gps_hardcoded()
     }
     /// Converts a Rust GPS time to its C equivalent
     pub(crate) fn to_gps_time_t(self) -> swiftnav_sys::gps_time_t {
@@ -176,24 +174,24 @@ impl GpsTime {
             tow_utc -= 1.0;
         }
 
-        let mut t_u = GpsTime {
+        let mut utc_time = GpsTime {
             wn: self.wn,
             tow: tow_utc,
         };
-        t_u.normalize();
+        utc_time.normalize();
 
         /* break the time into components */
-        let mut u = UtcTime::from_gps_no_leap(t_u);
+        let mut utc_time: UtcTime = UtcTime::from_gps_no_leap(utc_time);
 
         if is_lse {
-            assert!(u.hour() == 23);
-            assert!(u.minute() == 59);
-            assert!(u.seconds_int() == 59);
+            assert!(utc_time.hour() == 23);
+            assert!(utc_time.minute() == 59);
+            assert!(utc_time.seconds_int() == 59);
             /* add the extra second back in*/
-            u.add_second();
+            utc_time.add_second();
         }
 
-        u
+        utc_time
     }
 
     /// Converts the GPS time into UTC time
@@ -462,10 +460,16 @@ impl GpsTime {
     }
 }
 
+impl Default for GpsTime {
+    fn default() -> Self {
+        GpsTime::new_unchecked(0, 0.0)
+    }
+}
+
 impl PartialEq for GpsTime {
     fn eq(&self, other: &Self) -> bool {
         let diff_seconds = self.diff(other).abs();
-        diff_seconds < Self::JIFFY
+        diff_seconds < consts::JIFFY
     }
 }
 
@@ -473,7 +477,7 @@ impl PartialOrd for GpsTime {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
         let diff_seconds = self.diff(other);
 
-        if diff_seconds.abs() < Self::JIFFY {
+        if diff_seconds.abs() < consts::JIFFY {
             Some(std::cmp::Ordering::Equal)
         } else if diff_seconds > 0.0 {
             Some(std::cmp::Ordering::Greater)

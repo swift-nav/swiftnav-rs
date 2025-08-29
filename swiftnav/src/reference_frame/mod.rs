@@ -57,14 +57,14 @@
 //! let transformation = get_transformation(ReferenceFrame::ITRF2014, ReferenceFrame::NAD83_2011)
 //!     .unwrap();
 //!
-//! let epoch_2020 = UtcTime::from_date(2020, 3, 15, 0, 0, 0.).to_gps_hardcoded();
+//! let epoch_2020 = UtcTime::from_parts(2020, 3, 15, 0, 0, 0.).to_gps_hardcoded();
 //! let itrf_coord = Coordinate::with_velocity(
 //!     ReferenceFrame::ITRF2014, // The reference frame of the coordinate
 //!     ECEF::new(-2703764.0, -4261273.0, 3887158.0), // The position of the coordinate
 //!     ECEF::new(-0.221, 0.254, 0.122), // The velocity of the coordinate
 //!     epoch_2020); // The epoch of the coordinate
 //!
-//! let epoch_2010 = UtcTime::from_date(2010, 1, 1, 0, 0, 0.).to_gps_hardcoded();
+//! let epoch_2010 = UtcTime::from_parts(2010, 1, 1, 0, 0, 0.).to_gps_hardcoded();
 //! let itrf_coord = itrf_coord.adjust_epoch(&epoch_2010); // Change the epoch of the coordinate
 //!
 //! let nad83_coord = transformation.transform(&itrf_coord);
