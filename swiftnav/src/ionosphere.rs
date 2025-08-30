@@ -73,7 +73,7 @@ impl Ionosphere {
     ///   * IS-GPS-200H, Section 20.3.3.5.1.7
     pub fn decode_parameters(words: &[u32; 8]) -> Result<Ionosphere, IonoDecodeFailure> {
         let mut iono = Ionosphere(swiftnav_sys::ionosphere_t {
-            toa: GpsTime::unknown(),
+            toa: GpsTime::default().to_gps_time_t(),
             a0: 0.0,
             a1: 0.0,
             a2: 0.0,
@@ -104,7 +104,7 @@ impl Ionosphere {
     ///
     /// \return Ionospheric delay distance for GPS L1 frequency \[m\]
     pub fn calc_delay(&self, t: &GpsTime, lat_u: f64, lon_u: f64, a: f64, e: f64) -> f64 {
-        unsafe { swiftnav_sys::calc_ionosphere(t.c_ptr(), lat_u, lon_u, a, e, &self.0) }
+        unsafe { swiftnav_sys::calc_ionosphere(&t.to_gps_time_t(), lat_u, lon_u, a, e, &self.0) }
     }
 }
 
@@ -193,7 +193,7 @@ mod tests {
         ];
         let result = Ionosphere::new(
             /* reference data provided by u-blox receiver */
-            GpsTime::new_unchecked(0, 0.),
+            GpsTime::default(),
             0.0000000111758,
             0.0000000223517,
             -0.0000000596046,

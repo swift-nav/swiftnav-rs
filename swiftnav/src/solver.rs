@@ -416,7 +416,7 @@ pub fn calc_pvt(
         swiftnav_sys::calc_PVT(
             measurements.len() as u8,
             meas_ptr,
-            tor.c_ptr(),
+            &tor.to_gps_time_t(),
             settings.disable_raim,
             settings.disable_velocity,
             &obs_config,
