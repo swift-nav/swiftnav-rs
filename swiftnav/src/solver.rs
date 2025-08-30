@@ -43,7 +43,7 @@ impl GnssSolution {
     /// Gets the received position in latitude, longitude, and height coordinates
     pub fn pos_llh(&self) -> Option<LLHRadians> {
         if self.pos_valid() {
-            Some(LLHRadians::from_array(&self.0.pos_llh))
+            Some(self.0.pos_llh.into())
         } else {
             None
         }
@@ -52,7 +52,7 @@ impl GnssSolution {
     /// Gets the received position in earth centered earth fixed cartesian coordinates
     pub fn pos_ecef(&self) -> Option<ECEF> {
         if self.pos_valid() {
-            Some(ECEF::from_array(&self.0.pos_ecef))
+            Some(self.0.pos_ecef.into())
         } else {
             None
         }
@@ -61,7 +61,7 @@ impl GnssSolution {
     /// Gets the receiver velocity in local north east down coordinates
     pub fn vel_ned(&self) -> Option<NED> {
         if self.vel_valid() {
-            Some(NED::from_array(&self.0.vel_ned))
+            Some(self.0.vel_ned.into())
         } else {
             None
         }
@@ -70,7 +70,7 @@ impl GnssSolution {
     /// Gets the receiver velocity in earth centered earth fixed cartesian coordinates
     pub fn vel_ecef(&self) -> Option<ECEF> {
         if self.vel_valid() {
-            Some(ECEF::from_array(&self.0.vel_ecef))
+            Some(self.0.vel_ecef.into())
         } else {
             None
         }

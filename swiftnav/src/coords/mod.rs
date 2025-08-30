@@ -88,7 +88,7 @@ use crate::{
     reference_frame::{get_transformation, ReferenceFrame, TransformationNotFound},
     time::GpsTime,
 };
-use nalgebra::{ArrayStorage, Vector2};
+use nalgebra::Vector2;
 
 /// WGS84 local horizontal coordinates consisting of an Azimuth and Elevation, with angles stored as radians
 ///
@@ -102,27 +102,43 @@ impl AzimuthElevation {
     /// Create an [`AzimuthElevation`] object from the given azimuth and elevation
     #[must_use]
     pub fn new(az: f64, el: f64) -> AzimuthElevation {
-        AzimuthElevation(Vector2::new(az, el))
-    }
-
-    /// Create an [`AzimuthElevation`] object from an array
-    ///
-    /// Element 0 is azimuth, element 1 is elevation
-    #[must_use]
-    pub const fn from_array(array: &[f64; 2]) -> AzimuthElevation {
-        AzimuthElevation(Vector2::from_array_storage(ArrayStorage([*array; 1])))
+        Self(Vector2::new(az, el))
     }
 
     /// Get the Azimuth component
     #[must_use]
     pub fn az(&self) -> f64 {
-        self.0[0]
+        self.0.x
     }
 
     /// Get the Elevation component
     #[must_use]
     pub fn el(&self) -> f64 {
-        self.0[1]
+        self.0.y
+    }
+}
+
+impl From<[f64; 2]> for AzimuthElevation {
+    fn from(array: [f64; 2]) -> Self {
+        Self::new(array[0], array[1])
+    }
+}
+
+impl From<&[f64; 2]> for AzimuthElevation {
+    fn from(array: &[f64; 2]) -> Self {
+        Self::new(array[0], array[1])
+    }
+}
+
+impl From<Vector2<f64>> for AzimuthElevation {
+    fn from(vector: Vector2<f64>) -> Self {
+        Self(vector)
+    }
+}
+
+impl From<(f64, f64)> for AzimuthElevation {
+    fn from((x, y): (f64, f64)) -> Self {
+        Self::new(x, y)
     }
 }
 
@@ -227,8 +243,8 @@ impl Coordinate {
 
     /// Transform the coordinate from into a new reference frame
     pub fn transform_to(&self, new_frame: ReferenceFrame) -> Result<Self, TransformationNotFound> {
-        let transformation = get_transformation(self.reference_frame, new_frame)?;
-        Ok(transformation.transform(self))
+        get_transformation(self.reference_frame, new_frame)
+            .map(|transformation| transformation.transform(self))
     }
 }
 
@@ -251,14 +267,14 @@ mod tests {
 
     #[test]
     fn llhrad2deg() {
-        let zeros = LLHRadians::from_array(&[0.0; 3]);
+        let zeros = LLHRadians::default();
 
         let deg = zeros.to_degrees();
         assert_eq!(0.0, deg.latitude());
         assert_eq!(0.0, deg.longitude());
         assert_eq!(0.0, deg.height());
 
-        let swift_home = LLHDegrees::from_array(&[37.779804, -122.391751, 60.0]);
+        let swift_home: LLHDegrees = [37.779804, -122.391751, 60.0].into();
         let rads = swift_home.to_radians();
 
         assert!((rads.latitude() - 0.659381970558).abs() < MAX_ANGLE_ERROR_RAD);
@@ -271,17 +287,17 @@ mod tests {
         );
     }
 
-    const LLH_VALUES: [LLHRadians; 10] = [
-        LLHRadians::from_array(&[0.0, 0.0, 0.0]), /* On the Equator and Prime Meridian. */
-        LLHRadians::from_array(&[0.0, 180.0 * D2R, 0.0]), /* On the Equator. */
-        LLHRadians::from_array(&[0.0, 90.0 * D2R, 0.0]), /* On the Equator. */
-        LLHRadians::from_array(&[0.0, -90.0 * D2R, 0.0]), /* On the Equator. */
-        LLHRadians::from_array(&[90.0 * D2R, 0.0, 0.0]), /* North pole. */
-        LLHRadians::from_array(&[-90.0 * D2R, 0.0, 0.0]), /* South pole. */
-        LLHRadians::from_array(&[90.0 * D2R, 0.0, 22.0]), /* 22m above the north pole. */
-        LLHRadians::from_array(&[-90.0 * D2R, 0.0, 22.0]), /* 22m above the south pole. */
-        LLHRadians::from_array(&[0.0, 0.0, 22.0]), /* 22m above the Equator and Prime Meridian. */
-        LLHRadians::from_array(&[0.0, 180.0 * D2R, 22.0]), /* 22m above the Equator. */
+    const LLH_VALUES: [[f64; 3]; 10] = [
+        [0.0, 0.0, 0.0],          /* On the Equator and Prime Meridian. */
+        [0.0, 180.0 * D2R, 0.0],  /* On the Equator. */
+        [0.0, 90.0 * D2R, 0.0],   /* On the Equator. */
+        [0.0, -90.0 * D2R, 0.0],  /* On the Equator. */
+        [90.0 * D2R, 0.0, 0.0],   /* North pole. */
+        [-90.0 * D2R, 0.0, 0.0],  /* South pole. */
+        [90.0 * D2R, 0.0, 22.0],  /* 22m above the north pole. */
+        [-90.0 * D2R, 0.0, 22.0], /* 22m above the south pole. */
+        [0.0, 0.0, 22.0],         /* 22m above the Equator and Prime Meridian. */
+        [0.0, 180.0 * D2R, 22.0], /* 22m above the Equator. */
     ];
 
     /* Semi-major axis. */
@@ -289,22 +305,25 @@ mod tests {
     /* Semi-minor axis. */
     const EARTH_B: f64 = 6_356_752.314_245_179;
 
-    const ECEF_VALUES: [ECEF; 10] = [
-        ECEF::from_array(&[EARTH_A, 0.0, 0.0]),
-        ECEF::from_array(&[-EARTH_A, 0.0, 0.0]),
-        ECEF::from_array(&[0.0, EARTH_A, 0.0]),
-        ECEF::from_array(&[0.0, -EARTH_A, 0.0]),
-        ECEF::from_array(&[0.0, 0.0, EARTH_B]),
-        ECEF::from_array(&[0.0, 0.0, -EARTH_B]),
-        ECEF::from_array(&[0.0, 0.0, (EARTH_B + 22.0)]),
-        ECEF::from_array(&[0.0, 0.0, -(EARTH_B + 22.0)]),
-        ECEF::from_array(&[(22.0 + EARTH_A), 0.0, 0.0]),
-        ECEF::from_array(&[-(22.0 + EARTH_A), 0.0, 0.0]),
+    const ECEF_VALUES: [[f64; 3]; 10] = [
+        [EARTH_A, 0.0, 0.0],
+        [-EARTH_A, 0.0, 0.0],
+        [0.0, EARTH_A, 0.0],
+        [0.0, -EARTH_A, 0.0],
+        [0.0, 0.0, EARTH_B],
+        [0.0, 0.0, -EARTH_B],
+        [0.0, 0.0, (EARTH_B + 22.0)],
+        [0.0, 0.0, -(EARTH_B + 22.0)],
+        [(22.0 + EARTH_A), 0.0, 0.0],
+        [-(22.0 + EARTH_A), 0.0, 0.0],
     ];
 
     #[test]
     fn llh2ecef() {
         for (llh_input, expected_ecef) in LLH_VALUES.iter().zip(ECEF_VALUES.iter()) {
+            let llh_input: LLHRadians = llh_input.into();
+            let expected_ecef: ECEF = expected_ecef.into();
+
             let ecef = llh_input.to_ecef();
 
             assert!(!ecef.x().is_nan());
@@ -325,6 +344,9 @@ mod tests {
     #[test]
     fn ecef2llh() {
         for (ecef_input, expected_llh) in ECEF_VALUES.iter().zip(LLH_VALUES.iter()) {
+            let ecef_input: ECEF = ecef_input.into();
+            let expected_llh: LLHRadians = expected_llh.into();
+
             let llh = ecef_input.to_llh();
 
             assert!(!llh.latitude().is_nan());
@@ -345,6 +367,7 @@ mod tests {
     #[test]
     fn llh2ecef2llh() {
         for llh_input in LLH_VALUES.iter() {
+            let llh_input: LLHRadians = llh_input.into();
             let llh_output = llh_input.to_ecef().to_llh();
 
             assert!(!llh_output.latitude().is_nan());
@@ -365,6 +388,7 @@ mod tests {
     #[test]
     fn ecef2llh2ecef() {
         for ecef_input in ECEF_VALUES.iter() {
+            let ecef_input: ECEF = ecef_input.into();
             let ecef_output = ecef_input.to_llh().to_ecef();
 
             assert!(!ecef_output.x().is_nan());

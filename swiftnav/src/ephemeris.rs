@@ -321,9 +321,9 @@ impl Ephemeris {
             swiftnav_sys::calc_sat_state(
                 &self.0,
                 &t.to_gps_time_t(),
-                sat.pos.as_mut_array_ref(),
-                sat.vel.as_mut_array_ref(),
-                sat.acc.as_mut_array_ref(),
+                sat.pos.as_array_mut(),
+                sat.vel.as_array_mut(),
+                sat.acc.as_array_mut(),
                 &mut sat.clock_err,
                 &mut sat.clock_rate_err,
             )
@@ -350,7 +350,7 @@ impl Ephemeris {
             swiftnav_sys::calc_sat_az_el(
                 &self.0,
                 &t.to_gps_time_t(),
-                pos.as_array_ref(),
+                pos.as_array(),
                 swiftnav_sys::satellite_orbit_type_t_MEO,
                 &mut az,
                 &mut el,
@@ -381,8 +381,8 @@ impl Ephemeris {
             swiftnav_sys::calc_sat_doppler(
                 &self.0,
                 &t.to_gps_time_t(),
-                pos.as_array_ref(),
-                vel.as_array_ref(),
+                pos.as_array(),
+                vel.as_array(),
                 swiftnav_sys::satellite_orbit_type_t_MEO,
                 &mut doppler,
             )

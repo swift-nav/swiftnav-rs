@@ -51,3 +51,24 @@ pub(crate) const fn compile_time_sqrt(s: f64) -> f64 {
     }
     x
 }
+
+/// Calculate the rotation matrix for rotating between an [`crate::coords::ECEF`] and [`crate::coords::NED`] frames
+#[must_use]
+pub(crate) fn ecef2ned_matrix(llh: crate::coords::LLHRadians) -> nalgebra::Matrix3<f64> {
+    let sin_lat = llh.latitude().sin();
+    let cos_lat = llh.latitude().cos();
+    let sin_lon = llh.longitude().sin();
+    let cos_lon = llh.longitude().cos();
+
+    nalgebra::Matrix3::new(
+        -sin_lat * cos_lon,
+        -sin_lat * sin_lon,
+        cos_lat,
+        -sin_lon,
+        cos_lon,
+        0.0,
+        -cos_lat * cos_lon,
+        -cos_lat * sin_lon,
+        -sin_lat,
+    )
+}

@@ -85,9 +85,9 @@ impl NavigationMeasurement {
     ///
     /// The satellite state is obtained by evaluating the satellite [ephemeris](crate::ephemeris::Ephemeris::calc_satellite_state) at the time of reception of the signal
     pub fn set_satellite_state(&mut self, sat_state: &SatelliteState) {
-        self.0.sat_pos = *sat_state.pos.as_array_ref();
-        self.0.sat_vel = *sat_state.vel.as_array_ref();
-        self.0.sat_acc = *sat_state.acc.as_array_ref();
+        self.0.sat_pos = *sat_state.pos.as_array();
+        self.0.sat_vel = *sat_state.vel.as_array();
+        self.0.sat_acc = *sat_state.acc.as_array();
         self.0.sat_clock_err = sat_state.clock_err;
         self.0.sat_clock_err_rate = sat_state.clock_rate_err;
     }

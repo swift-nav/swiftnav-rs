@@ -1,6 +1,6 @@
-use nalgebra::{ArrayStorage, Vector3};
+use nalgebra::Vector3;
 
-use super::{Ellipsoid, ECEF, WGS84};
+use crate::{coords::ECEF, math};
 
 /// Local North East Down reference frame coordinates
 ///
@@ -15,42 +15,28 @@ impl NED {
         NED(Vector3::new(n, e, d))
     }
 
-    /// Create a [`NED`] object from an array.
-    ///
-    /// Element 0 is north, element 1 is east, and element 2 is down
-    #[must_use]
-    pub fn from_array(array: &[f64; 3]) -> NED {
-        NED(Vector3::from_array_storage(ArrayStorage([*array; 1])))
-    }
-
-    /// Create a [`NED`] object from a [`Vector3<f64>`] object
-    #[must_use]
-    pub(crate) fn from_vector3(vector: Vector3<f64>) -> NED {
-        NED(vector)
-    }
-
     /// Get a reference to the inner [`Vector3<f64>`]
     #[must_use]
-    pub(crate) fn as_vector_ref(&self) -> &Vector3<f64> {
+    pub(crate) fn as_vector(&self) -> &Vector3<f64> {
         &self.0
     }
 
     /// Get the north component
     #[must_use]
     pub fn n(&self) -> f64 {
-        self.0[0]
+        self.0.x
     }
 
     /// Get the east component
     #[must_use]
     pub fn e(&self) -> f64 {
-        self.0[1]
+        self.0.y
     }
 
     /// Get the down component
     #[must_use]
     pub fn d(&self) -> f64 {
-        self.0[2]
+        self.0.z
     }
 
     /// Rotate a local [`NED`] vector into a [`ECEF`] vector, at a given
@@ -59,6 +45,31 @@ impl NED {
     /// This is the inverse of [ECEF::ned_vector_at].
     #[must_use]
     pub fn ecef_vector_at(&self, ref_ecef: &ECEF) -> ECEF {
-        WGS84::ned2ecef(self, ref_ecef)
+        let m = math::ecef2ned_matrix(ref_ecef.to_llh());
+        (m.transpose() * self.as_vector()).into()
+    }
+}
+
+impl From<[f64; 3]> for NED {
+    fn from(array: [f64; 3]) -> Self {
+        Self::new(array[0], array[1], array[2])
+    }
+}
+
+impl From<&[f64; 3]> for NED {
+    fn from(array: &[f64; 3]) -> Self {
+        Self::new(array[0], array[1], array[2])
+    }
+}
+
+impl From<Vector3<f64>> for NED {
+    fn from(vector: Vector3<f64>) -> Self {
+        Self(vector)
+    }
+}
+
+impl From<(f64, f64, f64)> for NED {
+    fn from((x, y, z): (f64, f64, f64)) -> Self {
+        Self::new(x, y, z)
     }
 }
