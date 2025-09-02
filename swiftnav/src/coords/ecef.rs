@@ -76,7 +76,7 @@ impl ECEF {
             return LLHRadians::new(latitude, longitude, height);
         }
 
-        // Caluclate some other constants as defined in the Fukushima paper.
+        // Calculate some other constants as defined in the Fukushima paper.
         let p_norm = p / WGS84::A;
         let e_c = (1. - WGS84::E * WGS84::E).sqrt();
         let z = self.z().abs() * e_c / WGS84::A;
@@ -96,7 +96,7 @@ impl ECEF {
         let mut f_n;
 
         // Iterate a maximum of 10 times. This should be way more than enough for all
-        // sane inputs
+        // same inputs
         for _ in 0..10 {
             // Calculate some intermediate variables used in the update step based on
             // the current state.
@@ -125,7 +125,7 @@ impl ECEF {
             // not divide by zero as only one of S or C should ever be zero.
             //
             // This incurs an extra division each iteration which the author was
-            // explicityl trying to avoid and it may be that this solution is just
+            // explicitly trying to avoid and it may be that this solution is just
             // reverting back to the method of iterating on T directly, perhaps this
             // bears more thought?
 
