@@ -287,16 +287,16 @@ mod tests {
     }
 
     const LLH_VALUES: [[f64; 3]; 10] = [
-        [0.0, 0.0, 0.0],                 /* On the Equator and Prime Meridian. */
-        [0.0, 180.0.to_radians(), 0.0],  /* On the Equator. */
-        [0.0, 90.0.to_radians(), 0.0],   /* On the Equator. */
-        [0.0, -90.0.to_radians(), 0.0],  /* On the Equator. */
-        [90.0.to_radians(), 0.0, 0.0],   /* North pole. */
-        [-90.0.to_radians(), 0.0, 0.0],  /* South pole. */
-        [90.0.to_radians(), 0.0, 22.0],  /* 22m above the north pole. */
-        [-90.0.to_radians(), 0.0, 22.0], /* 22m above the south pole. */
-        [0.0, 0.0, 22.0],                /* 22m above the Equator and Prime Meridian. */
-        [0.0, 180.0.to_radians(), 22.0], /* 22m above the Equator. */
+        [0.0, 0.0, 0.0],                     /* On the Equator and Prime Meridian. */
+        [0.0, 180.0_f64.to_radians(), 0.0],  /* On the Equator. */
+        [0.0, 90.0_f64.to_radians(), 0.0],   /* On the Equator. */
+        [0.0, -90.0_f64.to_radians(), 0.0],  /* On the Equator. */
+        [90.0_f64.to_radians(), 0.0, 0.0],   /* North pole. */
+        [-90.0_f64.to_radians(), 0.0, 0.0],  /* South pole. */
+        [90.0_f64.to_radians(), 0.0, 22.0],  /* 22m above the north pole. */
+        [-90.0_f64.to_radians(), 0.0, 22.0], /* 22m above the south pole. */
+        [0.0, 0.0, 22.0],                    /* 22m above the Equator and Prime Meridian. */
+        [0.0, 180.0_f64.to_radians(), 22.0], /* 22m above the Equator. */
     ];
 
     /* Semi-major axis. */
