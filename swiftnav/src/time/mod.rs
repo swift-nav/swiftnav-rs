@@ -118,7 +118,11 @@ mod tests {
             let diff = test_case.diff(&round_trip).abs();
             assert!(
                 diff < TOW_TOL,
-                "gps2mjd2gps failure. original: {test_case:?}, round trip: {round_trip:?}, diff: {diff}, TOW_TOL: {TOW_TOL}"
+                "gps2mjd2gps failure. original: {:?}, round trip: {:?}, diff: {}, TOW_TOL: {}",
+                test_case,
+                round_trip,
+                diff,
+                TOW_TOL
             );
 
             // test mjd -> date -> mjd

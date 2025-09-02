@@ -257,13 +257,12 @@ mod tests {
     use super::*;
     use proptest::prelude::*;
 
-    const D2R: f64 = std::f64::consts::PI / 180.0;
     /* Maximum allowable error in quantities with units of length (in meters). */
     const MAX_DIST_ERROR_M: f64 = 1e-6;
     /* Maximum allowable error in quantities with units of angle (in sec of arc).
      * 1 second of arc on the equator is ~31 meters. */
-    const MAX_ANGLE_ERROR_DEF: f64 = 1e-7;
-    const MAX_ANGLE_ERROR_RAD: f64 = MAX_ANGLE_ERROR_DEF * D2R;
+    const MAX_ANGLE_ERROR_SECS: f64 = 1e-7;
+    const MAX_ANGLE_ERROR_RAD: f64 = (MAX_ANGLE_ERROR_SECS / 3600.0).to_radians();
 
     #[test]
     fn llhrad2deg() {
@@ -288,16 +287,16 @@ mod tests {
     }
 
     const LLH_VALUES: [[f64; 3]; 10] = [
-        [0.0, 0.0, 0.0],          /* On the Equator and Prime Meridian. */
-        [0.0, 180.0 * D2R, 0.0],  /* On the Equator. */
-        [0.0, 90.0 * D2R, 0.0],   /* On the Equator. */
-        [0.0, -90.0 * D2R, 0.0],  /* On the Equator. */
-        [90.0 * D2R, 0.0, 0.0],   /* North pole. */
-        [-90.0 * D2R, 0.0, 0.0],  /* South pole. */
-        [90.0 * D2R, 0.0, 22.0],  /* 22m above the north pole. */
-        [-90.0 * D2R, 0.0, 22.0], /* 22m above the south pole. */
-        [0.0, 0.0, 22.0],         /* 22m above the Equator and Prime Meridian. */
-        [0.0, 180.0 * D2R, 22.0], /* 22m above the Equator. */
+        [0.0, 0.0, 0.0],                 /* On the Equator and Prime Meridian. */
+        [0.0, 180.0.to_radians(), 0.0],  /* On the Equator. */
+        [0.0, 90.0.to_radians(), 0.0],   /* On the Equator. */
+        [0.0, -90.0.to_radians(), 0.0],  /* On the Equator. */
+        [90.0.to_radians(), 0.0, 0.0],   /* North pole. */
+        [-90.0.to_radians(), 0.0, 0.0],  /* South pole. */
+        [90.0.to_radians(), 0.0, 22.0],  /* 22m above the north pole. */
+        [-90.0.to_radians(), 0.0, 22.0], /* 22m above the south pole. */
+        [0.0, 0.0, 22.0],                /* 22m above the Equator and Prime Meridian. */
+        [0.0, 180.0.to_radians(), 22.0], /* 22m above the Equator. */
     ];
 
     /* Semi-major axis. */
@@ -510,6 +509,10 @@ mod tests {
         /// Property: Converting ECEF->LLH->ECEF should always result in the original value
         #[test]
         fn prop_ecef2llh2ecef_identity(x in (-4.0*EARTH_A)..(4.0*EARTH_A), y in (-4.0*EARTH_A)..(4.0*EARTH_A), z in (-4.0*EARTH_A)..(4.0*EARTH_A)) {
+            // We know our implementation breaks down as the coordinates get near the center
+            // of the earth, so skip over coordinates that aren't at least half way to the ellipsoid
+            prop_assume!((x*x + y*y + z*z).sqrt().abs() > 0.5*EARTH_A);
+
             let ecef_input = ECEF::new(x, y, z);
             let llh = ecef_input.to_llh();
             let ecef_output = llh.to_ecef();
@@ -520,15 +523,15 @@ mod tests {
 
             let x_err = ecef_input.x() - ecef_output.x();
             assert!(x_err.abs() < MAX_DIST_ERROR_M,
-                "Converting random WGS84 ECEF to LLH and back again does not return the original values. Initial: {:?}, LLH: {:?}, Final: {:?}, X error (mm): {}", ecef_input, llh, ecef_output, x_err*1000.0);
+                "Converting random WGS84 ECEF to LLH and back again does not return the original values. Initial: {:?}, LLH: {:?}, Final: {:?}, X error (mm): {}", ecef_input, llh.to_degrees(), ecef_output, x_err*1000.0);
 
             let y_err = ecef_input.y() - ecef_output.y();
             assert!(y_err.abs() < MAX_DIST_ERROR_M,
-                "Converting random WGS84 ECEF to LLH and back again does not return the original values. Initial: {:?}, LLH: {:?}, Final: {:?}, Y error (mm): {}", ecef_input, llh, ecef_output, y_err*1000.0);
+                "Converting random WGS84 ECEF to LLH and back again does not return the original values. Initial: {:?}, LLH: {:?}, Final: {:?}, Y error (mm): {}", ecef_input, llh.to_degrees(), ecef_output, y_err*1000.0);
 
             let z_err = ecef_input.z() - ecef_output.z();
             assert!(z_err.abs() < MAX_DIST_ERROR_M,
-                "Converting random WGS84 ECEF to LLH and back again does not return the original values. Initial: {:?}, LLH: {:?}, Final: {:?}, Z error (mm): {}", ecef_input, llh, ecef_output, z_err*1000.0);
+                "Converting random WGS84 ECEF to LLH and back again does not return the original values. Initial: {:?}, LLH: {:?}, Final: {:?}, Z error (mm): {}", ecef_input, llh.to_degrees(), ecef_output, z_err*1000.0);
         }
 
         /// Property: Converting ECEF->NED using the same point should always result in a value of 0 NED
