@@ -96,12 +96,15 @@ jobs:
         run: |
           rustup -V
           rustup set profile minimal
-          rustup toolchain install --force-non-host ${{ matrix.toolchain }}-${{ matrix.binary_target }}
-          rustup default --force-non-host ${{ matrix.toolchain }}-${{ matrix.binary_target }}
+          rustup target add --toolchain ${{ matrix.toolchain }} ${{ matrix.binary_target }}
           rustup show
 
       - name: Build
+        env:
+          CARGO_BUILD_TARGET: ${{ matrix.binary_target }}
         run: just build
 
       - name: Test
+        env:
+          CARGO_BUILD_TARGET: ${{ matrix.binary_target }}
         run: just test
