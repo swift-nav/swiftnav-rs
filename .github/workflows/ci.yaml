@@ -96,7 +96,8 @@ jobs:
         run: |
           rustup -V
           rustup set profile minimal
-          rustup target add --toolchain ${{ matrix.toolchain }} ${{ matrix.binary_target }}
+          rustup default ${{ matrix.toolchain }}
+          rustup target add ${{ matrix.binary_target }}
           rustup show
 
       - name: Build
