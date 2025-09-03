@@ -14,6 +14,30 @@ impl LLHDegrees {
         Self(Vector3::new(lat, lon, height))
     }
 
+    /// Get a reference to the inner array storing the data
+    #[must_use]
+    pub fn as_array(&self) -> &[f64; 3] {
+        &self.0.data.0[0]
+    }
+
+    /// Get a mutable reference to the inner array storing the data
+    #[must_use]
+    pub fn as_array_mut(&mut self) -> &mut [f64; 3] {
+        &mut self.0.data.0[0]
+    }
+
+    /// Get a reference to the inner [`Vector3`] storing the data
+    #[must_use]
+    pub fn as_vector(&self) -> &Vector3<f64> {
+        &self.0
+    }
+
+    /// Get a mutable reference to the inner [`Vector3`] storing the data
+    #[must_use]
+    pub fn as_vector_mut(&mut self) -> &mut Vector3<f64> {
+        &mut self.0
+    }
+
     /// Get the latitude component
     #[must_use]
     pub fn latitude(&self) -> f64 {
@@ -96,6 +120,30 @@ impl LLHRadians {
     #[must_use]
     pub fn new(lat: f64, lon: f64, height: f64) -> Self {
         Self(Vector3::new(lat, lon, height))
+    }
+
+    /// Get a reference to the inner array storing the data
+    #[must_use]
+    pub fn as_array(&self) -> &[f64; 3] {
+        &self.0.data.0[0]
+    }
+
+    /// Get a mutable reference to the inner array storing the data
+    #[must_use]
+    pub fn as_array_mut(&mut self) -> &mut [f64; 3] {
+        &mut self.0.data.0[0]
+    }
+
+    /// Get a reference to the inner [`Vector3`] storing the data
+    #[must_use]
+    pub fn as_vector(&self) -> &Vector3<f64> {
+        &self.0
+    }
+
+    /// Get a mutable reference to the inner [`Vector3`] storing the data
+    #[must_use]
+    pub fn as_vector_mut(&mut self) -> &mut Vector3<f64> {
+        &mut self.0
     }
 
     /// Get the latitude component

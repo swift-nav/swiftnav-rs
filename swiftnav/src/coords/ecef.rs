@@ -19,10 +19,28 @@ impl ECEF {
         Self(Vector3::new(x, y, z))
     }
 
-    /// Get a reference to the inner [`Vector3<f64>`]
+    /// Get a reference to the inner array storing the data
     #[must_use]
-    pub(crate) fn as_vector(&self) -> &Vector3<f64> {
+    pub fn as_array(&self) -> &[f64; 3] {
+        &self.0.data.0[0]
+    }
+
+    /// Get a mutable reference to the inner array storing the data
+    #[must_use]
+    pub fn as_array_mut(&mut self) -> &mut [f64; 3] {
+        &mut self.0.data.0[0]
+    }
+
+    /// Get a reference to the inner [`Vector3`] storing the data
+    #[must_use]
+    pub fn as_vector(&self) -> &Vector3<f64> {
         &self.0
+    }
+
+    /// Get a mutable reference to the inner [`Vector3`] storing the data
+    #[must_use]
+    pub fn as_vector_mut(&mut self) -> &mut Vector3<f64> {
+        &mut self.0
     }
 
     /// Get the X component
