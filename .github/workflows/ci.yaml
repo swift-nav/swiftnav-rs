@@ -63,7 +63,7 @@ jobs:
           # MSRV
           - os: ubuntu-latest
             binary_target: x86_64-unknown-linux-gnu
-            toolchain: 1.62.1
+            toolchain: 1.82.0
     steps:
       - uses: actions/checkout@v5
         with:
@@ -97,6 +97,7 @@ jobs:
           rustup -V
           rustup set profile minimal
           rustup toolchain install --force-non-host ${{ matrix.toolchain }}-${{ matrix.binary_target }}
+          rustup default ${{ matrix.toolchain }}-${{ matrix.binary_target }}
           rustup show
 
       - name: Build

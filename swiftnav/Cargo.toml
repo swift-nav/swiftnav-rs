@@ -7,7 +7,7 @@ description = "GNSS positioning and related utilities"
 readme = "README.md"
 repository = "https://github.com/swift-nav/swiftnav-rs"
 license = "LGPL-3.0"
-rust-version = "1.62.1"
+rust-version = "1.82.0"
 
 [dependencies]
 rustversion = "1.0"
