@@ -60,13 +60,7 @@
 
 pub mod coords;
 pub mod edc;
-pub mod ephemeris;
-pub mod geoid;
-pub mod ionosphere;
 pub mod math;
-pub mod navmeas;
 pub mod reference_frame;
 pub mod signal;
-pub mod solver;
 pub mod time;
-pub mod troposphere;

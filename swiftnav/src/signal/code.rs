@@ -294,11 +294,6 @@ impl Code {
         self.to_constellation() == Constellation::Qzs
     }
 
-    #[must_use]
-    pub(crate) fn to_code_t(self) -> i32 {
-        self as i32
-    }
-
     /// Get the carrier frequency of the given code
     ///
     /// # Note
@@ -602,15 +597,6 @@ mod tests {
         {
             let result = Code::from_str("💩💩💩💩");
             assert!(result.is_err());
-        }
-    }
-
-    #[test]
-    fn swiftnav_sys_int_values() {
-        for (i, e) in ((swiftnav_sys::code_e_CODE_INVALID + 1)..(swiftnav_sys::code_e_CODE_COUNT))
-            .zip(Code::iter())
-        {
-            assert_eq!(i, e as i32);
         }
     }
 }

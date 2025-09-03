@@ -194,14 +194,4 @@ mod tests {
             assert!(result.is_err());
         }
     }
-
-    #[test]
-    fn swiftnav_sys_int_values() {
-        for (i, e) in ((swiftnav_sys::constellation_e_CONSTELLATION_INVALID + 1)
-            ..(swiftnav_sys::constellation_e_CONSTELLATION_COUNT))
-            .zip(Constellation::iter())
-        {
-            assert_eq!(i, e as i32);
-        }
-    }
 }
