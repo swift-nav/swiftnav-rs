@@ -11,8 +11,8 @@
 //!
 //! These four coordinates types are defined:
 //!  * [`LLHDegrees`]/[`LLHRadians`] - Geodetic coordinates, Latitude Lontitude Height
-//!  * [ECEF] - Cartesian coordinates, Earth Centered, Earth Fixed
-//!  * [NED] - Local direction coordinates, North East Down
+//!  * [`ECEF`] - Cartesian coordinates, Earth Centered, Earth Fixed
+//!  * [`NED`] - Local direction coordinates, North East Down
 //!  * [`AzimuthElevation`] - Relative direction coordinates, Azimith Elevation
 //!
 //! # Geodetic to Cartesian
