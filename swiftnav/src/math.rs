@@ -38,11 +38,10 @@ pub(crate) const fn compile_time_max_u16(a: u16, b: u16) -> u16 {
 #[allow(clippy::many_single_char_names)] // This is pure math, single character names are used in the source material
 pub(crate) const fn compile_time_sqrt(s: f64) -> f64 {
     let mut x = s;
-    let mut y = 0.0;
+    let mut y = 0.0_f64;
     let mut z;
     let mut i = 0;
-    #[allow(clippy::float_cmp)] // We intentionally iterate until the values stop changing
-    while y != x {
+    while y.to_bits() != x.to_bits() {
         y = x;
         z = s / y;
         x = f64::midpoint(y, z);
