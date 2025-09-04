@@ -233,6 +233,30 @@ impl From<LLHDegrees> for ECEF {
     }
 }
 
+impl AsRef<[f64; 3]> for ECEF {
+    fn as_ref(&self) -> &[f64; 3] {
+        self.as_array()
+    }
+}
+
+impl AsRef<Vector3<f64>> for ECEF {
+    fn as_ref(&self) -> &Vector3<f64> {
+        self.as_vector()
+    }
+}
+
+impl AsMut<[f64; 3]> for ECEF {
+    fn as_mut(&mut self) -> &mut [f64; 3] {
+        self.as_array_mut()
+    }
+}
+
+impl AsMut<Vector3<f64>> for ECEF {
+    fn as_mut(&mut self) -> &mut Vector3<f64> {
+        self.as_vector_mut()
+    }
+}
+
 impl Add for ECEF {
     type Output = Self;
     fn add(self, rhs: ECEF) -> Self {

@@ -166,6 +166,30 @@ impl From<(f64, f64)> for AzimuthElevation {
     }
 }
 
+impl AsRef<[f64; 2]> for AzimuthElevation {
+    fn as_ref(&self) -> &[f64; 2] {
+        self.as_array()
+    }
+}
+
+impl AsRef<Vector2<f64>> for AzimuthElevation {
+    fn as_ref(&self) -> &Vector2<f64> {
+        self.as_vector()
+    }
+}
+
+impl AsMut<[f64; 2]> for AzimuthElevation {
+    fn as_mut(&mut self) -> &mut [f64; 2] {
+        self.as_array_mut()
+    }
+}
+
+impl AsMut<Vector2<f64>> for AzimuthElevation {
+    fn as_mut(&mut self) -> &mut Vector2<f64> {
+        self.as_vector_mut()
+    }
+}
+
 /// Complete coordinate used for transforming between reference frames
 ///
 /// Velocities are optional, but when present they will be transformed

@@ -91,3 +91,27 @@ impl From<(f64, f64, f64)> for NED {
         Self::new(x, y, z)
     }
 }
+
+impl AsRef<[f64; 3]> for NED {
+    fn as_ref(&self) -> &[f64; 3] {
+        self.as_array()
+    }
+}
+
+impl AsRef<Vector3<f64>> for NED {
+    fn as_ref(&self) -> &Vector3<f64> {
+        self.as_vector()
+    }
+}
+
+impl AsMut<[f64; 3]> for NED {
+    fn as_mut(&mut self) -> &mut [f64; 3] {
+        self.as_array_mut()
+    }
+}
+
+impl AsMut<Vector3<f64>> for NED {
+    fn as_mut(&mut self) -> &mut Vector3<f64> {
+        self.as_vector_mut()
+    }
+}

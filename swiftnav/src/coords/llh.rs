@@ -109,6 +109,30 @@ impl From<ECEF> for LLHDegrees {
     }
 }
 
+impl AsRef<[f64; 3]> for LLHDegrees {
+    fn as_ref(&self) -> &[f64; 3] {
+        self.as_array()
+    }
+}
+
+impl AsRef<Vector3<f64>> for LLHDegrees {
+    fn as_ref(&self) -> &Vector3<f64> {
+        self.as_vector()
+    }
+}
+
+impl AsMut<[f64; 3]> for LLHDegrees {
+    fn as_mut(&mut self) -> &mut [f64; 3] {
+        self.as_array_mut()
+    }
+}
+
+impl AsMut<Vector3<f64>> for LLHDegrees {
+    fn as_mut(&mut self) -> &mut Vector3<f64> {
+        self.as_vector_mut()
+    }
+}
+
 /// WGS84 geodetic coordinates (Latitude, Longitude, Height), with angles in radians.
 ///
 /// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude, and height above the ellipsoid in meters
@@ -222,5 +246,29 @@ impl From<LLHDegrees> for LLHRadians {
 impl From<ECEF> for LLHRadians {
     fn from(ecef: ECEF) -> Self {
         ecef.to_llh()
+    }
+}
+
+impl AsRef<[f64; 3]> for LLHRadians {
+    fn as_ref(&self) -> &[f64; 3] {
+        self.as_array()
+    }
+}
+
+impl AsRef<Vector3<f64>> for LLHRadians {
+    fn as_ref(&self) -> &Vector3<f64> {
+        self.as_vector()
+    }
+}
+
+impl AsMut<[f64; 3]> for LLHRadians {
+    fn as_mut(&mut self) -> &mut [f64; 3] {
+        self.as_array_mut()
+    }
+}
+
+impl AsMut<Vector3<f64>> for LLHRadians {
+    fn as_mut(&mut self) -> &mut Vector3<f64> {
+        self.as_vector_mut()
     }
 }
