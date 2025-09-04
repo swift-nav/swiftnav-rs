@@ -105,6 +105,30 @@ impl AzimuthElevation {
         Self(Vector2::new(az, el))
     }
 
+    /// Get a reference to the inner array storing the data
+    #[must_use]
+    pub fn as_array(&self) -> &[f64; 2] {
+        &self.0.data.0[0]
+    }
+
+    /// Get a mutable reference to the inner array storing the data
+    #[must_use]
+    pub fn as_array_mut(&mut self) -> &mut [f64; 2] {
+        &mut self.0.data.0[0]
+    }
+
+    /// Get a reference to the inner [`Vector2`] storing the data
+    #[must_use]
+    pub fn as_vector(&self) -> &Vector2<f64> {
+        &self.0
+    }
+
+    /// Get a mutable reference to the inner [`Vector2`] storing the data
+    #[must_use]
+    pub fn as_vector_mut(&mut self) -> &mut Vector2<f64> {
+        &mut self.0
+    }
+
     /// Get the Azimuth component
     #[must_use]
     pub fn az(&self) -> f64 {
@@ -139,6 +163,30 @@ impl From<Vector2<f64>> for AzimuthElevation {
 impl From<(f64, f64)> for AzimuthElevation {
     fn from((x, y): (f64, f64)) -> Self {
         Self::new(x, y)
+    }
+}
+
+impl AsRef<[f64; 2]> for AzimuthElevation {
+    fn as_ref(&self) -> &[f64; 2] {
+        self.as_array()
+    }
+}
+
+impl AsRef<Vector2<f64>> for AzimuthElevation {
+    fn as_ref(&self) -> &Vector2<f64> {
+        self.as_vector()
+    }
+}
+
+impl AsMut<[f64; 2]> for AzimuthElevation {
+    fn as_mut(&mut self) -> &mut [f64; 2] {
+        self.as_array_mut()
+    }
+}
+
+impl AsMut<Vector2<f64>> for AzimuthElevation {
+    fn as_mut(&mut self) -> &mut Vector2<f64> {
+        self.as_vector_mut()
     }
 }
 
