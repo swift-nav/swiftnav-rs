@@ -77,6 +77,7 @@ pub const WEEK: Duration = Duration::from_secs(consts::WEEK_SECS as u64);
 /// # Note
 ///
 /// All year values are treated as if they are in the Gregorian calendar
+#[must_use]
 pub fn is_leap_year(year: u16) -> bool {
     ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0)
 }

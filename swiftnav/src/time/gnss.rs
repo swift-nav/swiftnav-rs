@@ -48,23 +48,27 @@ pub enum InvalidGpsTime {
 impl GpsTime {
     /// Makes a new GPS time object and checks the validity of the given values.
     ///
-    /// Invalid values include negative week values, negative, non-finite, or to
-    /// large time of week values.
+    /// # Errors
+    ///
+    /// An error will be returned if an invalid time is given. A valid time
+    /// must have a non-negative week number, and a time of week value between 0
+    /// and 604800.
     pub fn new(wn: i16, tow: f64) -> Result<GpsTime, InvalidGpsTime> {
         if wn < 0 {
             Err(InvalidGpsTime::InvalidWN(wn))
         } else if !tow.is_finite() || tow < 0.0 || tow >= WEEK.as_secs_f64() {
             Err(InvalidGpsTime::InvalidTOW(tow))
         } else {
-            Ok(GpsTime { wn, tow })
+            Ok(GpsTime { tow, wn })
         }
     }
     /// Makes a new GPS time object without checking the validity of the given values.
     pub(crate) const fn new_unchecked(wn: i16, tow: f64) -> GpsTime {
-        GpsTime { wn, tow }
+        GpsTime { tow, wn }
     }
 
     /// Makes a new GPS time object from a date and time
+    #[must_use]
     pub fn from_parts(
         year: u16,
         month: u8,
@@ -83,6 +87,7 @@ impl GpsTime {
     ///
     /// The hard coded list of leap seconds will get out of date, it is
     /// preferable to use [`GpsTime::from_parts()`] with the newest set of UTC parameters
+    #[must_use]
     pub fn from_parts_hardcoded(
         year: u16,
         month: u8,
@@ -95,32 +100,35 @@ impl GpsTime {
     }
 
     /// Gets the week number
+    #[must_use]
     pub fn wn(&self) -> i16 {
         self.wn
     }
 
     /// Gets the time of week
+    #[must_use]
     pub fn tow(&self) -> f64 {
         self.tow
     }
 
     /// Checks if the stored time is valid
+    #[must_use]
     pub fn is_valid(&self) -> bool {
         self.tow.is_finite()
             && self.tow >= 0.0
-            && self.tow < consts::WEEK_SECS as f64
+            && self.tow < f64::from(consts::WEEK_SECS)
             && self.wn >= 0
     }
 
     /// Normalize time of week value so it's within the length of a week
     fn normalize(&mut self) {
         while self.tow < 0.0 {
-            self.tow += consts::WEEK_SECS as f64;
+            self.tow += f64::from(consts::WEEK_SECS);
             self.wn -= 1;
         }
 
-        while self.tow >= consts::WEEK_SECS as f64 {
-            self.tow -= consts::WEEK_SECS as f64;
+        while self.tow >= f64::from(consts::WEEK_SECS) {
+            self.tow -= f64::from(consts::WEEK_SECS);
             self.wn += 1;
         }
     }
@@ -138,9 +146,10 @@ impl GpsTime {
     }
 
     /// Gets the difference between this and another time value in seconds
+    #[must_use]
     pub fn diff(&self, other: &Self) -> f64 {
         let dt = self.tow - other.tow;
-        dt + (self.wn - other.wn) as f64 * consts::WEEK_SECS as f64
+        dt + f64::from(self.wn - other.wn) * f64::from(consts::WEEK_SECS)
     }
 
     /// Convert a [`GpsTime`] into a [`UtcTime`] using the [`UtcParams`] if
@@ -192,6 +201,7 @@ impl GpsTime {
     /// # Panics
     ///
     /// This function will panic if the GPS time is not valid
+    #[must_use]
     pub fn to_utc(self, utc_params: &UtcParams) -> UtcTime {
         self.internal_to_utc(Some(utc_params))
     }
@@ -207,6 +217,7 @@ impl GpsTime {
     /// # Panics
     ///
     /// This function will panic if the GPS time is not valid
+    #[must_use]
     pub fn to_utc_hardcoded(self) -> UtcTime {
         self.internal_to_utc(None)
     }
@@ -221,9 +232,9 @@ impl GpsTime {
 
         /* the new UTC offset takes effect after the leap second event */
         if self.diff(&utc_params.t_lse()) >= 1.0 {
-            dt_utc += utc_params.dt_lsf() as f64;
+            dt_utc += f64::from(utc_params.dt_lsf());
         } else {
-            dt_utc += utc_params.dt_ls() as f64;
+            dt_utc += f64::from(utc_params.dt_ls());
         }
 
         dt_utc
@@ -251,16 +262,16 @@ impl GpsTime {
     /// Gets the number of seconds difference between UTC and GPS using the hardcoded
     /// list of leap seconds
     pub(crate) fn utc_gps_offset(&self, utc_params: &UtcParams) -> f64 {
-        let dt = self.diff(&utc_params.tot()) + utc_params.dt_ls() as f64;
+        let dt = self.diff(&utc_params.tot()) + f64::from(utc_params.dt_ls());
 
         /* The polynomial UTC to GPS correction */
         let mut dt_utc = utc_params.a0() + utc_params.a1() * dt + utc_params.a2() * dt * dt;
 
         /* the new UTC offset takes effect after the leap second event */
-        if self.diff(&utc_params.t_lse()) >= ((-utc_params.dt_ls() as f64) - dt_utc) {
-            dt_utc += utc_params.dt_lsf() as f64;
+        if self.diff(&utc_params.t_lse()) >= (f64::from(-utc_params.dt_ls()) - dt_utc) {
+            dt_utc += f64::from(utc_params.dt_lsf());
         } else {
-            dt_utc += utc_params.dt_ls() as f64;
+            dt_utc += f64::from(utc_params.dt_ls());
         }
 
         -dt_utc
@@ -285,6 +296,7 @@ impl GpsTime {
     }
 
     /// Checks to see if this point in time is a UTC leap second event
+    #[must_use]
     pub fn is_leap_second_event(&self, params: &UtcParams) -> bool {
         /* the UTC offset takes effect exactly 1 second after the start of
          * the (positive) leap second event */
@@ -302,6 +314,7 @@ impl GpsTime {
     /// The hard coded list of leap seconds will get out of date, it is
     /// preferable to use [`GpsTime::is_leap_second_event()`] with the newest
     /// set of UTC parameters
+    #[must_use]
     pub fn is_leap_second_event_hardcoded(&self) -> bool {
         for (t_leap, _offset) in UTC_LEAPS.iter().rev() {
             let dt = self.diff(t_leap);
@@ -321,6 +334,7 @@ impl GpsTime {
     }
 
     /// Converts the GPS time into a [`MJD`] (modified julian date)
+    #[must_use]
     pub fn to_mjd(self, utc_params: &UtcParams) -> MJD {
         self.to_utc(utc_params).to_mjd()
     }
@@ -333,11 +347,13 @@ impl GpsTime {
     /// The hard coded list of leap seconds will get out of date, it is
     /// preferable to use [`GpsTime::to_mjd()`] with the newest
     /// set of UTC parameters
+    #[must_use]
     pub fn to_mjd_hardcoded(self) -> MJD {
         self.to_utc_hardcoded().to_mjd()
     }
 
     /// Gets the GPS time of the nearest solution epoch
+    #[must_use]
     pub fn round_to_epoch(&self, soln_freq: f64) -> GpsTime {
         let rounded_tow = (self.tow * soln_freq).round() / soln_freq;
         let mut rounded_time = Self::new_unchecked(self.wn, rounded_tow);
@@ -347,6 +363,7 @@ impl GpsTime {
     }
 
     /// Gets the GPS time of the previous solution epoch
+    #[must_use]
     pub fn floor_to_epoch(&self, soln_freq: f64) -> GpsTime {
         /* round the time-of-week */
         let rounded_tow = (self.tow * soln_freq).floor() / soln_freq;
@@ -362,6 +379,7 @@ impl GpsTime {
     ///
     /// This function will panic if the GPS time is before the start of Galileo
     /// time, i.e. [`GAL_TIME_START`]
+    #[must_use]
     pub fn to_gal(self) -> GalTime {
         assert!(self.is_valid());
         assert!(self >= GAL_TIME_START);
@@ -377,6 +395,7 @@ impl GpsTime {
     ///
     /// This function will panic if the GPS time is before the start of Beidou
     /// time, i.e. [`BDS_TIME_START`]
+    #[must_use]
     pub fn to_bds(self) -> BdsTime {
         assert!(self.is_valid());
         assert!(self >= BDS_TIME_START);
@@ -392,15 +411,16 @@ impl GpsTime {
     }
 
     #[rustversion::since(1.62)]
-    /// Compare between itself and other GpsTime
+    /// Compare between itself and other `GpsTime`
     /// Checks whether week number is same which then mirrors
     /// [f64::total_cmp()](https://doc.rust-lang.org/std/primitive.f64.html#method.total_cmp)
+    #[must_use]
     pub fn total_cmp(&self, other: &GpsTime) -> std::cmp::Ordering {
-        if self.wn() != other.wn() {
-            self.wn().cmp(&other.wn())
-        } else {
+        if self.wn() == other.wn() {
             let other = other.tow();
             self.tow().total_cmp(&other)
+        } else {
+            self.wn().cmp(&other.wn())
         }
     }
 
@@ -412,6 +432,7 @@ impl GpsTime {
     /// January 1, 2025 has a fractional year value of $2025.0$, while January
     /// 30, 2025 is 30 days into the year so has a fractional year value of
     /// approximately $2025.082$ ($30 \div 365 \approx 0.082$).
+    #[must_use]
     pub fn to_fractional_year(&self, utc_params: &UtcParams) -> f64 {
         let utc = self.to_utc(utc_params);
         utc.to_fractional_year()
@@ -431,12 +452,14 @@ impl GpsTime {
     /// The hard coded list of leap seconds will get out of date, it is
     /// preferable to use [`GpsTime::to_fractional_year()`] with the newest
     /// set of UTC parameters
+    #[must_use]
     pub fn to_fractional_year_hardcoded(&self) -> f64 {
         let utc = self.to_utc_hardcoded();
         utc.to_fractional_year()
     }
 
     /// Converts the GPS time into a date and time
+    #[must_use]
     pub fn to_date(self, utc_params: &UtcParams) -> (u16, u8, u8, u8, u8, f64) {
         self.to_utc(utc_params).to_date()
     }
@@ -448,6 +471,7 @@ impl GpsTime {
     /// The hard coded list of leap seconds will get out of date, it is
     /// preferable to use [`GpsTime::to_date()`] with the newest
     /// set of UTC parameters
+    #[must_use]
     pub fn to_date_hardcoded(self) -> (u16, u8, u8, u8, u8, f64) {
         self.to_utc_hardcoded().to_date()
     }
@@ -528,6 +552,13 @@ pub struct GalTime {
 }
 
 impl GalTime {
+    /// Makes a new Galileo time object and checks the validity of the given values.
+    ///
+    /// # Errors
+    ///
+    /// An error will be returned if an invalid time is given. A valid time
+    /// must have a non-negative week number, and a time of week value between 0
+    /// and 604800.
     pub fn new(wn: i16, tow: f64) -> Result<GalTime, InvalidGpsTime> {
         if wn < 0 {
             Err(InvalidGpsTime::InvalidWN(wn))
@@ -538,14 +569,17 @@ impl GalTime {
         }
     }
 
+    #[must_use]
     pub fn wn(&self) -> i16 {
         self.wn
     }
 
+    #[must_use]
     pub fn tow(&self) -> f64 {
         self.tow
     }
 
+    #[must_use]
     pub fn to_gps(self) -> GpsTime {
         GpsTime {
             wn: self.wn + consts::GAL_WEEK_TO_GPS_WEEK,
@@ -553,6 +587,7 @@ impl GalTime {
         }
     }
 
+    #[must_use]
     pub fn to_bds(self) -> BdsTime {
         self.to_gps().to_bds()
     }
@@ -578,6 +613,13 @@ pub struct BdsTime {
 }
 
 impl BdsTime {
+    /// Makes a new Beidou time object and checks the validity of the given values.
+    ///
+    /// # Errors
+    ///
+    /// An error will be returned if an invalid time is given. A valid time
+    /// must have a non-negative week number, and a time of week value between 0
+    /// and 604800.
     pub fn new(wn: i16, tow: f64) -> Result<BdsTime, InvalidGpsTime> {
         if wn < 0 {
             Err(InvalidGpsTime::InvalidWN(wn))
@@ -588,14 +630,17 @@ impl BdsTime {
         }
     }
 
+    #[must_use]
     pub fn wn(&self) -> i16 {
         self.wn
     }
 
+    #[must_use]
     pub fn tow(&self) -> f64 {
         self.tow
     }
 
+    #[must_use]
     pub fn to_gps(self) -> GpsTime {
         let gps = GpsTime {
             wn: self.wn() + consts::BDS_WEEK_TO_GPS_WEEK,
@@ -604,6 +649,7 @@ impl BdsTime {
         gps + Duration::from_secs_f64(consts::BDS_SECOND_TO_GPS_SECOND)
     }
 
+    #[must_use]
     pub fn to_gal(self) -> GalTime {
         self.to_gps().to_gal()
     }

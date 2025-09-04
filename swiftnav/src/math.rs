@@ -35,20 +35,20 @@ pub(crate) const fn compile_time_max_u16(a: u16, b: u16) -> u16 {
 ///
 /// - This function is marked as `const`, allowing it to be evaluated at compile time.
 /// - The algorithm iteratively refines the approximation of the square root until the result stabilizes.
+#[allow(clippy::many_single_char_names)] // This is pure math, single character names are used in the source material
 pub(crate) const fn compile_time_sqrt(s: f64) -> f64 {
     let mut x = s;
     let mut y = 0.0;
     let mut z;
     let mut i = 0;
+    #[allow(clippy::float_cmp)] // We intentionally iterate until the values stop changing
     while y != x {
         y = x;
         z = s / y;
-        x = (y + z) / 2.0;
+        x = f64::midpoint(y, z);
         i += 1;
     }
-    if i > 100 {
-        panic!("SLOW_SQRT failed to converge");
-    }
+    assert!(i <= 100, "SLOW_SQRT failed to converge");
     x
 }
 
