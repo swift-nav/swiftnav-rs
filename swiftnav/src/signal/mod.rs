@@ -65,7 +65,10 @@ pub enum InvalidGnssSignal {
 impl GnssSignal {
     /// Make a [`GnssSignal`] from its constituent parts, check for a valid satellite PRN
     ///
-    /// The `sat` value is checked to be a valid PRN value for the given constellation
+    /// # Errors
+    ///
+    /// An error is returned if the satellite PRN is not valid for the corresponding
+    /// constellation.
     pub fn new(sat: u16, code: Code) -> Result<GnssSignal, InvalidSatellite> {
         let constellation = code.to_constellation();
         if sat < constellation.first_prn()
@@ -114,6 +117,7 @@ impl GnssSignal {
     ///
     /// This function will panic if the code is not a GLONASS FDMA code, or if the channel slot
     /// is invalid.
+    #[must_use]
     pub fn get_glo_channel_frequency(&self, slot: i16) -> f64 {
         self.code.get_glo_channel_frequency(slot)
     }

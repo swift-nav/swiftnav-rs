@@ -276,7 +276,7 @@ impl Code {
         self.to_constellation() == Constellation::Glo
     }
 
-    /// Checks if this is a BeiDou code
+    /// Checks if this is a `BeiDou` code
     #[must_use]
     pub fn is_bds(self) -> bool {
         self.to_constellation() == Constellation::Bds
@@ -352,16 +352,19 @@ impl Code {
 
         match &self {
             Code::GloL1of => {
-                consts::GLO_L1_HZ + (fcn - consts::GLO_FCN_OFFSET) as f64 * consts::GLO_L1_DELTA_HZ
+                consts::GLO_L1_HZ
+                    + f64::from(fcn - consts::GLO_FCN_OFFSET) * consts::GLO_L1_DELTA_HZ
             }
             Code::GloL2of => {
-                consts::GLO_L2_HZ + (fcn - consts::GLO_FCN_OFFSET) as f64 * consts::GLO_L2_DELTA_HZ
+                consts::GLO_L2_HZ
+                    + f64::from(fcn - consts::GLO_FCN_OFFSET) * consts::GLO_L2_DELTA_HZ
             }
             _ => panic!("You can't call get_glo_channel_frequency() on a non-GLONASS FDMA code!"),
         }
     }
 
     /// Get an iterator through the codes
+    #[must_use]
     pub fn iter() -> CodeIter {
         <Self as strum::IntoEnumIterator>::iter()
     }

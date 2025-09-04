@@ -17,7 +17,7 @@ pub const NUM_SATS_SBAS: u16 = 19;
 /// refer to <https://igscb.jpl.nasa.gov/pipermail/igsmail/2012/007771.html> and
 /// <https://igscb.jpl.nasa.gov/pipermail/igsmail/2015/008391.html>
 pub const NUM_SATS_GLO: u16 = 28;
-/// Total number of satellites in the BeiDou constellation.
+/// Total number of satellites in the `BeiDou` constellation.
 pub const NUM_SATS_BDS: u16 = 64;
 /// Total number of satellites in the Galileo constellation.
 pub const NUM_SATS_GAL: u16 = 36;
@@ -49,7 +49,7 @@ pub const NUM_CODES_GPS: u16 = 13;
 pub const NUM_CODES_SBAS: u16 = 5;
 /// Total number of codes in the GLONASS constellation.
 pub const NUM_CODES_GLO: u16 = 4;
-/// Total number of codes in the BeiDou constellation.
+/// Total number of codes in the `BeiDou` constellation.
 pub const NUM_CODES_BDS: u16 = 15;
 /// Total number of codes in the QZSS constellation.
 pub const NUM_CODES_QZS: u16 = 11;
@@ -67,7 +67,7 @@ pub const GLO_MAX_FCN: i16 = 14;
 pub const GLO_MIN_FCN: i16 = 1;
 
 /// Used to produce an unshifted GLO frequency slot out of GLO slots in
-/// GLO_MIN_FCN .. GLO_MAX_FCN range
+/// `GLO_MIN_FCN` .. `GLO_MAX_FCN` range
 pub const GLO_FCN_OFFSET: i16 = 8;
 
 /// Total number of L1C/A signals in the GPS constellation.
@@ -97,17 +97,17 @@ pub const NUM_SIGNALS_GLO_L1P: u16 = NUM_SATS_GLO;
 /// Total number of L1P signals in the GLONASS constellation.
 pub const NUM_SIGNALS_GLO_L2P: u16 = NUM_SATS_GLO;
 
-/// Total number of B1 signals in the BeiDou constellation.
+/// Total number of B1 signals in the `BeiDou` constellation.
 pub const NUM_SIGNALS_BDS2_B1: u16 = NUM_SATS_BDS;
-/// Total number of B2 signals in the BeiDou constellation.
+/// Total number of B2 signals in the `BeiDou` constellation.
 pub const NUM_SIGNALS_BDS2_B2: u16 = NUM_SATS_BDS;
-/// Total number of B1C signals in the BeiDou constellation.
+/// Total number of B1C signals in the `BeiDou` constellation.
 pub const NUM_SIGNALS_BDS3_B1C: u16 = NUM_SATS_BDS;
-/// Total number of B5 signals in the BeiDou constellation.
+/// Total number of B5 signals in the `BeiDou` constellation.
 pub const NUM_SIGNALS_BDS3_B5: u16 = NUM_SATS_BDS;
-/// Total number of B7 signals in the BeiDou constellation.
+/// Total number of B7 signals in the `BeiDou` constellation.
 pub const NUM_SIGNALS_BDS3_B7: u16 = NUM_SATS_BDS;
-/// Total number of B3 signals in the BeiDou constellation.
+/// Total number of B3 signals in the `BeiDou` constellation.
 pub const NUM_SIGNALS_BDS3_B3: u16 = NUM_SATS_BDS;
 
 /// Total number of E1 signals in the Galileo constellation.
@@ -142,7 +142,7 @@ pub const NUM_SIGNALS_SBAS: u16 = 2 * NUM_SIGNALS_SBAS_L1CA + 3 * NUM_SIGNALS_SB
 /// Total number of signals in the GLONASS constellation.
 pub const NUM_SIGNALS_GLO: u16 =
     NUM_SIGNALS_GLO_L1OF + NUM_SIGNALS_GLO_L2OF + NUM_SIGNALS_GLO_L1P + NUM_SIGNALS_GLO_L2P;
-/// Total number of signals in the BeiDou constellation.
+/// Total number of signals in the `BeiDou` constellation.
 pub const NUM_SIGNALS_BDS: u16 = 2 * NUM_SIGNALS_BDS2_B1
     + NUM_SIGNALS_BDS2_B2
     + 3 * NUM_SIGNALS_BDS3_B1C
@@ -174,7 +174,7 @@ pub const GPS_FIRST_PRN: u16 = 1;
 pub const SBAS_FIRST_PRN: u16 = 120;
 /// The first PRN number used in the GLONASS constellation.
 pub const GLO_FIRST_PRN: u16 = 1;
-/// The first PRN number used in the BeiDou constellation.
+/// The first PRN number used in the `BeiDou` constellation.
 pub const BDS_FIRST_PRN: u16 = 1;
 /// The first PRN number used in the Galileo constellation.
 pub const GAL_FIRST_PRN: u16 = 1;
@@ -213,7 +213,7 @@ pub const GAL_E1_HZ: f64 = 1.023e6 * 1540.;
 pub const GAL_E6_HZ: f64 = 1.023e6 * 1250.;
 /// Centre frequency of Galileo E5b
 pub const GAL_E7_HZ: f64 = 1.023e6 * 1180.;
-/// Centre frequency of Galileo E5AltBOC
+/// Centre frequency of Galileo `E5AltBOC`
 pub const GAL_E8_HZ: f64 = 1.023e6 * 1165.;
 /// Centre frequency of Galileo E5a
 pub const GAL_E5_HZ: f64 = 1.023e6 * 1150.;

@@ -50,10 +50,10 @@ impl ECEF {
         let p = (self.x() * self.x() + self.y() * self.y()).sqrt();
 
         // Compute longitude first, this can be done exactly.
-        let longitude = if p != 0.0 {
-            self.y().atan2(self.x())
-        } else {
+        let longitude = if p == 0.0 {
             0.0
+        } else {
+            self.y().atan2(self.x())
         };
 
         // If we are close to the pole then convergence is very slow, treat this is a
@@ -171,7 +171,7 @@ impl ECEF {
     /// Rotate this ECEF vector into NED coordinates, at a given
     /// reference point. This is approporiate for converting velocity vectors.
     ///
-    /// This is the inverse of [NED::ecef_vector_at].
+    /// This is the inverse of [`NED::ecef_vector_at`].
     #[must_use]
     pub fn ned_vector_at(&self, point: &ECEF) -> NED {
         let m = math::ecef2ned_matrix(point.to_llh());

@@ -42,7 +42,7 @@ impl NED {
     /// Rotate a local [`NED`] vector into a [`ECEF`] vector, at a given
     /// reference point. This is approporiate for converting velocity vectors.
     ///
-    /// This is the inverse of [ECEF::ned_vector_at].
+    /// This is the inverse of [`ECEF::ned_vector_at`].
     #[must_use]
     pub fn ecef_vector_at(&self, ref_ecef: &ECEF) -> ECEF {
         let m = math::ecef2ned_matrix(ref_ecef.to_llh());

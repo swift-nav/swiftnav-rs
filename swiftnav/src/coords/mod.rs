@@ -10,10 +10,10 @@
 //! Coordinates and conversions
 //!
 //! These four coordinates types are defined:
-//!  * [LLHDegrees]/[LLHRadians] - Geodetic coordinates, Latitude Lontitude Height
-//!  * [ECEF] - Cartesian coordinates, Earth Centered, Earth Fixed
-//!  * [NED] - Local direction coordinates, North East Down
-//!  * [AzimuthElevation] - Relative direction coordinates, Azimith Elevation
+//!  * [`LLHDegrees`]/[`LLHRadians`] - Geodetic coordinates, Latitude Lontitude Height
+//!  * [`ECEF`] - Cartesian coordinates, Earth Centered, Earth Fixed
+//!  * [`NED`] - Local direction coordinates, North East Down
+//!  * [`AzimuthElevation`] - Relative direction coordinates, Azimith Elevation
 //!
 //! # Geodetic to Cartesian
 //!
@@ -242,6 +242,11 @@ impl Coordinate {
     }
 
     /// Transform the coordinate from into a new reference frame
+    ///
+    /// # Errors
+    ///
+    /// An error is returned if a transformation from the coordinate's reference frame to the requested
+    /// reference frame could not be found.
     pub fn transform_to(&self, new_frame: ReferenceFrame) -> Result<Self, TransformationNotFound> {
         get_transformation(self.reference_frame, new_frame)
             .map(|transformation| transformation.transform(self))

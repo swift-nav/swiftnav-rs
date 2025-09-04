@@ -68,7 +68,7 @@ pub const HUNDRED_YEARS_DAYS: u32 = 24 * FOUR_YEARS_DAYS + 4 * YEAR_DAYS;
 pub const FOUR_HUNDRED_YEARS_DAYS: u32 = 3 * HUNDRED_YEARS_DAYS + 25 * FOUR_YEARS_DAYS;
 
 /// Unix timestamp of the GPS epoch 1980-01-06 00:00:00 UTC
-pub const GPS_EPOCH: i64 = 315964800;
+pub const GPS_EPOCH: i64 = 315_964_800;
 
 /// Modified Julian days of the GPS epoch 1980-01-06 00:00:00 UTC
 pub const MJD_JAN_6_1980: i32 = 44244;

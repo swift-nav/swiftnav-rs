@@ -7,6 +7,9 @@
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
 // EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
+
+#![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+
 use crate::time::{consts, is_leap_year, GpsTime, MJD};
 use std::time::Duration;
 
@@ -34,6 +37,7 @@ impl UtcParams {
     ///
     /// # Panics
     /// This function will panic if either `tot` or `t_lse` are not valid
+    #[must_use]
     pub fn from_components(
         a0: f64,
         a1: f64,
@@ -57,30 +61,37 @@ impl UtcParams {
     }
 
     /// Modulo 1 sec offset from GPS to UTC \[s\]
+    #[must_use]
     pub fn a0(&self) -> f64 {
         self.a0
     }
     /// Drift of time offset from GPS to UTC \[s/s\]
+    #[must_use]
     pub fn a1(&self) -> f64 {
         self.a1
     }
     /// Drift rate correction from GPS to UTC \[s/s\]
+    #[must_use]
     pub fn a2(&self) -> f64 {
         self.a2
     }
     /// Reference time of UTC parameters.
+    #[must_use]
     pub fn tot(&self) -> GpsTime {
         self.tot
     }
     /// Time of leap second event.
+    #[must_use]
     pub fn t_lse(&self) -> GpsTime {
         self.t_lse
     }
     /// Leap second delta from GPS to UTC before LS event \[s\]
+    #[must_use]
     pub fn dt_ls(&self) -> i8 {
         self.dt_ls
     }
     /// Leap second delta from GPS to UTC after LS event \[s\]
+    #[must_use]
     pub fn dt_lsf(&self) -> i8 {
         self.dt_lsf
     }
@@ -120,6 +131,7 @@ pub struct UtcTime {
 
 impl UtcTime {
     /// Creates a UTC time from its individual components
+    #[must_use]
     pub fn from_parts(year: u16, month: u8, day: u8, hour: u8, minute: u8, second: f64) -> UtcTime {
         let mjd = MJD::from_parts(year, month, day, hour, minute, second);
         mjd.to_utc()
@@ -128,24 +140,31 @@ impl UtcTime {
     pub(super) fn from_gps_no_leap(gps: GpsTime) -> UtcTime {
         /* see http://www.ngs.noaa.gov/gps-toolbox/bwr-c.txt */
 
+        /* Lookup table of the total number of days in the year after each month */
+        /* First row is for a non-leap year, second row is for a leap year */
+        const DAYS_AFTER_MONTH: [[u16; 13]; 2] = [
+            [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365],
+            [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366],
+        ];
+
         /* seconds of the day */
-        let t_utc = gps.tow() % (consts::DAY_SECS as f64);
+        let t_utc = gps.tow() % f64::from(consts::DAY_SECS);
 
         /* Convert this into hours, minutes and seconds */
         let second_int = t_utc.floor() as u32; /* The integer part of the seconds */
         let second_frac: f64 = t_utc % 1.0; /* The fractional part of the seconds */
         let hour: u8 = (second_int / consts::HOUR_SECS) as u8; /* The hours (1 - 23) */
-        let second_int = second_int - ((hour as u32) * consts::HOUR_SECS); /* Remove the hours from seconds */
+        let second_int = second_int - (u32::from(hour) * consts::HOUR_SECS); /* Remove the hours from seconds */
         let minute: u8 = (second_int / consts::MINUTE_SECS) as u8; /* The minutes (1 - 59) */
-        let second_int: u8 = (second_int - minute as u32 * consts::MINUTE_SECS) as u8; /* Remove the minutes from seconds */
+        let second_int: u8 = (second_int - u32::from(minute) * consts::MINUTE_SECS) as u8; /* Remove the minutes from seconds */
         /* The seconds (1 - 60) */
 
         /* Calculate the years */
 
         /* Days from 1 Jan 1980. GPS epoch is 6 Jan 1980 */
         let modified_julian_days: i32 = consts::MJD_JAN_6_1980
-            + gps.wn() as i32 * 7
-            + (gps.tow() / consts::DAY_SECS as f64).floor() as i32;
+            + i32::from(gps.wn()) * 7
+            + (gps.tow() / f64::from(consts::DAY_SECS)).floor() as i32;
         let days_since_1601: u32 = (modified_julian_days - consts::MJD_JAN_1_1601) as u32;
 
         /* Calculate the number of leap years */
@@ -172,26 +191,15 @@ impl UtcTime {
         let year_day = (days_left - num_non_leap_years * consts::YEAR_DAYS + 1) as u16;
 
         /* Work out if it is currently a leap year, 0 = no, 1 = yes` */
-        let leap_year: usize = if is_leap_year(year) { 1 } else { 0 };
+        let leap_year: usize = usize::from(is_leap_year(year));
 
         /* Roughly work out the month number */
-        let month_guess: u8 = (year_day as f32 * 0.032) as u8;
-
-        /* Lookup table of the total number of days in the year after each month */
-        /* First row is for a non-leap year, second row is for a leap year */
-        const DAYS_AFTER_MONTH: [[u16; 13]; 2] = [
-            [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365],
-            [0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366],
-        ];
+        let month_guess: u8 = (f32::from(year_day) * 0.032) as u8;
 
         /* Check if our guess was out, and what the correction is, */
         /* 0 = correct, 1 = wrong */
         let month_correction: u8 =
-            if year_day > DAYS_AFTER_MONTH[leap_year][(month_guess + 1) as usize] {
-                1
-            } else {
-                0
-            };
+            u8::from(year_day > DAYS_AFTER_MONTH[leap_year][(month_guess + 1) as usize]);
 
         /* Calculate the corrected number of months */
         let month = month_guess + month_correction + 1;
@@ -218,51 +226,61 @@ impl UtcTime {
     }
 
     /// Number of years CE. In four digit format
+    #[must_use]
     pub fn year(&self) -> u16 {
         self.year
     }
 
     /// Day of the year (1 - 366)
+    #[must_use]
     pub fn day_of_year(&self) -> u16 {
         self.year_day
     }
 
     /// Month of the year (1 - 12). 1 = January, 12 = December
+    #[must_use]
     pub fn month(&self) -> u8 {
         self.month
     }
 
     /// Day of the month (1 - 31)
+    #[must_use]
     pub fn day_of_month(&self) -> u8 {
         self.month_day
     }
 
     /// Day of the week (1 - 7). 1 = Monday, 7 = Sunday
+    #[must_use]
     pub fn day_of_week(&self) -> u8 {
         self.week_day
     }
 
     /// Hour of the day (0 - 23)
+    #[must_use]
     pub fn hour(&self) -> u8 {
         self.hour
     }
 
     /// Minutes of the hour (0 - 59)
+    #[must_use]
     pub fn minute(&self) -> u8 {
         self.minute
     }
 
     /// seconds of the minute (0 - 60)
+    #[must_use]
     pub fn seconds(&self) -> f64 {
-        (self.second_int as f64) + self.second_frac
+        f64::from(self.second_int) + self.second_frac
     }
 
     /// Integer second of the minue (0 - 60)
+    #[must_use]
     pub fn seconds_int(&self) -> u8 {
         self.second_int
     }
 
     /// Converts the UTC time into a modified julian date
+    #[must_use]
     pub fn to_mjd(&self) -> MJD {
         MJD::from_parts(
             self.year(),
@@ -275,6 +293,7 @@ impl UtcTime {
     }
 
     /// Converts the UTC time into a date and time
+    #[must_use]
     pub fn to_date(self) -> (u16, u8, u8, u8, u8, f64) {
         (
             self.year(),
@@ -287,6 +306,7 @@ impl UtcTime {
     }
 
     /// Makes an ISO8601 compatible date time string from the UTC time
+    #[must_use]
     pub fn iso8601_str(&self) -> String {
         format!(
             "{}-{}-{}T{}:{}:{:.3}Z",
@@ -321,6 +341,7 @@ impl UtcTime {
     ///
     /// This function will panic if the [`UtcTime`] does not represent a valid
     /// GPS time.
+    #[must_use]
     pub fn to_gps(self, utc_params: &UtcParams) -> GpsTime {
         self.internal_to_gps(Some(utc_params))
     }
@@ -336,6 +357,7 @@ impl UtcTime {
     /// # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
     /// The hard coded list of leap seconds will get out of date, it is
     /// preferable to use [`UtcTime::to_gps()`] with the newest set of UTC parameters
+    #[must_use]
     pub fn to_gps_hardcoded(self) -> GpsTime {
         self.internal_to_gps(None)
     }
@@ -348,20 +370,21 @@ impl UtcTime {
     /// January 1, 2025 has a fractional year value of $2025.0$, while January
     /// 30, 2025 is 30 days into the year so has a fractional year value of
     /// approximately $2025.082$ ($30 \div 365 \approx 0.082$).
+    #[must_use]
     pub fn to_fractional_year(&self) -> f64 {
-        let year = self.year() as f64;
-        let days = self.day_of_year() as f64;
-        let hours = self.hour() as f64;
-        let minutes = self.minute() as f64;
+        let year = f64::from(self.year());
+        let days = f64::from(self.day_of_year());
+        let hours = f64::from(self.hour());
+        let minutes = f64::from(self.minute());
         let seconds = self.seconds();
         let total_days = days
-            + hours / consts::DAY_HOURS as f64
-            + (minutes / consts::MINUTE_SECS as f64 + seconds) / consts::DAY_SECS as f64;
+            + hours / f64::from(consts::DAY_HOURS)
+            + (minutes / f64::from(consts::MINUTE_SECS) + seconds) / f64::from(consts::DAY_SECS);
 
         if is_leap_year(self.year()) {
-            year + total_days / consts::LEAP_YEAR_DAYS as f64
+            year + total_days / f64::from(consts::LEAP_YEAR_DAYS)
         } else {
-            year + total_days / consts::YEAR_DAYS as f64
+            year + total_days / f64::from(consts::YEAR_DAYS)
         }
     }
 
@@ -382,17 +405,17 @@ impl From<UtcTime> for chrono::DateTime<chrono::offset::Utc> {
         use chrono::prelude::*;
 
         let date = NaiveDate::from_ymd_opt(
-            utc.year() as i32,
-            utc.month() as u32,
-            utc.day_of_month() as u32,
+            i32::from(utc.year()),
+            u32::from(utc.month()),
+            u32::from(utc.day_of_month()),
         )
         .unwrap();
         let whole_seconds = utc.seconds().floor() as u32;
         let frac_seconds = utc.seconds().fract();
         let nanoseconds = (frac_seconds * 1_000_000_000.0).round() as u32;
         let time = NaiveTime::from_hms_nano_opt(
-            utc.hour() as u32,
-            utc.minute() as u32,
+            u32::from(utc.hour()),
+            u32::from(utc.minute()),
             whole_seconds,
             nanoseconds,
         )
@@ -408,7 +431,8 @@ impl<Tz: chrono::offset::TimeZone> From<chrono::DateTime<Tz>> for UtcTime {
         use chrono::prelude::*;
 
         let datetime = chrono.naive_utc();
-        let seconds = datetime.second() as f64 + (datetime.nanosecond() as f64 / 1_000_000_000.0);
+        let seconds =
+            f64::from(datetime.second()) + (f64::from(datetime.nanosecond()) / 1_000_000_000.0);
 
         UtcTime::from_parts(
             datetime.year() as u16,
@@ -427,23 +451,23 @@ impl<Tz: chrono::offset::TimeZone> From<chrono::DateTime<Tz>> for UtcTime {
  * that the new offset is in effect.
  */
 pub(super) const UTC_LEAPS: [(GpsTime, f64); 18] = [
-    (GpsTime::new_unchecked(77, 259200.), 1.),  /* 01-07-1981 */
-    (GpsTime::new_unchecked(129, 345601.), 2.), /* 01-07-1982 */
-    (GpsTime::new_unchecked(181, 432002.), 3.), /* 01-07-1983 */
+    (GpsTime::new_unchecked(77, 259_200.), 1.), /* 01-07-1981 */
+    (GpsTime::new_unchecked(129, 345_601.), 2.), /* 01-07-1982 */
+    (GpsTime::new_unchecked(181, 432_002.), 3.), /* 01-07-1983 */
     (GpsTime::new_unchecked(286, 86403.), 4.),  /* 01-07-1985 */
-    (GpsTime::new_unchecked(416, 432004.), 5.), /* 01-01-1988 */
+    (GpsTime::new_unchecked(416, 432_004.), 5.), /* 01-01-1988 */
     (GpsTime::new_unchecked(521, 86405.), 6.),  /* 01-01-1990 */
-    (GpsTime::new_unchecked(573, 172806.), 7.), /* 01-01-1991 */
-    (GpsTime::new_unchecked(651, 259207.), 8.), /* 01-07-1992 */
-    (GpsTime::new_unchecked(703, 345608.), 9.), /* 01-07-1993 */
-    (GpsTime::new_unchecked(755, 432009.), 10.), /* 01-07-1994 */
+    (GpsTime::new_unchecked(573, 172_806.), 7.), /* 01-01-1991 */
+    (GpsTime::new_unchecked(651, 259_207.), 8.), /* 01-07-1992 */
+    (GpsTime::new_unchecked(703, 345_608.), 9.), /* 01-07-1993 */
+    (GpsTime::new_unchecked(755, 432_009.), 10.), /* 01-07-1994 */
     (GpsTime::new_unchecked(834, 86410.), 11.), /* 01-01-1996 */
-    (GpsTime::new_unchecked(912, 172811.), 12.), /* 01-07-1997 */
-    (GpsTime::new_unchecked(990, 432012.), 13.), /* 01-01-1999 */
+    (GpsTime::new_unchecked(912, 172_811.), 12.), /* 01-07-1997 */
+    (GpsTime::new_unchecked(990, 432_012.), 13.), /* 01-01-1999 */
     (GpsTime::new_unchecked(1356, 13.), 14.),   /* 01-01-2006 */
-    (GpsTime::new_unchecked(1512, 345614.), 15.), /* 01-01-2009 */
+    (GpsTime::new_unchecked(1512, 345_614.), 15.), /* 01-01-2009 */
     (GpsTime::new_unchecked(1695, 15.), 16.),   /* 01-07-2012 */
-    (GpsTime::new_unchecked(1851, 259216.), 17.), /* 01-07-2015 */
+    (GpsTime::new_unchecked(1851, 259_216.), 17.), /* 01-07-2015 */
     (GpsTime::new_unchecked(1930, 17.), 18.),   /* 01-01-2017 */
 ];
 
