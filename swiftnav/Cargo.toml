@@ -7,12 +7,11 @@ description = "GNSS positioning and related utilities"
 readme = "README.md"
 repository = "https://github.com/swift-nav/swiftnav-rs"
 license = "LGPL-3.0"
-rust-version = "1.62.1"
+rust-version = "1.85.0"
 
 [dependencies]
 rustversion = "1.0"
 chrono = { version = "0.4", optional = true }
-swiftnav-sys = { version = "^0.10.0", path = "../swiftnav-sys/" }
 strum = { version = "0.27", features = ["derive"] }
 nalgebra = "0.33"
 thiserror = "2.0"

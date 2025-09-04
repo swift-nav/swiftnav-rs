@@ -11,10 +11,9 @@
 //! position estimations. The data used by `swiftnav` typically comes from GNSS
 //! receiver chips as raw observation and ephemeris data. `swiftnav` is more of
 //! a "bring your own algorithm" library, it provides a bunch of functionality that
-//! is useful when processing raw GNSS data, but it provides only limited position
-//! estimation capabilities. Each module encompasses a single set of functionality,
-//! and they are meant to be pretty self-explanatory for developers familiar with
-//! GNSS processing.
+//! is useful when processing raw GNSS data. Each module encompasses a single set
+//! of functionality, and they are meant to be pretty self-explanatory for
+//! developers familiar with GNSS processing.
 //!
 //! GNSS systems are used to estimate the location of the receiver by determining
 //! the distance between the receiver and several satellites. The satellites send
@@ -28,45 +27,35 @@
 //! [libsbp](https://github.com/swift-nav/libsbp) is the library to use if you
 //! want to communicate with receivers using Swift Binary Protocol (SBP).
 //!
-//! ## Time
+//! ## [Signal](`signal`)
+//! Types for identifying GNSS signals. Each satellite can send out multiple
+//! signals, and each constellation of satellites support their own set of signals
+//! and keeping track which is which is important.
+//!
+//! ## [Time](`time`)
 //! Time is a very important aspect of GNSS. `swiftnav` defaults to representing
 //! all times as GPS times. It provides the ability to manipulate GPS time stamps,
 //! as well as means to convert a GPS time stamp into various other time bases
 //! (GLONASS time, UTC, MJD).
 //!
-//! ## Coordinates
+//! ## [Coordinates](`coords`)
 //! Several different coordinate types have representations and the ability to
 //! convert between them. Earth centered earth fixed (ECEF), Latitude longitude and
 //! height (both in radians and degrees), and Azimuth and elevation coordinates are
 //! available.
 //!
-//! ## Ephemeris
-//! Decoding and evaluation of broadcast ephemeris for all major GNSS constellations
-//! is made available. You are able to calculate the satellite position at a
-//! particular point in time in several different coordinates.
+//! ## [Checksums](`edc`)
+//! Implementation of commonly used checksum algorithms used with GNSS data.
 //!
-//! ## Troposphere and Ionosphere
-//! Two major sources of signal error in GNSS are the troposphere and ionosphere.
-//! `swiftnav` provides the ability to decode and use the broadcast Klobuchar
-//! ionosphere model. An implementation of the UNM3m troposphere model is also
-//! provided.
-//!
-//! ## Single epoch position solver
-//! A simple least squares position solver is also included. This allows you to
-//! get an approximate position with GNSS measurements from a single point in time.
-//! It uses a least squares algorith, so no state is maintained between solves.
-//! This can be used to seed your own position estimation algorithm with a rough
-//! starting location.
+//! ## [Geodetic Reference Frames](`reference_frame`)
+//! Maps and GNSS tend to use their own reference frames (a.k.a datums), so it's
+//! important to keep track which reference frame a position is in and be able to
+//! transform positions in one reference frame into another so you can properly
+//! compare positions.
 
 pub mod coords;
 pub mod edc;
-pub mod ephemeris;
-pub mod geoid;
-pub mod ionosphere;
-pub mod math;
-pub mod navmeas;
+mod math;
 pub mod reference_frame;
 pub mod signal;
-pub mod solver;
 pub mod time;
-pub mod troposphere;

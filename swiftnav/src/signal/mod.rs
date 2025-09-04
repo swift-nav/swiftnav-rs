@@ -77,23 +77,6 @@ impl GnssSignal {
         }
     }
 
-    /// Convert a C `gnss_signal_t` object into a Rust [`GnssSignal`]
-    pub(crate) fn from_gnss_signal_t(
-        sid: swiftnav_sys::gnss_signal_t,
-    ) -> Result<GnssSignal, InvalidGnssSignal> {
-        use std::convert::TryInto;
-
-        Ok(Self::new(sid.sat, (sid.code as u8).try_into()?)?)
-    }
-
-    /// Convert a Rust [`GnssSignal`] object into a C `gnss_signal_t`
-    pub(crate) fn to_gnss_signal_t(self) -> swiftnav_sys::gnss_signal_t {
-        swiftnav_sys::gnss_signal_t {
-            sat: self.sat,
-            code: self.code.to_code_t(),
-        }
-    }
-
     /// Get the satellite PRN of the signal
     #[must_use]
     pub fn sat(&self) -> u16 {
