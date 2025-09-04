@@ -75,6 +75,7 @@
 //!
 
 use crate::coords::{Coordinate, ECEF};
+use nalgebra::{Matrix3, Vector3};
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     fmt,
@@ -168,20 +169,12 @@ pub enum ReferenceFrame {
 /// formulation of the Helmert transformation.
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub struct TimeDependentHelmertParams {
-    tx: f64,
-    tx_dot: f64,
-    ty: f64,
-    ty_dot: f64,
-    tz: f64,
-    tz_dot: f64,
+    t: Vector3<f64>,
+    t_dot: Vector3<f64>,
     s: f64,
     s_dot: f64,
-    rx: f64,
-    rx_dot: f64,
-    ry: f64,
-    ry_dot: f64,
-    rz: f64,
-    rz_dot: f64,
+    r: Vector3<f64>,
+    r_dot: Vector3<f64>,
     epoch: f64,
 }
 
@@ -192,57 +185,42 @@ impl TimeDependentHelmertParams {
 
     /// Reverses the transformation. Since this is a linear transformation we simply negate all terms
     pub fn invert(&mut self) {
-        self.tx *= -1.0;
-        self.tx_dot *= -1.0;
-        self.ty *= -1.0;
-        self.ty_dot *= -1.0;
-        self.tz *= -1.0;
-        self.tz_dot *= -1.0;
+        self.t *= -1.0;
+        self.t_dot *= -1.0;
         self.s *= -1.0;
         self.s_dot *= -1.0;
-        self.rx *= -1.0;
-        self.rx_dot *= -1.0;
-        self.ry *= -1.0;
-        self.ry_dot *= -1.0;
-        self.rz *= -1.0;
-        self.rz_dot *= -1.0;
+        self.r *= -1.0;
+        self.r_dot *= -1.0;
     }
 
     /// Apply the transformation on a position at a specific epoch
     #[must_use]
     pub fn transform_position(&self, position: &ECEF, epoch: f64) -> ECEF {
         let dt = epoch - self.epoch;
-        let tx = (self.tx + self.tx_dot * dt) * Self::TRANSLATE_SCALE;
-        let ty = (self.ty + self.ty_dot * dt) * Self::TRANSLATE_SCALE;
-        let tz = (self.tz + self.tz_dot * dt) * Self::TRANSLATE_SCALE;
+        let t = (self.t + self.t_dot * dt) * Self::TRANSLATE_SCALE;
         let s = (self.s + self.s_dot * dt) * Self::SCALE_SCALE;
-        let rx = (self.rx + self.rx_dot * dt) * Self::ROTATE_SCALE;
-        let ry = (self.ry + self.ry_dot * dt) * Self::ROTATE_SCALE;
-        let rz = (self.rz + self.rz_dot * dt) * Self::ROTATE_SCALE;
+        let r = (self.r + self.r_dot * dt) * Self::ROTATE_SCALE;
 
-        let x = position.x() + tx + (s * position.x()) + (-rz * position.y()) + (ry * position.z());
-        let y = position.y() + ty + (rz * position.x()) + (s * position.y()) + (-rx * position.z());
-        let z = position.z() + tz + (-ry * position.x()) + (rx * position.y()) + (s * position.z());
+        let m = Self::make_rotation_matrix(s, r);
 
-        ECEF::new(x, y, z)
+        (position.as_vector() + t + m * position.as_vector()).into()
     }
 
     /// Apply the transformation on a velocity at a specific position
     #[must_use]
     pub fn transform_velocity(&self, velocity: &ECEF, position: &ECEF) -> ECEF {
-        let tx = self.tx_dot * Self::TRANSLATE_SCALE;
-        let ty = self.ty_dot * Self::TRANSLATE_SCALE;
-        let tz = self.tz_dot * Self::TRANSLATE_SCALE;
+        let t = self.t_dot * Self::TRANSLATE_SCALE;
         let s = self.s_dot * Self::SCALE_SCALE;
-        let rx = self.rx_dot * Self::ROTATE_SCALE;
-        let ry = self.ry_dot * Self::ROTATE_SCALE;
-        let rz = self.rz_dot * Self::ROTATE_SCALE;
+        let r = self.r_dot * Self::ROTATE_SCALE;
 
-        let x = velocity.x() + tx + (s * position.x()) + (-rz * position.y()) + (ry * position.z());
-        let y = velocity.y() + ty + (rz * position.x()) + (s * position.y()) + (-rx * position.z());
-        let z = velocity.z() + tz + (-ry * position.x()) + (rx * position.y()) + (s * position.z());
+        let m = Self::make_rotation_matrix(s, r);
 
-        ECEF::new(x, y, z)
+        (velocity.as_vector() + t + m * position.as_vector()).into()
+    }
+
+    #[must_use]
+    fn make_rotation_matrix(s: f64, r: Vector3<f64>) -> Matrix3<f64> {
+        Matrix3::new(s, -r.z, r.y, r.z, s, -r.x, -r.y, r.x, s)
     }
 }
 
@@ -564,20 +542,20 @@ mod tests {
     #[test]
     fn helmert_position_translations() {
         let params = TimeDependentHelmertParams {
-            tx: 1.0 / TimeDependentHelmertParams::TRANSLATE_SCALE,
-            tx_dot: 0.1 / TimeDependentHelmertParams::TRANSLATE_SCALE,
-            ty: 2.0 / TimeDependentHelmertParams::TRANSLATE_SCALE,
-            ty_dot: 0.2 / TimeDependentHelmertParams::TRANSLATE_SCALE,
-            tz: 3.0 / TimeDependentHelmertParams::TRANSLATE_SCALE,
-            tz_dot: 0.3 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+            t: Vector3::new(
+                1.0 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+                2.0 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+                3.0 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+            ),
+            t_dot: Vector3::new(
+                0.1 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+                0.2 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+                0.3 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+            ),
             s: 0.0,
             s_dot: 0.0,
-            rx: 0.0,
-            rx_dot: 0.0,
-            ry: 0.0,
-            ry_dot: 0.0,
-            rz: 0.0,
-            rz_dot: 0.0,
+            r: Vector3::new(0.0, 0.0, 0.0),
+            r_dot: Vector3::new(0.0, 0.0, 0.0),
             epoch: 2010.0,
         };
         let initial_position = ECEF::default();
@@ -596,20 +574,12 @@ mod tests {
     #[test]
     fn helmert_position_scaling() {
         let params = TimeDependentHelmertParams {
-            tx: 0.0,
-            tx_dot: 0.0,
-            ty: 0.0,
-            ty_dot: 0.0,
-            tz: 0.0,
-            tz_dot: 0.0,
+            t: Vector3::new(0.0, 0.0, 0.0),
+            t_dot: Vector3::new(0.0, 0.0, 0.0),
             s: 1.0 / TimeDependentHelmertParams::SCALE_SCALE,
             s_dot: 0.1 / TimeDependentHelmertParams::SCALE_SCALE,
-            rx: 90.0,
-            rx_dot: 0.0,
-            ry: 0.0,
-            ry_dot: 0.0,
-            rz: 0.0,
-            rz_dot: 0.0,
+            r: Vector3::new(90.0, 0.0, 0.0),
+            r_dot: Vector3::new(0.0, 0.0, 0.0),
             epoch: 2010.0,
         };
         let initial_position = ECEF::new(1., 2., 3.);
@@ -628,20 +598,20 @@ mod tests {
     #[test]
     fn helmert_position_rotations() {
         let params = TimeDependentHelmertParams {
-            tx: 0.0,
-            tx_dot: 0.0,
-            ty: 0.0,
-            ty_dot: 0.0,
-            tz: 0.0,
-            tz_dot: 0.0,
+            t: Vector3::new(0.0, 0.0, 0.0),
+            t_dot: Vector3::new(0.0, 0.0, 0.0),
             s: 0.0,
             s_dot: 0.0,
-            rx: 1.0 / TimeDependentHelmertParams::ROTATE_SCALE,
-            rx_dot: 0.1 / TimeDependentHelmertParams::ROTATE_SCALE,
-            ry: 2.0 / TimeDependentHelmertParams::ROTATE_SCALE,
-            ry_dot: 0.2 / TimeDependentHelmertParams::ROTATE_SCALE,
-            rz: 3.0 / TimeDependentHelmertParams::ROTATE_SCALE,
-            rz_dot: 0.3 / TimeDependentHelmertParams::ROTATE_SCALE,
+            r: Vector3::new(
+                1.0 / TimeDependentHelmertParams::ROTATE_SCALE,
+                2.0 / TimeDependentHelmertParams::ROTATE_SCALE,
+                3.0 / TimeDependentHelmertParams::ROTATE_SCALE,
+            ),
+            r_dot: Vector3::new(
+                0.1 / TimeDependentHelmertParams::ROTATE_SCALE,
+                0.2 / TimeDependentHelmertParams::ROTATE_SCALE,
+                0.3 / TimeDependentHelmertParams::ROTATE_SCALE,
+            ),
             epoch: 2010.0,
         };
         let initial_position = ECEF::new(1.0, 1.0, 1.0);
@@ -660,20 +630,20 @@ mod tests {
     #[test]
     fn helmert_velocity_translations() {
         let params = TimeDependentHelmertParams {
-            tx: 1.0 / TimeDependentHelmertParams::TRANSLATE_SCALE,
-            tx_dot: 0.1 / TimeDependentHelmertParams::TRANSLATE_SCALE,
-            ty: 2.0 / TimeDependentHelmertParams::TRANSLATE_SCALE,
-            ty_dot: 0.2 / TimeDependentHelmertParams::TRANSLATE_SCALE,
-            tz: 3.0 / TimeDependentHelmertParams::TRANSLATE_SCALE,
-            tz_dot: 0.3 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+            t: Vector3::new(
+                1.0 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+                2.0 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+                3.0 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+            ),
+            t_dot: Vector3::new(
+                0.1 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+                0.2 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+                0.3 / TimeDependentHelmertParams::TRANSLATE_SCALE,
+            ),
             s: 0.0,
             s_dot: 0.0,
-            rx: 0.0,
-            rx_dot: 0.0,
-            ry: 0.0,
-            ry_dot: 0.0,
-            rz: 0.0,
-            rz_dot: 0.0,
+            r: Vector3::new(0.0, 0.0, 0.0),
+            r_dot: Vector3::new(0.0, 0.0, 0.0),
             epoch: 2010.0,
         };
         let initial_velocity = ECEF::default();
@@ -688,20 +658,12 @@ mod tests {
     #[test]
     fn helmert_velocity_scaling() {
         let params = TimeDependentHelmertParams {
-            tx: 0.0,
-            tx_dot: 0.0,
-            ty: 0.0,
-            ty_dot: 0.0,
-            tz: 0.0,
-            tz_dot: 0.0,
+            t: Vector3::new(0.0, 0.0, 0.0),
+            t_dot: Vector3::new(0.0, 0.0, 0.0),
             s: 1.0 / TimeDependentHelmertParams::SCALE_SCALE,
             s_dot: 0.1 / TimeDependentHelmertParams::SCALE_SCALE,
-            rx: 90.0,
-            rx_dot: 0.0,
-            ry: 0.0,
-            ry_dot: 0.0,
-            rz: 0.0,
-            rz_dot: 0.0,
+            r: Vector3::new(90.0, 0.0, 0.0),
+            r_dot: Vector3::new(0.0, 0.0, 0.0),
             epoch: 2010.0,
         };
         let initial_velocity = ECEF::default();
@@ -716,20 +678,20 @@ mod tests {
     #[test]
     fn helmert_velocity_rotations() {
         let params = TimeDependentHelmertParams {
-            tx: 0.0,
-            tx_dot: 0.0,
-            ty: 0.0,
-            ty_dot: 0.0,
-            tz: 0.0,
-            tz_dot: 0.0,
+            t: Vector3::new(0.0, 0.0, 0.0),
+            t_dot: Vector3::new(0.0, 0.0, 0.0),
             s: 0.0,
             s_dot: 0.0,
-            rx: 1.0 / TimeDependentHelmertParams::ROTATE_SCALE,
-            rx_dot: 0.1 / TimeDependentHelmertParams::ROTATE_SCALE,
-            ry: 2.0 / TimeDependentHelmertParams::ROTATE_SCALE,
-            ry_dot: 0.2 / TimeDependentHelmertParams::ROTATE_SCALE,
-            rz: 3.0 / TimeDependentHelmertParams::ROTATE_SCALE,
-            rz_dot: 0.3 / TimeDependentHelmertParams::ROTATE_SCALE,
+            r: Vector3::new(
+                1.0 / TimeDependentHelmertParams::ROTATE_SCALE,
+                2.0 / TimeDependentHelmertParams::ROTATE_SCALE,
+                3.0 / TimeDependentHelmertParams::ROTATE_SCALE,
+            ),
+            r_dot: Vector3::new(
+                0.1 / TimeDependentHelmertParams::ROTATE_SCALE,
+                0.2 / TimeDependentHelmertParams::ROTATE_SCALE,
+                0.3 / TimeDependentHelmertParams::ROTATE_SCALE,
+            ),
             epoch: 2010.0,
         };
         let initial_velocity = ECEF::default();
@@ -744,53 +706,45 @@ mod tests {
     #[test]
     fn helmert_invert() {
         let mut params = TimeDependentHelmertParams {
-            tx: 1.0,
-            tx_dot: 0.1,
-            ty: 2.0,
-            ty_dot: 0.2,
-            tz: 3.0,
-            tz_dot: 0.3,
+            t: Vector3::new(1.0, 2.0, 3.0),
+            t_dot: Vector3::new(0.1, 0.2, 0.3),
             s: 4.0,
             s_dot: 0.4,
-            rx: 5.0,
-            rx_dot: 0.5,
-            ry: 6.0,
-            ry_dot: 0.6,
-            rz: 7.0,
-            rz_dot: 0.7,
+            r: Vector3::new(5.0, 6.0, 7.0),
+            r_dot: Vector3::new(0.5, 0.6, 0.7),
             epoch: 2010.0,
         };
         params.invert();
-        assert_float_eq!(params.tx, -1.0, abs_all <= 1e-4);
-        assert_float_eq!(params.tx_dot, -0.1, abs_all <= 1e-4);
-        assert_float_eq!(params.ty, -2.0, abs_all <= 1e-4);
-        assert_float_eq!(params.ty_dot, -0.2, abs_all <= 1e-4);
-        assert_float_eq!(params.tz, -3.0, abs_all <= 1e-4);
-        assert_float_eq!(params.tz_dot, -0.3, abs_all <= 1e-4);
+        assert_float_eq!(params.t.x, -1.0, abs_all <= 1e-4);
+        assert_float_eq!(params.t_dot.x, -0.1, abs_all <= 1e-4);
+        assert_float_eq!(params.t.y, -2.0, abs_all <= 1e-4);
+        assert_float_eq!(params.t_dot.y, -0.2, abs_all <= 1e-4);
+        assert_float_eq!(params.t.z, -3.0, abs_all <= 1e-4);
+        assert_float_eq!(params.t_dot.z, -0.3, abs_all <= 1e-4);
         assert_float_eq!(params.s, -4.0, abs_all <= 1e-4);
         assert_float_eq!(params.s_dot, -0.4, abs_all <= 1e-4);
-        assert_float_eq!(params.rx, -5.0, abs_all <= 1e-4);
-        assert_float_eq!(params.rx_dot, -0.5, abs_all <= 1e-4);
-        assert_float_eq!(params.ry, -6.0, abs_all <= 1e-4);
-        assert_float_eq!(params.ry_dot, -0.6, abs_all <= 1e-4);
-        assert_float_eq!(params.rz, -7.0, abs_all <= 1e-4);
-        assert_float_eq!(params.rz_dot, -0.7, abs_all <= 1e-4);
+        assert_float_eq!(params.r.x, -5.0, abs_all <= 1e-4);
+        assert_float_eq!(params.r_dot.x, -0.5, abs_all <= 1e-4);
+        assert_float_eq!(params.r.y, -6.0, abs_all <= 1e-4);
+        assert_float_eq!(params.r_dot.y, -0.6, abs_all <= 1e-4);
+        assert_float_eq!(params.r.z, -7.0, abs_all <= 1e-4);
+        assert_float_eq!(params.r_dot.z, -0.7, abs_all <= 1e-4);
         assert_float_eq!(params.epoch, 2010.0, abs_all <= 1e-4);
         params.invert();
-        assert_float_eq!(params.tx, 1.0, abs_all <= 1e-4);
-        assert_float_eq!(params.tx_dot, 0.1, abs_all <= 1e-4);
-        assert_float_eq!(params.ty, 2.0, abs_all <= 1e-4);
-        assert_float_eq!(params.ty_dot, 0.2, abs_all <= 1e-4);
-        assert_float_eq!(params.tz, 3.0, abs_all <= 1e-4);
-        assert_float_eq!(params.tz_dot, 0.3, abs_all <= 1e-4);
+        assert_float_eq!(params.t.x, 1.0, abs_all <= 1e-4);
+        assert_float_eq!(params.t_dot.x, 0.1, abs_all <= 1e-4);
+        assert_float_eq!(params.t.y, 2.0, abs_all <= 1e-4);
+        assert_float_eq!(params.t_dot.y, 0.2, abs_all <= 1e-4);
+        assert_float_eq!(params.t.z, 3.0, abs_all <= 1e-4);
+        assert_float_eq!(params.t_dot.z, 0.3, abs_all <= 1e-4);
         assert_float_eq!(params.s, 4.0, abs_all <= 1e-4);
         assert_float_eq!(params.s_dot, 0.4, abs_all <= 1e-4);
-        assert_float_eq!(params.rx, 5.0, abs_all <= 1e-4);
-        assert_float_eq!(params.rx_dot, 0.5, abs_all <= 1e-4);
-        assert_float_eq!(params.ry, 6.0, abs_all <= 1e-4);
-        assert_float_eq!(params.ry_dot, 0.6, abs_all <= 1e-4);
-        assert_float_eq!(params.rz, 7.0, abs_all <= 1e-4);
-        assert_float_eq!(params.rz_dot, 0.7, abs_all <= 1e-4);
+        assert_float_eq!(params.r.x, 5.0, abs_all <= 1e-4);
+        assert_float_eq!(params.r_dot.x, 0.5, abs_all <= 1e-4);
+        assert_float_eq!(params.r.y, 6.0, abs_all <= 1e-4);
+        assert_float_eq!(params.r_dot.y, 0.6, abs_all <= 1e-4);
+        assert_float_eq!(params.r.z, 7.0, abs_all <= 1e-4);
+        assert_float_eq!(params.r_dot.z, 0.7, abs_all <= 1e-4);
         assert_float_eq!(params.epoch, 2010.0, abs_all <= 1e-4);
     }
 
