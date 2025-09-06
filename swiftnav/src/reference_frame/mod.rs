@@ -82,6 +82,10 @@ use strum::{Display, EnumIter, EnumString};
 mod params;
 
 /// Reference Frames
+///
+/// Some well known reference frames are included. Other
+/// reference frames are supported via the [`ReferenceFrame::Other`]
+/// variant which holds the reference frame name as a [`String`]
 #[derive(
     Debug,
     PartialEq,
@@ -188,6 +192,8 @@ impl PartialEq<ReferenceFrame> for &ReferenceFrame {
 /// Where $p$ is the constant value, $\dot{p}$ is the rate of
 /// change, and $\tau$ is the reference epoch.
 ///
+/// # Sign Convention
+///
 /// There are several sign conventions in use for the rotation
 /// parameters in Helmert transformations. In this implementation
 /// we follow the IERS conventions, which is opposite of the original
@@ -236,7 +242,7 @@ impl TimeDependentHelmertParams {
         self
     }
 
-    /// Apply the transformation on a position at a specific epoch
+    /// Apply the transformation to a position at a specific epoch
     pub fn transform_position(&self, position: &ECEF, epoch: f64) -> ECEF {
         let dt = epoch - self.epoch;
         let tx = (self.tx + self.tx_dot * dt) * Self::TRANSLATE_SCALE;
@@ -254,7 +260,7 @@ impl TimeDependentHelmertParams {
         ECEF::new(x, y, z)
     }
 
-    /// Apply the transformation on a velocity at a specific position
+    /// Apply the transformation to a velocity at a specific position
     pub fn transform_velocity(&self, velocity: &ECEF, position: &ECEF) -> ECEF {
         let tx = self.tx_dot * Self::TRANSLATE_SCALE;
         let ty = self.ty_dot * Self::TRANSLATE_SCALE;
@@ -287,13 +293,14 @@ impl TimeDependentHelmertParams {
 /// A transformation from one reference frame to another.
 #[derive(Debug, PartialEq, PartialOrd, Clone, Serialize, Deserialize)]
 pub struct Transformation {
-    #[serde(alias = "source", alias = "source_name", alias = "frames.source_name")]
-    pub from: ReferenceFrame,
     #[serde(
-        alias = "destination",
-        alias = "destination_name",
-        alias = "frames.destination_name"
+        alias = "source",
+        alias = "source_name",
+        alias = "frames.source",
+        alias = "frames.source_name"
     )]
+    pub from: ReferenceFrame,
+    #[serde(alias = "destination", alias = "destination_name")]
     pub to: ReferenceFrame,
     pub params: TimeDependentHelmertParams,
 }
@@ -303,6 +310,11 @@ impl Transformation {
     ///
     /// Reference frame transformations do not change the epoch of the
     /// coordinate.
+    ///
+    /// # Errors
+    ///
+    /// [`TransformationNotFound`] Is returned as an error if there is a mismatch between
+    /// the coordinate reference frame and the [`Transformation::from`] field.
     pub fn transform(&self, coord: Coordinate) -> Result<Coordinate, TransformationNotFound> {
         if coord.reference_frame() != self.from {
             return Err(TransformationNotFound(
@@ -328,7 +340,7 @@ impl Transformation {
     /// Reverse the transformation
     pub fn invert(mut self) -> Self {
         std::mem::swap(&mut self.from, &mut self.to);
-        self.params.invert();
+        self.params = self.params.invert();
         self
     }
 }
@@ -353,8 +365,8 @@ type TransformationGraph =
 
 /// A repository for managing reference frame transformations
 ///
-/// This struct allows for dynamic loading and management of transformations,
-/// supporting runtime configuration from various data formats via serde.
+/// This struct allows for loading the builtin transformations
+/// as well as adding additional transformations from other sources.
 #[derive(Debug, Clone)]
 pub struct TransformationRepository {
     transformations: TransformationGraph,
@@ -374,13 +386,12 @@ impl TransformationRepository {
     ///
     /// If there are duplicated transformations in the list, the
     /// last one in the list will take priority
-    pub fn from_transformations(transformations: Vec<Transformation>) -> Self {
-        transformations
-            .into_iter()
-            .fold(Self::new(), |mut repo, transformation| {
-                repo.add_transformation(transformation.clone());
-                repo
-            })
+    pub fn from_transformations<T: IntoIterator<Item = Transformation>>(
+        transformations: T,
+    ) -> Self {
+        let mut repo = Self::new();
+        repo.extend(transformations);
+        repo
     }
 
     /// Create a repository with the builtin transformations
@@ -409,6 +420,18 @@ impl TransformationRepository {
             .extend([(from, inverted_params)]);
     }
 
+    /// Transform a [`Coordinate`] to a new reference frame
+    ///
+    /// This function finds the shortest series of transformations from the coordinate's
+    /// initial reference frame to the requestest one, then sequentially applies
+    /// those transformations to get the new position and velocity. The epoch of the
+    /// coordinate is not modified in this process.
+    ///
+    /// # Errors
+    ///
+    /// [`TransformationNotFound`] is returned as an error if no path from the
+    /// coordinate's reference frame to the requested reference frame could be found
+    /// in the repository.
     pub fn transform(
         &self,
         coord: Coordinate,
@@ -443,6 +466,13 @@ impl TransformationRepository {
     /// Returns a list of transformations that need to be applied in sequence
     /// to transform from the source to the destination frame. Uses breadth-first
     /// search to find the path with the minimum number of transformation steps.
+    ///
+    /// An empty vector will be returned if the two reference frames are the same.
+    ///
+    /// # Errors
+    ///
+    /// [`TransformationNotFound`] will be returned as an error if
+    /// no path could be found between the two reference frames
     fn get_shortest_path(
         &self,
         from: &ReferenceFrame,
@@ -477,24 +507,25 @@ impl TransformationRepository {
         Err(TransformationNotFound(from.clone(), to.clone()))
     }
 
+    /// Get the number of transformations stored in the repository
     pub fn count(&self) -> usize {
         self.transformations
             .values()
             .map(|neighbors| neighbors.len())
             .sum()
     }
-
-    // TODO(jbangelo): Add interator functions in place of the list access
-    pub fn iter(&self) -> impl Iterator<Item = &TimeDependentHelmertParams> {
-        self.transformations
-            .iter()
-            .flat_map(|(_from, neighbors)| neighbors.values())
-    }
 }
 
 impl Default for TransformationRepository {
     fn default() -> Self {
         Self::from_builtin()
+    }
+}
+
+impl Extend<Transformation> for TransformationRepository {
+    fn extend<T: IntoIterator<Item = Transformation>>(&mut self, iter: T) {
+        iter.into_iter()
+            .for_each(|transformation| self.add_transformation(transformation));
     }
 }
 
@@ -1247,6 +1278,63 @@ mod tests {
             let deserialized: Transformation =
                 serde_json::from_str(&json).expect("Failed to deserialize");
             assert_eq!(transformation, deserialized);
+        }
+
+        #[test]
+        fn test_serde_aliases() {
+            // Test "source" and "destination"
+            let json = serde_json::json!({
+                "source": "ITRF2020",
+                "destination": "ITRF2014",
+                "params": {
+                    "tx": -1.4,
+                    "tx_dot": 0.0,
+                    "ty": -0.9,
+                    "ty_dot": -0.1,
+                    "tz": 1.4,
+                    "tz_dot": 0.2,
+                    "s": -0.42,
+                    "s_dot": 0.0,
+                    "rx": 0.0,
+                    "rx_dot": 0.0,
+                    "ry": 0.0,
+                    "ry_dot": 0.0,
+                    "rz": 0.0,
+                    "rz_dot": 0.0,
+                    "epoch": 2015.0,
+                }
+            });
+
+            let deserialized: Transformation = serde_json::from_value(json).unwrap();
+            assert_eq!(deserialized.from, ReferenceFrame::ITRF2020);
+            assert_eq!(deserialized.to, ReferenceFrame::ITRF2014);
+
+            // Test "source_name" and destination_name"
+            let json = serde_json::json!({
+                "source_name": "ITRF2020",
+                "destination_name": "ITRF2014",
+                "params": {
+                    "tx": -1.4,
+                    "tx_dot": 0.0,
+                    "ty": -0.9,
+                    "ty_dot": -0.1,
+                    "tz": 1.4,
+                    "tz_dot": 0.2,
+                    "s": -0.42,
+                    "s_dot": 0.0,
+                    "rx": 0.0,
+                    "rx_dot": 0.0,
+                    "ry": 0.0,
+                    "ry_dot": 0.0,
+                    "rz": 0.0,
+                    "rz_dot": 0.0,
+                    "epoch": 2015.0,
+                }
+            });
+
+            let deserialized: Transformation = serde_json::from_value(json).unwrap();
+            assert_eq!(deserialized.from, ReferenceFrame::ITRF2020);
+            assert_eq!(deserialized.to, ReferenceFrame::ITRF2014);
         }
     }
 }
