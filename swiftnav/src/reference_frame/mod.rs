@@ -50,11 +50,14 @@
 //! ```
 //! use swiftnav::{
 //!     coords::{Coordinate, ECEF},
-//!     reference_frame::{get_transformation, ReferenceFrame, TransformationNotFound},
+//!     reference_frame::{TransformationRepository, ReferenceFrame, TransformationNotFound},
 //!     time::UtcTime
 //! };
 //!
-//! let transformation = get_transformation(ReferenceFrame::ITRF2014, ReferenceFrame::NAD83_2011)
+//! // Can also load your own transformations at runtime
+//! let transformation_repo = TransformationRepository::from_builtin();
+//!
+//! let transformation = transformation_repo.get_transformation(ReferenceFrame::ITRF2014, ReferenceFrame::NAD83_2011)
 //!     .unwrap();
 //!
 //! let epoch_2020 = UtcTime::from_parts(2020, 3, 15, 0, 0, 0.).to_gps_hardcoded();
@@ -70,12 +73,13 @@
 //! let nad83_coord = transformation.transform(&itrf_coord);
 //! // Alternatively, you can use the `transform_to` method on the coordinate itself
 //! let nad83_coord: Result<Coordinate, TransformationNotFound> =
-//!     itrf_coord.transform_to(ReferenceFrame::NAD83_2011);
+//!     itrf_coord.transform_to(ReferenceFrame::NAD83_2011, &transformation_repo);
 //! ```
 //!
 
 use crate::coords::{Coordinate, ECEF};
 use nalgebra::{Matrix3, Vector3};
+use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     fmt,
@@ -86,9 +90,22 @@ mod params;
 
 /// Reference Frames
 #[derive(
-    Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, EnumString, Display, EnumIter, Hash,
+    Debug,
+    PartialEq,
+    Eq,
+    PartialOrd,
+    Ord,
+    Clone,
+    Copy,
+    EnumString,
+    Display,
+    EnumIter,
+    Hash,
+    Serialize,
+    Deserialize,
 )]
 #[strum(serialize_all = "UPPERCASE")]
+#[serde(rename_all = "UPPERCASE")]
 pub enum ReferenceFrame {
     ITRF88,
     ITRF89,
@@ -167,7 +184,7 @@ pub enum ReferenceFrame {
 /// parameters in Helmert transformations. In this implementation
 /// we follow the IERS conventions, which is opposite of the original
 /// formulation of the Helmert transformation.
-#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy, Serialize, Deserialize)]
 pub struct TimeDependentHelmertParams {
     t: Vector3<f64>,
     t_dot: Vector3<f64>,
@@ -225,7 +242,7 @@ impl TimeDependentHelmertParams {
 }
 
 /// A transformation from one reference frame to another.
-#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy, Serialize, Deserialize)]
 pub struct Transformation {
     pub from: ReferenceFrame,
     pub to: ReferenceFrame,
@@ -284,45 +301,147 @@ impl fmt::Display for TransformationNotFound {
 
 impl std::error::Error for TransformationNotFound {}
 
-/// Find a transformation from one reference frame to another
+/// A repository for managing reference frame transformations
 ///
-/// We currently only support a limited set of transformations.
-/// If no transformation is found, `None` is returned.
-///
-/// # Errors
-///
-/// An error will be returned if a transformation between the two reference
-/// frames couldn't be found.
-pub fn get_transformation(
-    from: ReferenceFrame,
-    to: ReferenceFrame,
-) -> Result<Transformation, TransformationNotFound> {
-    params::TRANSFORMATIONS
-        .iter()
-        .find(|t| (t.from == from && t.to == to) || (t.from == to && t.to == from))
-        .map(|t| {
-            if t.from == from && t.to == to {
-                *t
-            } else {
-                (*t).invert()
+/// This struct allows for dynamic loading and management of transformations,
+/// supporting runtime configuration from various data formats via serde.
+#[derive(Debug, Clone)]
+pub struct TransformationRepository {
+    transformations: Vec<Transformation>,
+    graph: TransformationGraph,
+}
+
+impl TransformationRepository {
+    /// Create an empty transformation repository
+    pub fn new() -> Self {
+        Self {
+            transformations: Vec::new(),
+            graph: TransformationGraph::new(),
+        }
+    }
+
+    /// Create a repository from a list of transformations
+    pub fn from_transformations(transformations: Vec<Transformation>) -> Self {
+        let mut repo = Self {
+            transformations,
+            graph: TransformationGraph::new(),
+        };
+        repo.rebuild_graph();
+        repo
+    }
+
+    /// Create a repository with the builtin transformations
+    pub fn from_builtin() -> Self {
+        Self::from_transformations(builtin_transformations())
+    }
+
+    /// Add a transformation to the repository
+    ///
+    /// This will rebuild the internal graph to include the new transformation.
+    pub fn add_transformation(&mut self, transformation: Transformation) {
+        self.transformations.push(transformation);
+        self.rebuild_graph();
+    }
+
+    /// Get a transformation between two reference frames
+    ///
+    /// This looks for a direct transformation or its inverse.
+    pub fn get_transformation(
+        &self,
+        from: ReferenceFrame,
+        to: ReferenceFrame,
+    ) -> Result<Transformation, TransformationNotFound> {
+        self.transformations
+            .iter()
+            .find(|t| (t.from == from && t.to == to) || (t.from == to && t.to == from))
+            .map(|t| {
+                if t.from == from && t.to == to {
+                    *t
+                } else {
+                    (*t).invert()
+                }
+            })
+            .ok_or(TransformationNotFound(from, to))
+    }
+
+    /// Get the shortest path between two reference frames
+    ///
+    /// Returns a list of transformations that need to be applied in sequence
+    /// to transform from the source to the destination frame.
+    pub fn get_shortest_path(
+        &self,
+        from: ReferenceFrame,
+        to: ReferenceFrame,
+    ) -> Option<Vec<Transformation>> {
+        let frame_path = self.graph.get_shortest_path(from, to)?;
+
+        // Convert the path of reference frames into a sequence of transformations
+        let mut transformations = Vec::new();
+        for window in frame_path.windows(2) {
+            if let [from_frame, to_frame] = window {
+                if let Ok(transformation) = self.get_transformation(*from_frame, *to_frame) {
+                    transformations.push(transformation);
+                } else {
+                    // This shouldn't happen if the graph is consistent with available transformations
+                    return None;
+                }
             }
-        })
-        .ok_or(TransformationNotFound(from, to))
+        }
+
+        Some(transformations)
+    }
+
+    /// Get a reference to all transformations in the repository
+    pub fn transformations(&self) -> &[Transformation] {
+        &self.transformations
+    }
+
+    /// Rebuild the internal graph from the current transformations
+    fn rebuild_graph(&mut self) {
+        self.graph = TransformationGraph::from_transformations(&self.transformations);
+    }
+}
+
+impl Default for TransformationRepository {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Get the builtin transformations as a Vec
+///
+/// This function converts the static transformation array into a Vec
+/// that can be used for serialization or with TransformationRepository.
+pub fn builtin_transformations() -> Vec<Transformation> {
+    params::TRANSFORMATIONS.to_vec()
 }
 
 /// A helper type for finding transformations between reference frames that require multiple steps
 ///
 /// This object can be used to determine which calls to [`get_transformation`]
 /// are needed when a single transformation does not exist between two reference frames.
+#[derive(Debug, Clone)]
 pub struct TransformationGraph {
     graph: HashMap<ReferenceFrame, HashSet<ReferenceFrame>>,
 }
 
 impl TransformationGraph {
-    /// Create a new transformation graph, fully populated with the known transformations
+    /// Create a new empty transformation graph
     pub fn new() -> Self {
+        TransformationGraph {
+            graph: HashMap::new(),
+        }
+    }
+
+    /// Create a new transformation graph from the builtin transformations
+    pub fn from_builtin() -> Self {
+        Self::from_transformations(&params::TRANSFORMATIONS)
+    }
+
+    /// Create a new transformation graph from a slice of transformations
+    pub fn from_transformations(transformations: &[Transformation]) -> Self {
         let mut graph = HashMap::new();
-        for transformation in &params::TRANSFORMATIONS {
+        for transformation in transformations.iter() {
             graph
                 .entry(transformation.from)
                 .or_insert_with(HashSet::new)
@@ -333,6 +452,21 @@ impl TransformationGraph {
                 .insert(transformation.from);
         }
         TransformationGraph { graph }
+    }
+
+    /// Rebuild the graph from a slice of transformations
+    pub fn rebuild(&mut self, transformations: &[Transformation]) {
+        self.graph.clear();
+        for transformation in transformations.iter() {
+            self.graph
+                .entry(transformation.from)
+                .or_default()
+                .insert(transformation.to);
+            self.graph
+                .entry(transformation.to)
+                .or_default()
+                .insert(transformation.from);
+        }
     }
 
     /// Get the shortest path between two reference frames, if one exists
@@ -375,7 +509,7 @@ impl TransformationGraph {
 
 impl Default for TransformationGraph {
     fn default() -> Self {
-        TransformationGraph::new()
+        TransformationGraph::from_builtin()
     }
 }
 
@@ -756,7 +890,7 @@ mod tests {
         // Make sure there isn't a direct path
         assert!(!TRANSFORMATIONS.iter().any(|t| t.from == from && t.to == to));
 
-        let graph = TransformationGraph::new();
+        let graph = TransformationGraph::from_builtin();
         let path = graph.get_shortest_path(from, to);
         assert!(path.is_some());
         // Make sure that the path is correct. N.B. this may change if more transformations
@@ -770,7 +904,7 @@ mod tests {
 
     #[test]
     fn fully_traversable_graph() {
-        let graph = TransformationGraph::new();
+        let graph = TransformationGraph::from_builtin();
         for from in ReferenceFrame::iter() {
             for to in ReferenceFrame::iter() {
                 if from == to {
@@ -779,6 +913,204 @@ mod tests {
                 let path = graph.get_shortest_path(from, to);
                 assert!(path.is_some(), "No path from {} to {}", from, to);
             }
+        }
+    }
+
+    #[test]
+    fn transformation_repository_empty() {
+        let repo = TransformationRepository::new();
+        assert_eq!(repo.transformations().len(), 0);
+
+        let result = repo.get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::ITRF2014);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn transformation_repository_from_builtin() {
+        let repo = TransformationRepository::from_builtin();
+        assert_eq!(repo.transformations().len(), TRANSFORMATIONS.len());
+
+        // Test that we can find transformations
+        let result = repo.get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::ITRF2014);
+        assert!(result.is_ok());
+
+        // Test path finding
+        let path = repo.get_shortest_path(ReferenceFrame::ITRF2020, ReferenceFrame::ETRF2000);
+        assert!(path.is_some());
+    }
+
+    #[test]
+    fn transformation_repository_add_transformation() {
+        let mut repo = TransformationRepository::new();
+
+        // Create a simple transformation for testing
+        let transformation = Transformation {
+            from: ReferenceFrame::ITRF2020,
+            to: ReferenceFrame::ITRF2014,
+            params: TimeDependentHelmertParams {
+                tx: 1.0,
+                tx_dot: 0.0,
+                ty: 2.0,
+                ty_dot: 0.0,
+                tz: 3.0,
+                tz_dot: 0.0,
+                s: 0.0,
+                s_dot: 0.0,
+                rx: 0.0,
+                rx_dot: 0.0,
+                ry: 0.0,
+                ry_dot: 0.0,
+                rz: 0.0,
+                rz_dot: 0.0,
+                epoch: 2015.0,
+            },
+        };
+
+        repo.add_transformation(transformation);
+        assert_eq!(repo.transformations().len(), 1);
+
+        let result = repo.get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::ITRF2014);
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), transformation);
+
+        // Test reverse transformation
+        let reverse_result =
+            repo.get_transformation(ReferenceFrame::ITRF2014, ReferenceFrame::ITRF2020);
+        assert!(reverse_result.is_ok());
+        assert_eq!(reverse_result.unwrap(), transformation.invert());
+    }
+
+    #[test]
+    fn transformation_repository_from_transformations() {
+        let transformations = vec![
+            Transformation {
+                from: ReferenceFrame::ITRF2020,
+                to: ReferenceFrame::ITRF2014,
+                params: TimeDependentHelmertParams {
+                    tx: 1.0,
+                    tx_dot: 0.0,
+                    ty: 2.0,
+                    ty_dot: 0.0,
+                    tz: 3.0,
+                    tz_dot: 0.0,
+                    s: 0.0,
+                    s_dot: 0.0,
+                    rx: 0.0,
+                    rx_dot: 0.0,
+                    ry: 0.0,
+                    ry_dot: 0.0,
+                    rz: 0.0,
+                    rz_dot: 0.0,
+                    epoch: 2015.0,
+                },
+            },
+            Transformation {
+                from: ReferenceFrame::ITRF2014,
+                to: ReferenceFrame::ITRF2000,
+                params: TimeDependentHelmertParams {
+                    tx: 4.0,
+                    tx_dot: 0.0,
+                    ty: 5.0,
+                    ty_dot: 0.0,
+                    tz: 6.0,
+                    tz_dot: 0.0,
+                    s: 0.0,
+                    s_dot: 0.0,
+                    rx: 0.0,
+                    rx_dot: 0.0,
+                    ry: 0.0,
+                    ry_dot: 0.0,
+                    rz: 0.0,
+                    rz_dot: 0.0,
+                    epoch: 2015.0,
+                },
+            },
+        ];
+
+        let repo = TransformationRepository::from_transformations(transformations.clone());
+        assert_eq!(repo.transformations().len(), 2);
+
+        // Test direct transformation
+        let result = repo.get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::ITRF2014);
+        assert!(result.is_ok());
+
+        // Test multi-step path
+        let path = repo.get_shortest_path(ReferenceFrame::ITRF2020, ReferenceFrame::ITRF2000);
+        assert!(path.is_some());
+        let path = path.unwrap();
+        assert_eq!(path.len(), 2); // Two transformations: ITRF2020->ITRF2014 and ITRF2014->ITRF2000
+        assert_eq!(path[0].from, ReferenceFrame::ITRF2020);
+        assert_eq!(path[0].to, ReferenceFrame::ITRF2014);
+        assert_eq!(path[1].from, ReferenceFrame::ITRF2014);
+        assert_eq!(path[1].to, ReferenceFrame::ITRF2000);
+    }
+
+    #[cfg(test)]
+    mod serialization_tests {
+        use super::*;
+
+        #[test]
+        fn test_serde_roundtrip() {
+            let original_transformations = builtin_transformations();
+
+            // Serialize to JSON
+            let json =
+                serde_json::to_string(&original_transformations).expect("Failed to serialize");
+
+            // Deserialize from JSON
+            let deserialized_transformations: Vec<Transformation> =
+                serde_json::from_str(&json).expect("Failed to deserialize");
+
+            // Compare
+            assert_eq!(
+                original_transformations.len(),
+                deserialized_transformations.len()
+            );
+            for (orig, deser) in original_transformations
+                .iter()
+                .zip(deserialized_transformations.iter())
+            {
+                assert_eq!(orig, deser);
+            }
+        }
+
+        #[test]
+        fn test_reference_frame_serde() {
+            let frame = ReferenceFrame::ITRF2020;
+            let json = serde_json::to_string(&frame).expect("Failed to serialize");
+            let deserialized: ReferenceFrame =
+                serde_json::from_str(&json).expect("Failed to deserialize");
+            assert_eq!(frame, deserialized);
+        }
+
+        #[test]
+        fn test_transformation_serde() {
+            let transformation = Transformation {
+                from: ReferenceFrame::ITRF2020,
+                to: ReferenceFrame::ITRF2014,
+                params: TimeDependentHelmertParams {
+                    tx: -1.4,
+                    tx_dot: 0.0,
+                    ty: -0.9,
+                    ty_dot: -0.1,
+                    tz: 1.4,
+                    tz_dot: 0.2,
+                    s: -0.42,
+                    s_dot: 0.0,
+                    rx: 0.0,
+                    rx_dot: 0.0,
+                    ry: 0.0,
+                    ry_dot: 0.0,
+                    rz: 0.0,
+                    rz_dot: 0.0,
+                    epoch: 2015.0,
+                },
+            };
+
+            let json = serde_json::to_string(&transformation).expect("Failed to serialize");
+            let deserialized: Transformation =
+                serde_json::from_str(&json).expect("Failed to deserialize");
+            assert_eq!(transformation, deserialized);
         }
     }
 }

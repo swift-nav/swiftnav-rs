@@ -1,7 +1,7 @@
 use float_eq::assert_float_eq;
 use swiftnav::{
     coords::{Coordinate, ECEF},
-    reference_frame::{get_transformation, ReferenceFrame},
+    reference_frame::{ReferenceFrame, TransformationRepository},
     time::{GpsTime, UtcTime},
 };
 
@@ -18,8 +18,10 @@ fn euref_itrf2014() {
         Some(ECEF::new(0.01, 0.2, 0.030)),
         make_epoch(2000),
     );
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::ITRF2014).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::ITRF2014)
+        .unwrap();
     let result_coords = transformation.transform(&initial_coords);
     assert_float_eq!(result_coords.position().x(), 4027894.0029, abs <= 0.0001);
     assert_float_eq!(result_coords.position().y(), 307045.6005, abs <= 0.0001);
@@ -53,8 +55,10 @@ fn euref_itrf2008() {
         Some(ECEF::new(0.01, 0.2, 0.030)),
         make_epoch(2000),
     );
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::ITRF2008).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::ITRF2008)
+        .unwrap();
     let result_coords = transformation.transform(&initial_coords);
     assert_float_eq!(result_coords.position().x(), 4027894.0032, abs <= 0.0001);
     assert_float_eq!(result_coords.position().y(), 307045.6023, abs <= 0.0001);
@@ -88,8 +92,10 @@ fn euref_etrf2020() {
         Some(ECEF::new(0.01, 0.2, 0.030)),
         make_epoch(2000),
     );
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::ETRF2020).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::ETRF2020)
+        .unwrap();
     let result_coords = transformation.transform(&initial_coords);
     assert_float_eq!(result_coords.position().x(), 4027894.1545, abs <= 0.0001);
     assert_float_eq!(result_coords.position().y(), 307045.4157, abs <= 0.0001);
@@ -123,8 +129,10 @@ fn euref_etrf2014() {
         Some(ECEF::new(0.01, 0.2, 0.030)),
         make_epoch(2000),
     );
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF2014, ReferenceFrame::ETRF2014).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF2014, ReferenceFrame::ETRF2014)
+        .unwrap();
     let result_coords = transformation.transform(&initial_coords);
     assert_float_eq!(result_coords.position().x(), 4027894.1579, abs <= 0.0001);
     assert_float_eq!(result_coords.position().y(), 307045.4123, abs <= 0.0001);
@@ -158,8 +166,10 @@ fn euref_etrf2005() {
         Some(ECEF::new(0.01, 0.2, 0.030)),
         make_epoch(2000),
     );
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF2005, ReferenceFrame::ETRF2005).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF2005, ReferenceFrame::ETRF2005)
+        .unwrap();
     let result_coords = transformation.transform(&initial_coords);
     assert_float_eq!(result_coords.position().x(), 4027894.2107, abs <= 0.0001);
     assert_float_eq!(result_coords.position().y(), 307045.4661, abs <= 0.0001);
@@ -193,8 +203,10 @@ fn euref_etrf2000() {
         Some(ECEF::new(0.01, 0.2, 0.030)),
         make_epoch(2000),
     );
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF2000, ReferenceFrame::ETRF2000).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF2000, ReferenceFrame::ETRF2000)
+        .unwrap();
     let result_coords = transformation.transform(&initial_coords);
     assert_float_eq!(result_coords.position().x(), 4027894.2015, abs <= 0.0001);
     assert_float_eq!(result_coords.position().y(), 307045.4596, abs <= 0.0001);
@@ -228,8 +240,10 @@ fn euref_etrf97() {
         Some(ECEF::new(0.01, 0.2, 0.030)),
         make_epoch(2000),
     );
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF97, ReferenceFrame::ETRF97).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF97, ReferenceFrame::ETRF97)
+        .unwrap();
     let result_coords = transformation.transform(&initial_coords);
     assert_float_eq!(result_coords.position().x(), 4027894.1888, abs <= 0.0001);
     assert_float_eq!(result_coords.position().y(), 307045.4489, abs <= 0.0001);
@@ -263,8 +277,10 @@ fn euref_etrf96() {
         Some(ECEF::new(0.01, 0.2, 0.030)),
         make_epoch(2000),
     );
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF96, ReferenceFrame::ETRF96).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF96, ReferenceFrame::ETRF96)
+        .unwrap();
     let result_coords = transformation.transform(&initial_coords);
     assert_float_eq!(result_coords.position().x(), 4027894.1888, abs <= 0.0001);
     assert_float_eq!(result_coords.position().y(), 307045.4489, abs <= 0.0001);
@@ -298,8 +314,10 @@ fn euref_etrf94() {
         Some(ECEF::new(0.01, 0.2, 0.030)),
         make_epoch(2000),
     );
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF94, ReferenceFrame::ETRF94).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF94, ReferenceFrame::ETRF94)
+        .unwrap();
     let result_coords = transformation.transform(&initial_coords);
     assert_float_eq!(result_coords.position().x(), 4027894.1888, abs <= 0.0001);
     assert_float_eq!(result_coords.position().y(), 307045.4489, abs <= 0.0001);
@@ -333,8 +351,10 @@ fn euref_etrf93() {
         Some(ECEF::new(0.01, 0.2, 0.030)),
         make_epoch(2000),
     );
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF93, ReferenceFrame::ETRF93).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF93, ReferenceFrame::ETRF93)
+        .unwrap();
     let result_coords = transformation.transform(&initial_coords);
     assert_float_eq!(result_coords.position().x(), 4027894.2406, abs <= 0.0001);
     assert_float_eq!(result_coords.position().y(), 307045.4251, abs <= 0.0001);
@@ -368,8 +388,10 @@ fn euref_etrf92() {
         Some(ECEF::new(0.01, 0.2, 0.030)),
         make_epoch(2000),
     );
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF92, ReferenceFrame::ETRF92).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF92, ReferenceFrame::ETRF92)
+        .unwrap();
     let result_coords = transformation.transform(&initial_coords);
     assert_float_eq!(result_coords.position().x(), 4027894.1916, abs <= 0.0001);
     assert_float_eq!(result_coords.position().y(), 307045.4388, abs <= 0.0001);
@@ -403,8 +425,10 @@ fn euref_etrf91() {
         Some(ECEF::new(0.01, 0.2, 0.030)),
         make_epoch(2000),
     );
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF91, ReferenceFrame::ETRF91).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF91, ReferenceFrame::ETRF91)
+        .unwrap();
     let result_coords = transformation.transform(&initial_coords);
     assert_float_eq!(result_coords.position().x(), 4027894.1746, abs <= 0.0001);
     assert_float_eq!(result_coords.position().y(), 307045.4238, abs <= 0.0001);
@@ -438,8 +462,10 @@ fn euref_etrf90() {
         Some(ECEF::new(0.01, 0.2, 0.030)),
         make_epoch(2000),
     );
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF90, ReferenceFrame::ETRF90).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF90, ReferenceFrame::ETRF90)
+        .unwrap();
     let result_coords = transformation.transform(&initial_coords);
     assert_float_eq!(result_coords.position().x(), 4027894.1862, abs <= 0.0001);
     assert_float_eq!(result_coords.position().y(), 307045.4466, abs <= 0.0001);
@@ -473,8 +499,10 @@ fn euref_etrf89() {
         Some(ECEF::new(0.01, 0.2, 0.030)),
         make_epoch(2000),
     );
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF89, ReferenceFrame::ETRF89).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF89, ReferenceFrame::ETRF89)
+        .unwrap();
     let result_coords = transformation.transform(&initial_coords);
     assert_float_eq!(result_coords.position().x(), 4027894.1672, abs <= 0.0001);
     assert_float_eq!(result_coords.position().y(), 307045.4186, abs <= 0.0001);
@@ -508,8 +536,10 @@ fn euref_etrf2014_reverse() {
         Some(ECEF::new(0.01, 0.2, 0.030)),
         make_epoch(2000),
     );
-    let transformation =
-        get_transformation(ReferenceFrame::ETRF2014, ReferenceFrame::ITRF2014).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ETRF2014, ReferenceFrame::ITRF2014)
+        .unwrap();
     let result_coords = transformation.transform(&initial_coords);
     assert_float_eq!(result_coords.position().x(), 4027893.8541, abs <= 0.0001);
     assert_float_eq!(result_coords.position().y(), 307045.7877, abs <= 0.0001);
@@ -576,8 +606,10 @@ fn euref_complete_transform() {
         Some(ECEF::new(0.01, 0.2, 0.030)),
         make_epoch(2000),
     );
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF2014, ReferenceFrame::ETRF2014).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF2014, ReferenceFrame::ETRF2014)
+        .unwrap();
 
     // Test adjusting the epoch first then transforming
     let result_coords = transformation.transform(&initial_coords.adjust_epoch(&make_epoch(2008)));
@@ -640,8 +672,10 @@ fn htdp_nad83_2011_fixed_date() {
         make_epoch(2010),
     );
 
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF2014, ReferenceFrame::NAD83_2011).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF2014, ReferenceFrame::NAD83_2011)
+        .unwrap();
 
     let result_coords = transformation.transform(&initial_coords);
     assert_float_eq!(result_coords.position().x(), -2705104.572, abs <= 0.001);
@@ -677,8 +711,10 @@ fn htdp_nad83_2011_adjust_epoch() {
         make_epoch(2020),
     );
 
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF2014, ReferenceFrame::NAD83_2011).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF2014, ReferenceFrame::NAD83_2011)
+        .unwrap();
 
     let result_coords = transformation.transform(&initial_coords.adjust_epoch(&make_epoch(2010)));
     assert_float_eq!(result_coords.position().x(), -2705104.349, abs <= 0.001);
@@ -739,8 +775,10 @@ fn trx_nad83_csrs_fixed_date() {
         make_epoch(2010),
     );
 
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::NAD83_CSRS).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::NAD83_CSRS)
+        .unwrap();
 
     let result_coords = transformation.transform(&initial_coords);
     assert_float_eq!(result_coords.position().x(), 1267459.462, abs <= 0.001);
@@ -776,8 +814,10 @@ fn trx_nad83_csrs_adjust_epoch() {
         make_epoch(2020),
     );
 
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::NAD83_CSRS).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::NAD83_CSRS)
+        .unwrap();
 
     let result_coords = transformation.transform(&initial_coords.adjust_epoch(&make_epoch(2010)));
     assert_float_eq!(result_coords.position().x(), 1267459.620, abs <= 0.001);
@@ -837,8 +877,10 @@ fn dref91_r2016() {
         None,
         UtcTime::from_parts(2023, 02, 22, 0, 0, 0.).to_gps_hardcoded(),
     );
-    let transformation =
-        get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::DREF91_R2016).unwrap();
+    let transformations = TransformationRepository::from_builtin();
+    let transformation = transformations
+        .get_transformation(ReferenceFrame::ITRF2020, ReferenceFrame::DREF91_R2016)
+        .unwrap();
     let result_coords = transformation.transform(&initial_coords);
     assert_float_eq!(result_coords.position().x(), 3842153.3718, abs <= 0.0001);
     assert_float_eq!(result_coords.position().y(), 563401.6528, abs <= 0.0001);
