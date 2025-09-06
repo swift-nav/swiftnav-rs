@@ -2,7 +2,7 @@ use nalgebra::Vector3;
 
 use super::{ReferenceFrame, TimeDependentHelmertParams, Transformation};
 
-pub const TRANSFORMATIONS: [Transformation; 34] = [
+pub const TRANSFORMATIONS: [Transformation; 33] = [
     Transformation {
         from: ReferenceFrame::ITRF2020,
         to: ReferenceFrame::ITRF2014,
@@ -339,19 +339,6 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
             r: Vector3::new(-26.78138, 0.42027, -10.93206),
             r_dot: Vector3::new(-0.06667, 0.75744, 0.05133),
             epoch: 2010.0,
-        },
-    },
-    Transformation {
-        from: ReferenceFrame::ITRF2014,
-        to: ReferenceFrame::ETRF2014,
-        params: TimeDependentHelmertParams {
-            t: Vector3::new(0.0, 0.0, 0.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
-            r_dot: Vector3::new(0.085, 0.531, -0.770),
-            epoch: 1989.0,
         },
     },
     Transformation {
