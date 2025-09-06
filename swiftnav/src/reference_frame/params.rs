@@ -1,6 +1,6 @@
 use super::{ReferenceFrame, TimeDependentHelmertParams, Transformation};
 
-pub const TRANSFORMATIONS: [Transformation; 34] = [
+pub const TRANSFORMATIONS: [Transformation; 33] = [
     Transformation {
         from: ReferenceFrame::ITRF2020,
         to: ReferenceFrame::ITRF2014,
@@ -545,27 +545,6 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
             rz: -10.93206,
             rz_dot: 0.05133,
             epoch: 2010.0,
-        },
-    },
-    Transformation {
-        from: ReferenceFrame::ITRF2014,
-        to: ReferenceFrame::ETRF2014,
-        params: TimeDependentHelmertParams {
-            tx: 0.0,
-            tx_dot: 0.0,
-            ty: 0.0,
-            ty_dot: 0.0,
-            tz: 0.0,
-            tz_dot: 0.0,
-            s: 0.0,
-            s_dot: 0.0,
-            rx: 0.0,
-            rx_dot: 0.085,
-            ry: 0.0,
-            ry_dot: 0.531,
-            rz: 0.0,
-            rz_dot: -0.770,
-            epoch: 1989.0,
         },
     },
     Transformation {
