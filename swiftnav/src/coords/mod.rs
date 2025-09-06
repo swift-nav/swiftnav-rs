@@ -85,7 +85,7 @@ pub use llh::*;
 pub use ned::*;
 
 use crate::{
-    reference_frame::{get_transformation, ReferenceFrame, TransformationNotFound},
+    reference_frame::{ReferenceFrame, TransformationNotFound, TransformationRepository},
     time::GpsTime,
 };
 use nalgebra::Vector2;
@@ -242,8 +242,12 @@ impl Coordinate {
     }
 
     /// Transform the coordinate from into a new reference frame
-    pub fn transform_to(&self, new_frame: ReferenceFrame) -> Result<Self, TransformationNotFound> {
-        get_transformation(self.reference_frame, new_frame)
+    pub fn transform_to(
+        &self,
+        new_frame: ReferenceFrame,
+        repo: &TransformationRepository,
+    ) -> Result<Self, TransformationNotFound> {
+        repo.get_transformation(self.reference_frame, new_frame)
             .map(|transformation| transformation.transform(self))
     }
 }
