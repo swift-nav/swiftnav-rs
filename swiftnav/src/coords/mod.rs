@@ -167,7 +167,7 @@ impl Coordinate {
         }
     }
 
-    /// Create a new [`Coordinate`] object with a velocity value
+    /// Create a new [`Coordinate`] object with no velocity value
     #[must_use]
     pub fn without_velocity(
         reference_frame: ReferenceFrame,
@@ -182,7 +182,7 @@ impl Coordinate {
         }
     }
 
-    /// Create a new [`Coordinate`] object with no velocity
+    /// Create a new [`Coordinate`] object with a velocity
     #[must_use]
     pub fn with_velocity(
         reference_frame: ReferenceFrame,
