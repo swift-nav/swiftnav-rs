@@ -9,67 +9,63 @@
 // WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
 //! Geodetic reference frame transformations
 //!
-//! Geodetic reference frames define the coordinate system used to represent
-//! positions on the Earth. Different reference frames are commonly used in
-//! different regions of the world, and for different purposes. For example,
-//! global reference frames, such as the International Terrestrial Reference
-//! Frame (ITRF), are used for global positioning, while regional reference
-//! frames, such as the European Terrestrial Reference Frame (ETRF), are used
-//! for regional positioning. Due to the movement of the earth's crust apparently
-//! fixed positions will move over time. Because of this it's important to note
-//! only take note of a position, but also the time at which that position was
-//! determined. In most regions of the earth the crust moves at a constant speed,
-//! meaning that if you are able to determine the local velocity of the crust you
-//! can easily determine what the position of a static point would have been in
-//! the past. It is commong for regional reference frames to define a common reference
-//! epoch that all positions should be transformed to, allowing the direct comparison
-//! of positions even if they were determined at different times. Regional reference
-//! frames also typically are defined to be "fixed" to a particular tectonic plate,
-//! meaning the large majority of the velocity for points on that tectonic plate
-//! are cancelled out. In contrast, global reference frames are not fixed to
-//! any particular tectonic plate, so most places on earth will have a measurable
-//! velocity. Global reference frames also typically do not have a common reference
-//! epoch, so determining one's local velocity is important to be able to compare
-//! positions or to transform a coordinate from a global reference frame to a regional
-//! reference frame.
+//! Transform coordinates between geodetic reference frames using time-dependent Helmert transformations.
+//! Supports both global frames (ITRF series) and regional frames (ETRF, NAD83, etc.) with runtime
+//! parameter loading.
 //!
-//! This module provides several types and functions to help transform a set of coordinates
-//! from one reference frame to another, and from one epoch to another. Several sets of
-//! transformation parameters are included for converting between common reference frames.
-//! To start out, you must have a [`Coordinate`] that you want to transform. This consists of a
-//! position, an epoch, and a reference frame as well as an optional velocity. You then need to
-//! get the [`Transformation`] object that describes the transformation from the reference
-//! frame of the coordinate to the desired reference frame. You can then call the `transform`
-//! method on the transformation object to get a new coordinate in the desired reference frame.
-//! This transformation will change the position and velocity of the coordinate, but it does
-//! not the change the epoch of the coordinate. If you need to change the epoch of the
-//! coordinate you will need to use the [`Coordinate::adjust_epoch`](crate::coords::Coordinate::adjust_epoch)
-//! method which uses the velocity of the coordinate to determine the position at the new epoch.
+//! # Key Concepts
 //!
-//! # Example
+//! - **Reference frames** define coordinate systems for Earth positioning
+//! - **Crustal motion** causes positions to change over time, requiring velocity tracking
+//! - **Transformations** use 15-parameter Helmert models with time dependencies
+//! - **Path finding** automatically chains transformations between frames
+//!
+//! # Core Types
+//!
+//! - [`ReferenceFrame`] - Enumeration of supported coordinate systems
+//! - [`TransformationRepository`] - Manages transformation parameters and pathfinding
+//! - [`Coordinate`] - Position with reference frame, epoch, and optional velocity
+//! - [`TimeDependentHelmertParams`] - 15-parameter transformation model
+//!
+//! # Basic Usage
+//!
 //! ```
 //! use swiftnav::{
 //!     coords::{Coordinate, ECEF},
-//!     reference_frame::{TransformationRepository, ReferenceFrame, TransformationNotFound},
+//!     reference_frame::{TransformationRepository, ReferenceFrame},
 //!     time::UtcTime
 //! };
 //!
-//! // Can also load your own transformations at runtime
-//! let transformation_repo = TransformationRepository::from_builtin();
+//! let repo = TransformationRepository::from_builtin();
+//! let epoch = UtcTime::from_parts(2020, 3, 15, 0, 0, 0.).to_gps_hardcoded();
 //!
-//! let epoch_2020 = UtcTime::from_parts(2020, 3, 15, 0, 0, 0.).to_gps_hardcoded();
+//! // Create coordinate with position and velocity
 //! let itrf_coord = Coordinate::with_velocity(
-//!     ReferenceFrame::ITRF2014, // The reference frame of the coordinate
-//!     ECEF::new(-2703764.0, -4261273.0, 3887158.0), // The position of the coordinate
-//!     ECEF::new(-0.221, 0.254, 0.122), // The velocity of the coordinate
-//!     epoch_2020); // The epoch of the coordinate
+//!     ReferenceFrame::ITRF2014,
+//!     ECEF::new(-2703764.0, -4261273.0, 3887158.0),
+//!     ECEF::new(-0.221, 0.254, 0.122),
+//!     epoch
+//! );
 //!
-//! let epoch_2010 = UtcTime::from_parts(2010, 1, 1, 0, 0, 0.).to_gps_hardcoded();
-//! let itrf_coord = itrf_coord.adjust_epoch(&epoch_2010); // Change the epoch of the coordinate
-//!
-//! let nad83_coord = transformation_repo.transform(itrf_coord.clone(), &ReferenceFrame::NAD83_2011);
+//! // Transform to different reference frame
+//! let nad83_coord = repo.transform(itrf_coord, &ReferenceFrame::NAD83_2011)?;
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
+//! # Custom Transformations
+//!
+//! ```
+//! # use swiftnav::reference_frame::*;
+//! let mut repo = TransformationRepository::new();
+//!
+//! let custom_transform = Transformation {
+//!     from: ReferenceFrame::ITRF2020,
+//!     to: ReferenceFrame::Other("LOCAL_FRAME".to_string()),
+//!     params: TimeDependentHelmertParams { /* ... */ # tx: 0.0, tx_dot: 0.0, ty: 0.0, ty_dot: 0.0, tz: 0.0, tz_dot: 0.0, s: 0.0, s_dot: 0.0, rx: 0.0, rx_dot: 0.0, ry: 0.0, ry_dot: 0.0, rz: 0.0, rz_dot: 0.0, epoch: 2020.0 }
+//! };
+//!
+//! repo.add_transformation(custom_transform);
+//! ```
 
 use crate::coords::{Coordinate, ECEF};
 use nalgebra::{Matrix3, Vector3};
@@ -82,11 +78,29 @@ use strum::{Display, EnumIter, EnumString};
 
 mod params;
 
-/// Reference Frames
+/// Geodetic reference frame identifiers
 ///
-/// Some well known reference frames are included. Other
-/// reference frames are supported via the [`ReferenceFrame::Other`]
-/// variant which holds the reference frame name as a [`String`]
+/// Enumerates well-known global and regional reference frames with support
+/// for custom frames via the [`Other`] variant.
+///
+/// # Examples
+/// ```
+/// # use swiftnav::reference_frame::ReferenceFrame;
+/// # use std::str::FromStr;
+/// // Use predefined frames
+/// let itrf = ReferenceFrame::ITRF2020;
+/// let nad83 = ReferenceFrame::NAD83_2011;
+///
+/// // Parse from string
+/// let parsed: ReferenceFrame = "ITRF2014".parse()?;
+/// let custom: ReferenceFrame = "MY_LOCAL_FRAME".parse()?;
+///
+/// // Custom frames
+/// let local = ReferenceFrame::Other("SITE_FRAME_2023".to_string());
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
+///
+/// [`Other`]: ReferenceFrame::Other
 #[derive(
     Debug,
     PartialEq,
@@ -193,6 +207,19 @@ impl PartialEq<ReferenceFrame> for &ReferenceFrame {
 /// Where $p$ is the constant value, $\dot{p}$ is the rate of
 /// change, and $\tau$ is the reference epoch.
 ///
+/// # Parameter Units
+///
+/// Input parameters are stored in standard geodetic units:
+/// - **Translation** (`tx`, `ty`, `tz`): millimeters (mm)  
+/// - **Translation rates** (`tx_dot`, `ty_dot`, `tz_dot`): mm/year
+/// - **Scale** (`s`): parts per billion (ppb)
+/// - **Scale rate** (`s_dot`): ppb/year  
+/// - **Rotation** (`rx`, `ry`, `rz`): milliarcseconds (mas)
+/// - **Rotation rates** (`rx_dot`, `ry_dot`, `rz_dot`): mas/year
+/// - **Reference epoch** (`epoch`): decimal years
+///
+/// These units are automatically converted to SI units during computation.
+///
 /// # Sign Convention
 ///
 /// There are several sign conventions in use for the rotation
@@ -213,8 +240,11 @@ pub struct TimeDependentHelmertParams {
 }
 
 impl TimeDependentHelmertParams {
+    /// Scale factor for translation parameters (converts mm to m)
     const TRANSLATE_SCALE: f64 = 1.0e-3;
+    /// Scale factor for scale parameters (converts ppb to fractional scale)
     const SCALE_SCALE: f64 = 1.0e-9;
+    /// Scale factor for rotation parameters (converts mas to radians)
     const ROTATE_SCALE: f64 = (std::f64::consts::PI / 180.0) * (0.001 / 3600.0);
 
     /// Reverses the transformation. Since this is a linear transformation we simply negate all terms
@@ -259,6 +289,18 @@ impl TimeDependentHelmertParams {
         Matrix3::new(s, -r.z, r.y, r.z, s, -r.x, -r.y, r.x, s)
     }
 
+    /// Apply the complete Helmert transformation to position and velocity
+    ///
+    /// Combines position and velocity transformations into a single operation.
+    /// The velocity transformation uses the rate terms from the Helmert parameters.
+    ///
+    /// # Arguments
+    /// * `position` - Position to transform
+    /// * `velocity` - Optional velocity to transform (None preserves None)
+    /// * `epoch` - Time epoch for position transformation
+    ///
+    /// # Returns
+    /// Tuple of transformed (position, velocity)
     pub fn transform(
         &self,
         position: &ECEF,
@@ -440,18 +482,31 @@ impl TransformationRepository {
         ))
     }
 
-    /// Get the shortest path between two reference frames
+    /// Find the shortest transformation path between reference frames
     ///
-    /// Returns a list of transformations that need to be applied in sequence
-    /// to transform from the source to the destination frame. Uses breadth-first
-    /// search to find the path with the minimum number of transformation steps.
+    /// Uses breadth-first search to find the minimal sequence of transformations
+    /// needed to convert between reference frames. The algorithm automatically
+    /// chains transformations when no direct path exists.
     ///
-    /// An empty vector will be returned if the two reference frames are the same.
+    /// Returns an empty vector if source and destination frames are identical.
+    ///
+    /// # Examples
+    /// ```
+    /// # use swiftnav::reference_frame::*;
+    /// let repo = TransformationRepository::from_builtin();
+    ///
+    /// // Direct transformation if available
+    /// let path = repo.get_shortest_path(&ReferenceFrame::ITRF2020, &ReferenceFrame::ITRF2014)?;
+    ///
+    /// // Multi-hop transformation when needed
+    /// let path = repo.get_shortest_path(&ReferenceFrame::ITRF2020, &ReferenceFrame::ETRF2000)?;
+    /// assert!(path.len() >= 1);
+    /// # Ok::<(), TransformationNotFound>(())
+    /// ```
     ///
     /// # Errors
     ///
-    /// [`TransformationNotFound`] will be returned as an error if
-    /// no path could be found between the two reference frames
+    /// [`TransformationNotFound`] if no transformation path exists between the frames
     fn get_shortest_path(
         &self,
         from: &ReferenceFrame,
@@ -508,10 +563,20 @@ impl Extend<Transformation> for TransformationRepository {
     }
 }
 
-/// Get the builtin transformations as a Vec
+/// Get the builtin transformation parameters
 ///
-/// This function converts the static transformation array into a Vec
-/// that can be used for serialization or with TransformationRepository.
+/// Returns a Vec of all pre-defined transformations between common reference frames
+/// including ITRF, ETRF, NAD83, and WGS84 series. These transformations are sourced
+/// from authoritative geodetic organizations.
+///
+/// Use this to initialize a [`TransformationRepository`] or for serialization.
+///
+/// # Example
+/// ```
+/// # use swiftnav::reference_frame::*;
+/// let transformations = builtin_transformations();
+/// let repo = TransformationRepository::from_transformations(transformations);
+/// ```
 pub fn builtin_transformations() -> Vec<Transformation> {
     params::TRANSFORMATIONS.to_vec()
 }

@@ -15,7 +15,7 @@ chrono = { version = "0.4", optional = true }
 strum = { version = "0.27", features = ["derive"] }
 nalgebra = "0.33"
 thiserror = "2.0"
-serde = { version = "1.0.219", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
 
 [dev-dependencies]
 float_eq = "1.0.1"
