@@ -203,7 +203,9 @@ impl PartialEq<ReferenceFrame> for &ReferenceFrame {
 pub struct TimeDependentHelmertParams {
     t: Vector3<f64>,
     t_dot: Vector3<f64>,
+    #[serde(alias = "scale", alias = "d")]
     s: f64,
+    #[serde(alias = "scale_dot", alias = "d_dot")]
     s_dot: f64,
     r: Vector3<f64>,
     r_dot: Vector3<f64>,
@@ -273,12 +275,7 @@ impl TimeDependentHelmertParams {
 /// A transformation from one reference frame to another.
 #[derive(Debug, PartialEq, PartialOrd, Clone, Serialize, Deserialize)]
 pub struct Transformation {
-    #[serde(
-        alias = "source",
-        alias = "source_name",
-        alias = "frames.source",
-        alias = "frames.source_name"
-    )]
+    #[serde(alias = "source", alias = "source_name")]
     pub from: ReferenceFrame,
     #[serde(alias = "destination", alias = "destination_name")]
     pub to: ReferenceFrame,
