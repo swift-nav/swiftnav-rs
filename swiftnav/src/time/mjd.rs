@@ -8,11 +8,11 @@
 // EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
 
-#![allow(
+#![expect(
     clippy::cast_possible_truncation,
     clippy::cast_sign_loss,
-    clippy::cast_precision_loss
-)]
+    clippy::cast_precision_loss,
+    reason = "We need to review the math for overflows")]
 
 use crate::time::{consts, GpsTime, UtcParams, UtcTime};
 use std::time::Duration;

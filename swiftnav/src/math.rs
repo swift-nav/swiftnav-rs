@@ -35,7 +35,7 @@ pub(crate) const fn compile_time_max_u16(a: u16, b: u16) -> u16 {
 ///
 /// - This function is marked as `const`, allowing it to be evaluated at compile time.
 /// - The algorithm iteratively refines the approximation of the square root until the result stabilizes.
-#[allow(clippy::many_single_char_names)] // This is pure math, single character names are used in the source material
+#[expect(clippy::many_single_char_names, reason = "It's math, whatyagonnado?")]
 pub(crate) const fn compile_time_sqrt(s: f64) -> f64 {
     let mut x = s;
     let mut y = 0.0_f64;
