@@ -209,6 +209,7 @@ impl TimeDependentHelmertParams {
     }
 
     /// Apply the transformation on a position at a specific epoch
+    #[must_use]
     pub fn transform_position(&self, position: &ECEF, epoch: f64) -> ECEF {
         let dt = epoch - self.epoch;
         let tx = (self.tx + self.tx_dot * dt) * Self::TRANSLATE_SCALE;
@@ -227,6 +228,7 @@ impl TimeDependentHelmertParams {
     }
 
     /// Apply the transformation on a velocity at a specific position
+    #[must_use]
     pub fn transform_velocity(&self, velocity: &ECEF, position: &ECEF) -> ECEF {
         let tx = self.tx_dot * Self::TRANSLATE_SCALE;
         let ty = self.ty_dot * Self::TRANSLATE_SCALE;
@@ -257,6 +259,12 @@ impl Transformation {
     ///
     /// Reference frame transformations do not change the epoch of the
     /// coordinate.
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the given coordinate is not already in the reference
+    /// frame this [`Transformation`] converts from.
+    #[must_use]
     pub fn transform(&self, coord: &Coordinate) -> Coordinate {
         assert!(
             coord.reference_frame() == self.from,
@@ -275,6 +283,7 @@ impl Transformation {
     }
 
     /// Reverse the transformation
+    #[must_use]
     pub fn invert(mut self) -> Self {
         std::mem::swap(&mut self.from, &mut self.to);
         self.params.invert();
@@ -301,6 +310,11 @@ impl std::error::Error for TransformationNotFound {}
 ///
 /// We currently only support a limited set of transformations.
 /// If no transformation is found, `None` is returned.
+///
+/// # Errors
+///
+/// An error will be returned if a transformation between the two reference
+/// frames couldn't be found.
 pub fn get_transformation(
     from: ReferenceFrame,
     to: ReferenceFrame,
@@ -330,7 +344,7 @@ impl TransformationGraph {
     /// Create a new transformation graph, fully populated with the known transformations
     pub fn new() -> Self {
         let mut graph = HashMap::new();
-        for transformation in params::TRANSFORMATIONS.iter() {
+        for transformation in &params::TRANSFORMATIONS {
             graph
                 .entry(transformation.from)
                 .or_insert_with(HashSet::new)
@@ -347,6 +361,7 @@ impl TransformationGraph {
     ///
     /// This function will also search for reverse paths if no direct path is found.
     /// The search is performed breadth-first.
+    #[must_use]
     pub fn get_shortest_path(
         &self,
         from: ReferenceFrame,

@@ -53,6 +53,8 @@
 //! transform positions in one reference frame into another so you can properly
 //! compare positions.
 
+#![warn(clippy::pedantic)]
+
 pub mod coords;
 pub mod edc;
 mod math;

@@ -128,6 +128,7 @@ impl LLHRadians {
     ///
     /// Uses the [`WGS84`] Ellipsoid
     #[must_use]
+    #[expect(clippy::many_single_char_names, reason = "It's math, whatyagonnado?")]
     pub fn to_ecef(&self) -> ECEF {
         let d = WGS84::E * (self.latitude()).sin();
         let n = WGS84::A / (1. - d * d).sqrt();
