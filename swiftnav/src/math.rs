@@ -29,6 +29,7 @@ pub(crate) const fn compile_time_max_u16(a: u16, b: u16) -> u16 {
 ///
 /// # Panics
 ///
+/// - This function will panic if the given number is NOT between 0.0 and 1.0.
 /// - This function will panic if the computation does not converge within 100 iterations.
 ///
 /// # Notes
@@ -37,6 +38,11 @@ pub(crate) const fn compile_time_max_u16(a: u16, b: u16) -> u16 {
 /// - The algorithm iteratively refines the approximation of the square root until the result stabilizes.
 #[expect(clippy::many_single_char_names, reason = "It's math, whatyagonnado?")]
 pub(crate) const fn compile_time_sqrt(s: f64) -> f64 {
+    assert!(
+        s >= 0.0 && s <= 1.0,
+        "Can only compute square root of numbers between 0 and 1"
+    );
+
     let mut x = s;
     let mut y = 0.0_f64;
     let mut z;
@@ -70,4 +76,23 @@ pub(crate) fn ecef2ned_matrix(llh: crate::coords::LLHRadians) -> nalgebra::Matri
         -cos_lat * sin_lon,
         -sin_lat,
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use float_eq::assert_float_eq;
+    use proptest::prelude::*;
+
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1000))]
+
+        /// Property: Converting LLH->ECEF->LLH should always result in the original value
+        #[test]
+        fn newton_sqrt(x in 0.0..=1.0) {
+            let newton_approx = compile_time_sqrt(x);
+            let sqrt = x.sqrt();
+            assert_float_eq!(sqrt, newton_approx, ulps <= 1, "Newton approximation of square root doesn't match IEEE sqrt! (Newton: {}, IEEE: {})", newton_approx, sqrt);
+        }
+    }
 }
