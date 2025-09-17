@@ -239,10 +239,11 @@ impl TimeDependentHelmertParams {
     /// all other fields to zero like this:
     ///
     /// ```rust
-    /// TimeDependentHelmertParams {
+    /// # use swiftnav::reference_frame::TimeDependentHelmertParams;
+    /// let params = TimeDependentHelmertParams {
     ///   epoch: 2020.0,
     ///   ..TimeDependentHelmertParams::zeros()
-    /// }
+    /// };
     /// ```
     #[must_use]
     pub const fn zeros() -> TimeDependentHelmertParams {
@@ -569,13 +570,6 @@ impl Extend<Transformation> for TransformationRepository {
 /// Returns a Vec of all pre-defined transformations between common reference frames
 /// including ITRF, ETRF, NAD83, and WGS84 series. These transformations are sourced
 /// from authoritative geodetic organizations..
-///
-/// # Example
-/// ```
-/// # use swiftnav::reference_frame::*;
-/// let transformations = builtin_transformations();
-/// let repo = TransformationRepository::from_transformations(transformations);
-/// ```
 #[must_use]
 fn builtin_transformations() -> Vec<Transformation> {
     params::TRANSFORMATIONS.to_vec()
