@@ -481,16 +481,13 @@ impl TransformationRepository {
     ) -> Result<Coordinate, TransformationNotFound> {
         let epoch = coord.epoch().to_fractional_year_hardcoded();
 
-        let apply_transformation = |(position, velocity): (ECEF, Option<ECEF>),
-                                    params: &TimeDependentHelmertParams|
-         -> (ECEF, Option<ECEF>) {
-            params.transform(&position, velocity.as_ref(), epoch)
-        };
-
         let (position, velocity) = self
             .get_shortest_path(coord.reference_frame(), to)?
             .into_iter()
-            .fold((coord.position(), coord.velocity()), apply_transformation);
+            .fold(
+                (coord.position(), coord.velocity()),
+                |(pos, vel), params| params.transform(&pos, vel.as_ref(), epoch),
+            );
 
         Ok(Coordinate::new(
             to.clone(),
@@ -955,7 +952,6 @@ mod tests {
 
         let graph: TransformationRepository = TransformationRepository::from_builtin();
         let path = graph.get_shortest_path(&from, &to);
-        assert!(path.is_ok());
         // Make sure that the path is correct. N.B. this may change if more transformations
         // are added in the future
         let path = path.unwrap();
@@ -968,7 +964,7 @@ mod tests {
         assert_eq!(repo.count(), 0);
 
         let result = repo.get_shortest_path(&ReferenceFrame::ITRF2020, &ReferenceFrame::ITRF2014);
-        assert!(result.is_err());
+        result.unwrap_err();
     }
 
     #[test]
@@ -978,7 +974,7 @@ mod tests {
 
         // Test path finding
         let path = repo.get_shortest_path(&ReferenceFrame::ITRF2020, &ReferenceFrame::ETRF2000);
-        assert!(path.is_ok());
+        path.unwrap();
     }
 
     #[test]
@@ -1005,14 +1001,12 @@ mod tests {
         assert_eq!(repo.count(), 2);
 
         let result = repo.get_shortest_path(&ReferenceFrame::ITRF2020, &ReferenceFrame::ITRF2014);
-        assert!(result.is_ok());
         assert_eq!(result.unwrap(), vec![&params]);
 
         // Test reverse transformation
         let params = params.invert();
         let reverse_result =
             repo.get_shortest_path(&ReferenceFrame::ITRF2014, &ReferenceFrame::ITRF2020);
-        assert!(reverse_result.is_ok());
         assert_eq!(reverse_result.unwrap(), vec![&params]);
     }
 
@@ -1052,11 +1046,10 @@ mod tests {
 
         // Test direct transformation
         let result = repo.get_shortest_path(&ReferenceFrame::ITRF2020, &ReferenceFrame::ITRF2014);
-        assert!(result.is_ok());
+        result.unwrap();
 
         // Test multi-step path
         let path = repo.get_shortest_path(&ReferenceFrame::ITRF2020, &ReferenceFrame::ITRF2000);
-        assert!(path.is_ok());
         let path = path.unwrap();
         assert_eq!(path.len(), 2); // Two transformations: ITRF2020->ITRF2014 and ITRF2014->ITRF2000
         assert_eq!(
@@ -1139,12 +1132,12 @@ mod tests {
             &ReferenceFrame::Other("Frame1".to_string()),
             &ReferenceFrame::Other("Frame2".to_string()),
         );
-        assert!(result.is_ok());
+        result.unwrap();
 
         let reverse_result = repo.get_shortest_path(
             &ReferenceFrame::Other("Frame2".to_string()),
             &ReferenceFrame::Other("Frame1".to_string()),
         );
-        assert!(reverse_result.is_ok());
+        reverse_result.unwrap();
     }
 }
