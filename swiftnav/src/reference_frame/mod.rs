@@ -230,6 +230,20 @@ impl TimeDependentHelmertParams {
     /// Scale factor for rotation parameters (converts milliarcseconds to radians)
     pub const ROTATE_SCALE: f64 = (std::f64::consts::PI / 180.0) * (0.001 / 3600.0);
 
+    /// Create a [`TimeDependentHelmertParams`] object with zero in every field.
+    ///
+    /// # Note
+    ///
+    /// The [`TimeDependentHelmertParams::epoch`] field needs to represent a real time, and an
+    /// epoch of `0.0` is almost certainly not what you intend. This is best used to initialize
+    /// all other fields to zero like this:
+    ///
+    /// ```rust
+    /// TimeDependentHelmertParams {
+    ///   epoch: 2020.0,
+    ///   ..TimeDependentHelmertParams::zeros()
+    /// }
+    /// ```
     #[must_use]
     pub const fn zeros() -> TimeDependentHelmertParams {
         TimeDependentHelmertParams {
@@ -466,8 +480,8 @@ impl TransformationRepository {
     ) -> Result<Coordinate, TransformationNotFound> {
         let epoch = coord.epoch().to_fractional_year_hardcoded();
 
-        let accumulate_transformations = |(position, velocity): (ECEF, Option<ECEF>),
-                                          params: &TimeDependentHelmertParams|
+        let apply_transformation = |(position, velocity): (ECEF, Option<ECEF>),
+                                    params: &TimeDependentHelmertParams|
          -> (ECEF, Option<ECEF>) {
             params.transform(&position, velocity.as_ref(), epoch)
         };
@@ -475,10 +489,7 @@ impl TransformationRepository {
         let (position, velocity) = self
             .get_shortest_path(coord.reference_frame(), to)?
             .into_iter()
-            .fold(
-                (coord.position(), coord.velocity()),
-                accumulate_transformations,
-            );
+            .fold((coord.position(), coord.velocity()), apply_transformation);
 
         Ok(Coordinate::new(
             to.clone(),
@@ -557,9 +568,7 @@ impl Extend<Transformation> for TransformationRepository {
 ///
 /// Returns a Vec of all pre-defined transformations between common reference frames
 /// including ITRF, ETRF, NAD83, and WGS84 series. These transformations are sourced
-/// from authoritative geodetic organizations.
-///
-/// Use this to initialize a [`TransformationRepository`] or for serialization.
+/// from authoritative geodetic organizations..
 ///
 /// # Example
 /// ```
@@ -568,7 +577,7 @@ impl Extend<Transformation> for TransformationRepository {
 /// let repo = TransformationRepository::from_transformations(transformations);
 /// ```
 #[must_use]
-pub fn builtin_transformations() -> Vec<Transformation> {
+fn builtin_transformations() -> Vec<Transformation> {
     params::TRANSFORMATIONS.to_vec()
 }
 
