@@ -398,13 +398,8 @@ pub const TRANSFORMATIONS: [Transformation; 33] = [
         from: ReferenceFrame::ITRF2020,
         to: ReferenceFrame::WGS84_G2296,
         params: TimeDependentHelmertParams {
-            t: Vector3::new(0.0, 0.0, 0.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
-            r_dot: Vector3::new(0.0, 0.0, 0.0),
             epoch: 2024.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     // WGS84(G2139) is defined to be the same as ITRF2014 at epoch 2016.0
@@ -412,13 +407,8 @@ pub const TRANSFORMATIONS: [Transformation; 33] = [
         from: ReferenceFrame::ITRF2014,
         to: ReferenceFrame::WGS84_G2139,
         params: TimeDependentHelmertParams {
-            t: Vector3::new(0.0, 0.0, 0.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
-            r_dot: Vector3::new(0.0, 0.0, 0.0),
             epoch: 2016.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     // WGS84(G1762) is defined to be the same as ITRF2008 at epoch 2005.0
@@ -426,13 +416,8 @@ pub const TRANSFORMATIONS: [Transformation; 33] = [
         from: ReferenceFrame::ITRF2008,
         to: ReferenceFrame::WGS84_G1762,
         params: TimeDependentHelmertParams {
-            t: Vector3::new(0.0, 0.0, 0.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
-            r_dot: Vector3::new(0.0, 0.0, 0.0),
             epoch: 2005.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
 ];

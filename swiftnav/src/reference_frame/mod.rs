@@ -55,13 +55,14 @@
 //! # Custom Transformations
 //!
 //! ```
+//! # use nalgebra::Vector3;
 //! # use swiftnav::reference_frame::*;
 //! let mut repo = TransformationRepository::new();
 //!
 //! let custom_transform = Transformation {
 //!     from: ReferenceFrame::ITRF2020,
 //!     to: ReferenceFrame::Other("LOCAL_FRAME".to_string()),
-//!     params: TimeDependentHelmertParams { /* ... */ # tx: 0.0, tx_dot: 0.0, ty: 0.0, ty_dot: 0.0, tz: 0.0, tz_dot: 0.0, s: 0.0, s_dot: 0.0, rx: 0.0, rx_dot: 0.0, ry: 0.0, ry_dot: 0.0, rz: 0.0, rz_dot: 0.0, epoch: 2020.0 }
+//!     params: TimeDependentHelmertParams::default(),
 //! };
 //!
 //! repo.add_transformation(custom_transform);
@@ -69,7 +70,6 @@
 
 use crate::coords::{Coordinate, ECEF};
 use nalgebra::{Matrix3, Vector3};
-use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     fmt,
@@ -112,11 +112,8 @@ mod params;
     Display,
     EnumIter,
     Hash,
-    Serialize,
-    Deserialize,
 )]
 #[strum(serialize_all = "UPPERCASE")]
-#[serde(rename_all = "UPPERCASE")]
 pub enum ReferenceFrame {
     ITRF88,
     ITRF89,
@@ -165,7 +162,6 @@ pub enum ReferenceFrame {
     WGS84_G2296,
     /// Custom reference frame with user-defined name
     #[strum(transparent, default)]
-    #[serde(untagged)]
     Other(String),
 }
 
@@ -226,28 +222,40 @@ impl PartialEq<ReferenceFrame> for &ReferenceFrame {
 /// parameters in Helmert transformations. In this implementation
 /// we follow the IERS conventions, which is opposite of the original
 /// formulation of the Helmert transformation.
-#[derive(Debug, PartialEq, PartialOrd, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub struct TimeDependentHelmertParams {
-    t: Vector3<f64>,
-    t_dot: Vector3<f64>,
-    #[serde(alias = "scale", alias = "d")]
-    s: f64,
-    #[serde(alias = "scale_dot", alias = "d_dot")]
-    s_dot: f64,
-    r: Vector3<f64>,
-    r_dot: Vector3<f64>,
-    epoch: f64,
+    pub t: Vector3<f64>,
+    pub t_dot: Vector3<f64>,
+    pub s: f64,
+    pub s_dot: f64,
+    pub r: Vector3<f64>,
+    pub r_dot: Vector3<f64>,
+    pub epoch: f64,
 }
 
 impl TimeDependentHelmertParams {
     /// Scale factor for translation parameters (converts mm to m)
-    const TRANSLATE_SCALE: f64 = 1.0e-3;
-    /// Scale factor for scale parameters (converts ppb to fractional scale)
-    const SCALE_SCALE: f64 = 1.0e-9;
-    /// Scale factor for rotation parameters (converts mas to radians)
-    const ROTATE_SCALE: f64 = (std::f64::consts::PI / 180.0) * (0.001 / 3600.0);
+    pub const TRANSLATE_SCALE: f64 = 1.0e-3;
+    /// Scale factor for scale parameters (converts ppb to unit scale)
+    pub const SCALE_SCALE: f64 = 1.0e-9;
+    /// Scale factor for rotation parameters (converts milliarcseconds to radians)
+    pub const ROTATE_SCALE: f64 = (std::f64::consts::PI / 180.0) * (0.001 / 3600.0);
+
+    #[must_use]
+    pub const fn zeros() -> TimeDependentHelmertParams {
+        TimeDependentHelmertParams {
+            t: Vector3::new(0.0, 0.0, 0.0),
+            t_dot: Vector3::new(0.0, 0.0, 0.0),
+            s: 0.0,
+            s_dot: 0.0,
+            r: Vector3::new(0.0, 0.0, 0.0),
+            r_dot: Vector3::new(0.0, 0.0, 0.0),
+            epoch: 0.0,
+        }
+    }
 
     /// Reverses the transformation. Since this is a linear transformation we simply negate all terms
+    #[must_use]
     pub fn invert(mut self) -> Self {
         self.t *= -1.0;
         self.t_dot *= -1.0;
@@ -301,6 +309,7 @@ impl TimeDependentHelmertParams {
     ///
     /// # Returns
     /// Tuple of transformed (position, velocity)
+    #[must_use]
     pub fn transform(
         &self,
         position: &ECEF,
@@ -314,12 +323,19 @@ impl TimeDependentHelmertParams {
     }
 }
 
+impl Default for TimeDependentHelmertParams {
+    fn default() -> Self {
+        Self {
+            epoch: 2020.0,
+            ..Self::zeros()
+        }
+    }
+}
+
 /// A transformation from one reference frame to another.
-#[derive(Debug, PartialEq, PartialOrd, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct Transformation {
-    #[serde(alias = "source", alias = "source_name")]
     pub from: ReferenceFrame,
-    #[serde(alias = "destination", alias = "destination_name")]
     pub to: ReferenceFrame,
     pub params: TimeDependentHelmertParams,
 }
@@ -334,8 +350,7 @@ impl Transformation {
     ///
     /// [`TransformationNotFound`] Is returned as an error if there is a mismatch between
     /// the coordinate reference frame and the [`Transformation::from`] field.
-    #[must_use]
-    pub fn transform(&self, coord: Coordinate) -> Result<Coordinate, TransformationNotFound> {
+    pub fn transform(&self, coord: &Coordinate) -> Result<Coordinate, TransformationNotFound> {
         if coord.reference_frame() != self.from {
             return Err(TransformationNotFound(
                 self.from.clone(),
@@ -395,6 +410,7 @@ pub struct TransformationRepository {
 
 impl TransformationRepository {
     /// Create an empty transformation repository
+    #[must_use]
     pub fn new() -> Self {
         Self {
             transformations: TransformationGraph::new(),
@@ -416,6 +432,7 @@ impl TransformationRepository {
     }
 
     /// Create a repository with the builtin transformations
+    #[must_use]
     pub fn from_builtin() -> Self {
         Self::from_transformations(builtin_transformations())
     }
@@ -455,7 +472,7 @@ impl TransformationRepository {
     /// in the repository.
     pub fn transform(
         &self,
-        coord: Coordinate,
+        coord: &Coordinate,
         to: &ReferenceFrame,
     ) -> Result<Coordinate, TransformationNotFound> {
         let epoch = coord.epoch().to_fractional_year_hardcoded();
@@ -489,20 +506,6 @@ impl TransformationRepository {
     /// chains transformations when no direct path exists.
     ///
     /// Returns an empty vector if source and destination frames are identical.
-    ///
-    /// # Examples
-    /// ```
-    /// # use swiftnav::reference_frame::*;
-    /// let repo = TransformationRepository::from_builtin();
-    ///
-    /// // Direct transformation if available
-    /// let path = repo.get_shortest_path(&ReferenceFrame::ITRF2020, &ReferenceFrame::ITRF2014)?;
-    ///
-    /// // Multi-hop transformation when needed
-    /// let path = repo.get_shortest_path(&ReferenceFrame::ITRF2020, &ReferenceFrame::ETRF2000)?;
-    /// assert!(path.len() >= 1);
-    /// # Ok::<(), TransformationNotFound>(())
-    /// ```
     ///
     /// # Errors
     ///
@@ -542,10 +545,11 @@ impl TransformationRepository {
     }
 
     /// Get the number of transformations stored in the repository
+    #[must_use]
     pub fn count(&self) -> usize {
         self.transformations
             .values()
-            .map(|neighbors| neighbors.len())
+            .map(HashMap::len)
             .sum()
     }
 }
@@ -577,6 +581,7 @@ impl Extend<Transformation> for TransformationRepository {
 /// let transformations = builtin_transformations();
 /// let repo = TransformationRepository::from_transformations(transformations);
 /// ```
+#[must_use]
 pub fn builtin_transformations() -> Vec<Transformation> {
     params::TRANSFORMATIONS.to_vec()
 }
@@ -906,7 +911,7 @@ mod tests {
 
     #[test]
     fn helmert_invert() {
-        let mut params = TimeDependentHelmertParams {
+        let params = TimeDependentHelmertParams {
             t: Vector3::new(1.0, 2.0, 3.0),
             t_dot: Vector3::new(0.1, 0.2, 0.3),
             s: 4.0,
@@ -996,20 +1001,12 @@ mod tests {
             from: ReferenceFrame::ITRF2020,
             to: ReferenceFrame::ITRF2014,
             params: TimeDependentHelmertParams {
-                tx: 1.0,
-                tx_dot: 0.0,
-                ty: 2.0,
-                ty_dot: 0.0,
-                tz: 3.0,
-                tz_dot: 0.0,
+                t: Vector3::new(1.0, 2.0, 3.0),
+                t_dot: Vector3::new(0.0, 0.0, 0.0),
                 s: 0.0,
                 s_dot: 0.0,
-                rx: 0.0,
-                rx_dot: 0.0,
-                ry: 0.0,
-                ry_dot: 0.0,
-                rz: 0.0,
-                rz_dot: 0.0,
+                r: Vector3::new(0.0, 0.0, 0.0),
+                r_dot: Vector3::new(0.0, 0.0, 0.0),
                 epoch: 2015.0,
             },
         };
@@ -1037,20 +1034,12 @@ mod tests {
                 from: ReferenceFrame::ITRF2020,
                 to: ReferenceFrame::ITRF2014,
                 params: TimeDependentHelmertParams {
-                    tx: 1.0,
-                    tx_dot: 0.0,
-                    ty: 2.0,
-                    ty_dot: 0.0,
-                    tz: 3.0,
-                    tz_dot: 0.0,
+                    t: Vector3::new(1.0, 2.0, 3.0),
+                    t_dot: Vector3::new(0.0, 0.0, 0.0),
                     s: 0.0,
                     s_dot: 0.0,
-                    rx: 0.0,
-                    rx_dot: 0.0,
-                    ry: 0.0,
-                    ry_dot: 0.0,
-                    rz: 0.0,
-                    rz_dot: 0.0,
+                    r: Vector3::new(0.0, 0.0, 0.0),
+                    r_dot: Vector3::new(0.0, 0.0, 0.0),
                     epoch: 2015.0,
                 },
             },
@@ -1058,20 +1047,12 @@ mod tests {
                 from: ReferenceFrame::ITRF2014,
                 to: ReferenceFrame::ITRF2000,
                 params: TimeDependentHelmertParams {
-                    tx: 4.0,
-                    tx_dot: 0.0,
-                    ty: 5.0,
-                    ty_dot: 0.0,
-                    tz: 6.0,
-                    tz_dot: 0.0,
+                    t: Vector3::new(4.0,5.0,6.0),
+                    t_dot: Vector3::new(0.0,0.0,0.0),
                     s: 0.0,
                     s_dot: 0.0,
-                    rx: 0.0,
-                    rx_dot: 0.0,
-                    ry: 0.0,
-                    ry_dot: 0.0,
-                    rz: 0.0,
-                    rz_dot: 0.0,
+                    r: Vector3::new(0.0,0.0,0.0),
+                    r_dot: Vector3::new(0.0,0.0,0.0),
                     epoch: 2015.0,
                 },
             },
@@ -1129,20 +1110,12 @@ mod tests {
             from: ReferenceFrame::ITRF2020,
             to: ReferenceFrame::Other("LocalFrame".to_string()),
             params: TimeDependentHelmertParams {
-                tx: 1.0,
-                tx_dot: 0.0,
-                ty: 2.0,
-                ty_dot: 0.0,
-                tz: 3.0,
-                tz_dot: 0.0,
+                t: Vector3::new(1.0,2.0,3.0),
+                t_dot: Vector3::new(0.0,0.0,0.0),
                 s: 0.0,
                 s_dot: 0.0,
-                rx: 0.0,
-                rx_dot: 0.0,
-                ry: 0.0,
-                ry_dot: 0.0,
-                rz: 0.0,
-                rz_dot: 0.0,
+                r: Vector3::new(0.0,0.0,0.0),
+                r_dot: Vector3::new(0.0,0.0,0.0),
                 epoch: 2020.0,
             },
         };
@@ -1161,20 +1134,12 @@ mod tests {
             from: ReferenceFrame::Other("Frame1".to_string()),
             to: ReferenceFrame::Other("Frame2".to_string()),
             params: TimeDependentHelmertParams {
-                tx: 1.0,
-                tx_dot: 0.0,
-                ty: 2.0,
-                ty_dot: 0.0,
-                tz: 3.0,
-                tz_dot: 0.0,
+                t: Vector3::new(1.0,2.0,3.0),
+                t_dot: Vector3::new(0.0,0.0,0.0),
                 s: 0.0,
                 s_dot: 0.0,
-                rx: 0.0,
-                rx_dot: 0.0,
-                ry: 0.0,
-                ry_dot: 0.0,
-                rz: 0.0,
-                rz_dot: 0.0,
+                r: Vector3::new(0.0,0.0,0.0),
+                r_dot: Vector3::new(0.0,0.0,0.0),
                 epoch: 2020.0,
             },
         };
@@ -1192,171 +1157,5 @@ mod tests {
             &ReferenceFrame::Other("Frame1".to_string()),
         );
         assert!(reverse_result.is_ok());
-    }
-
-    #[cfg(test)]
-    mod serialization_tests {
-        use super::*;
-
-        #[test]
-        fn test_serde_roundtrip() {
-            let original_transformations = builtin_transformations();
-
-            // Serialize to JSON
-            let json =
-                serde_json::to_string(&original_transformations).expect("Failed to serialize");
-
-            // Deserialize from JSON
-            let deserialized_transformations: Vec<Transformation> =
-                serde_json::from_str(&json).expect("Failed to deserialize");
-
-            // Compare
-            assert_eq!(
-                original_transformations.len(),
-                deserialized_transformations.len()
-            );
-            for (orig, deser) in original_transformations
-                .iter()
-                .zip(deserialized_transformations.iter())
-            {
-                assert_eq!(orig, deser);
-            }
-        }
-
-        #[test]
-        fn test_reference_frame_serde() {
-            let frame = ReferenceFrame::ITRF2020;
-            let json = serde_json::to_string(&frame).expect("Failed to serialize");
-            let deserialized: ReferenceFrame =
-                serde_json::from_str(&json).expect("Failed to deserialize");
-            assert_eq!(frame, deserialized);
-        }
-
-        #[test]
-        fn test_custom_reference_frame_serde() {
-            let custom_frame = ReferenceFrame::Other("MyCustomFrame".to_string());
-            let json = serde_json::to_string(&custom_frame).expect("Failed to serialize");
-            let deserialized: ReferenceFrame =
-                serde_json::from_str(&json).expect("Failed to deserialize");
-            assert_eq!(custom_frame, deserialized);
-            assert_eq!(json, "\"MyCustomFrame\"");
-        }
-
-        #[test]
-        fn test_custom_transformation_serde() {
-            let transformation = Transformation {
-                from: ReferenceFrame::Other("FrameA".to_string()),
-                to: ReferenceFrame::Other("FrameB".to_string()),
-                params: TimeDependentHelmertParams {
-                    tx: -1.4,
-                    tx_dot: 0.0,
-                    ty: -0.9,
-                    ty_dot: -0.1,
-                    tz: 1.4,
-                    tz_dot: 0.2,
-                    s: -0.42,
-                    s_dot: 0.0,
-                    rx: 0.0,
-                    rx_dot: 0.0,
-                    ry: 0.0,
-                    ry_dot: 0.0,
-                    rz: 0.0,
-                    rz_dot: 0.0,
-                    epoch: 2015.0,
-                },
-            };
-
-            let json = serde_json::to_string(&transformation).expect("Failed to serialize");
-            let deserialized: Transformation =
-                serde_json::from_str(&json).expect("Failed to deserialize");
-            assert_eq!(transformation, deserialized);
-        }
-
-        #[test]
-        fn test_transformation_serde() {
-            let transformation = Transformation {
-                from: ReferenceFrame::ITRF2020,
-                to: ReferenceFrame::ITRF2014,
-                params: TimeDependentHelmertParams {
-                    tx: -1.4,
-                    tx_dot: 0.0,
-                    ty: -0.9,
-                    ty_dot: -0.1,
-                    tz: 1.4,
-                    tz_dot: 0.2,
-                    s: -0.42,
-                    s_dot: 0.0,
-                    rx: 0.0,
-                    rx_dot: 0.0,
-                    ry: 0.0,
-                    ry_dot: 0.0,
-                    rz: 0.0,
-                    rz_dot: 0.0,
-                    epoch: 2015.0,
-                },
-            };
-
-            let json = serde_json::to_string(&transformation).expect("Failed to serialize");
-            let deserialized: Transformation =
-                serde_json::from_str(&json).expect("Failed to deserialize");
-            assert_eq!(transformation, deserialized);
-        }
-
-        #[test]
-        fn test_serde_aliases() {
-            // Test "source" and "destination"
-            let json = serde_json::json!({
-                "source": "ITRF2020",
-                "destination": "ITRF2014",
-                "params": {
-                    "tx": -1.4,
-                    "tx_dot": 0.0,
-                    "ty": -0.9,
-                    "ty_dot": -0.1,
-                    "tz": 1.4,
-                    "tz_dot": 0.2,
-                    "s": -0.42,
-                    "s_dot": 0.0,
-                    "rx": 0.0,
-                    "rx_dot": 0.0,
-                    "ry": 0.0,
-                    "ry_dot": 0.0,
-                    "rz": 0.0,
-                    "rz_dot": 0.0,
-                    "epoch": 2015.0,
-                }
-            });
-
-            let deserialized: Transformation = serde_json::from_value(json).unwrap();
-            assert_eq!(deserialized.from, ReferenceFrame::ITRF2020);
-            assert_eq!(deserialized.to, ReferenceFrame::ITRF2014);
-
-            // Test "source_name" and destination_name"
-            let json = serde_json::json!({
-                "source_name": "ITRF2020",
-                "destination_name": "ITRF2014",
-                "params": {
-                    "tx": -1.4,
-                    "tx_dot": 0.0,
-                    "ty": -0.9,
-                    "ty_dot": -0.1,
-                    "tz": 1.4,
-                    "tz_dot": 0.2,
-                    "s": -0.42,
-                    "s_dot": 0.0,
-                    "rx": 0.0,
-                    "rx_dot": 0.0,
-                    "ry": 0.0,
-                    "ry_dot": 0.0,
-                    "rz": 0.0,
-                    "rz_dot": 0.0,
-                    "epoch": 2015.0,
-                }
-            });
-
-            let deserialized: Transformation = serde_json::from_value(json).unwrap();
-            assert_eq!(deserialized.from, ReferenceFrame::ITRF2020);
-            assert_eq!(deserialized.to, ReferenceFrame::ITRF2014);
-        }
     }
 }
