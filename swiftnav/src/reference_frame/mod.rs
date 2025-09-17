@@ -48,7 +48,7 @@
 //! );
 //!
 //! // Transform to different reference frame
-//! let nad83_coord = repo.transform(itrf_coord, &ReferenceFrame::NAD83_2011)?;
+//! let nad83_coord = repo.transform(&itrf_coord, &ReferenceFrame::NAD83_2011)?;
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
@@ -101,18 +101,7 @@ mod params;
 /// ```
 ///
 /// [`Other`]: ReferenceFrame::Other
-#[derive(
-    Debug,
-    PartialEq,
-    Eq,
-    PartialOrd,
-    Ord,
-    Clone,
-    EnumString,
-    Display,
-    EnumIter,
-    Hash,
-)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, EnumString, Display, EnumIter, Hash)]
 #[strum(serialize_all = "UPPERCASE")]
 pub enum ReferenceFrame {
     ITRF88,
@@ -547,10 +536,7 @@ impl TransformationRepository {
     /// Get the number of transformations stored in the repository
     #[must_use]
     pub fn count(&self) -> usize {
-        self.transformations
-            .values()
-            .map(HashMap::len)
-            .sum()
+        self.transformations.values().map(HashMap::len).sum()
     }
 }
 
@@ -1047,12 +1033,12 @@ mod tests {
                 from: ReferenceFrame::ITRF2014,
                 to: ReferenceFrame::ITRF2000,
                 params: TimeDependentHelmertParams {
-                    t: Vector3::new(4.0,5.0,6.0),
-                    t_dot: Vector3::new(0.0,0.0,0.0),
+                    t: Vector3::new(4.0, 5.0, 6.0),
+                    t_dot: Vector3::new(0.0, 0.0, 0.0),
                     s: 0.0,
                     s_dot: 0.0,
-                    r: Vector3::new(0.0,0.0,0.0),
-                    r_dot: Vector3::new(0.0,0.0,0.0),
+                    r: Vector3::new(0.0, 0.0, 0.0),
+                    r_dot: Vector3::new(0.0, 0.0, 0.0),
                     epoch: 2015.0,
                 },
             },
@@ -1110,12 +1096,12 @@ mod tests {
             from: ReferenceFrame::ITRF2020,
             to: ReferenceFrame::Other("LocalFrame".to_string()),
             params: TimeDependentHelmertParams {
-                t: Vector3::new(1.0,2.0,3.0),
-                t_dot: Vector3::new(0.0,0.0,0.0),
+                t: Vector3::new(1.0, 2.0, 3.0),
+                t_dot: Vector3::new(0.0, 0.0, 0.0),
                 s: 0.0,
                 s_dot: 0.0,
-                r: Vector3::new(0.0,0.0,0.0),
-                r_dot: Vector3::new(0.0,0.0,0.0),
+                r: Vector3::new(0.0, 0.0, 0.0),
+                r_dot: Vector3::new(0.0, 0.0, 0.0),
                 epoch: 2020.0,
             },
         };
@@ -1134,12 +1120,12 @@ mod tests {
             from: ReferenceFrame::Other("Frame1".to_string()),
             to: ReferenceFrame::Other("Frame2".to_string()),
             params: TimeDependentHelmertParams {
-                t: Vector3::new(1.0,2.0,3.0),
-                t_dot: Vector3::new(0.0,0.0,0.0),
+                t: Vector3::new(1.0, 2.0, 3.0),
+                t_dot: Vector3::new(0.0, 0.0, 0.0),
                 s: 0.0,
                 s_dot: 0.0,
-                r: Vector3::new(0.0,0.0,0.0),
-                r_dot: Vector3::new(0.0,0.0,0.0),
+                r: Vector3::new(0.0, 0.0, 0.0),
+                r_dot: Vector3::new(0.0, 0.0, 0.0),
                 epoch: 2020.0,
             },
         };
