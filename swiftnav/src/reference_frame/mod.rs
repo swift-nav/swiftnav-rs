@@ -9,70 +9,64 @@
 // WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
 //! Geodetic reference frame transformations
 //!
-//! Geodetic reference frames define the coordinate system used to represent
-//! positions on the Earth. Different reference frames are commonly used in
-//! different regions of the world, and for different purposes. For example,
-//! global reference frames, such as the International Terrestrial Reference
-//! Frame (ITRF), are used for global positioning, while regional reference
-//! frames, such as the European Terrestrial Reference Frame (ETRF), are used
-//! for regional positioning. Due to the movement of the earth's crust apparently
-//! fixed positions will move over time. Because of this it's important to note
-//! only take note of a position, but also the time at which that position was
-//! determined. In most regions of the earth the crust moves at a constant speed,
-//! meaning that if you are able to determine the local velocity of the crust you
-//! can easily determine what the position of a static point would have been in
-//! the past. It is commong for regional reference frames to define a common reference
-//! epoch that all positions should be transformed to, allowing the direct comparison
-//! of positions even if they were determined at different times. Regional reference
-//! frames also typically are defined to be "fixed" to a particular tectonic plate,
-//! meaning the large majority of the velocity for points on that tectonic plate
-//! are cancelled out. In contrast, global reference frames are not fixed to
-//! any particular tectonic plate, so most places on earth will have a measurable
-//! velocity. Global reference frames also typically do not have a common reference
-//! epoch, so determining one's local velocity is important to be able to compare
-//! positions or to transform a coordinate from a global reference frame to a regional
-//! reference frame.
+//! Transform coordinates between geodetic reference frames using time-dependent Helmert transformations.
+//! Supports both global frames (ITRF series) and regional frames (ETRF, NAD83, etc.) with runtime
+//! parameter loading.
 //!
-//! This module provides several types and functions to help transform a set of coordinates
-//! from one reference frame to another, and from one epoch to another. Several sets of
-//! transformation parameters are included for converting between common reference frames.
-//! To start out, you must have a [`Coordinate`] that you want to transform. This consists of a
-//! position, an epoch, and a reference frame as well as an optional velocity. You then need to
-//! get the [`Transformation`] object that describes the transformation from the reference
-//! frame of the coordinate to the desired reference frame. You can then call the `transform`
-//! method on the transformation object to get a new coordinate in the desired reference frame.
-//! This transformation will change the position and velocity of the coordinate, but it does
-//! not the change the epoch of the coordinate. If you need to change the epoch of the
-//! coordinate you will need to use the [`Coordinate::adjust_epoch`](crate::coords::Coordinate::adjust_epoch)
-//! method which uses the velocity of the coordinate to determine the position at the new epoch.
+//! # Key Concepts
 //!
-//! # Example
+//! - **Reference frames** define coordinate systems for Earth positioning
+//! - **Crustal motion** causes positions to change over time, requiring velocity tracking
+//! - **Transformations** use 15-parameter Helmert models with time dependencies
+//! - **Path finding** automatically chains transformations between frames
+//!
+//! # Core Types
+//!
+//! - [`ReferenceFrame`] - Enumeration of supported coordinate systems
+//! - [`TransformationRepository`] - Manages transformation parameters and pathfinding
+//! - [`Coordinate`] - Position with reference frame, epoch, and optional velocity
+//! - [`TimeDependentHelmertParams`] - 15-parameter transformation model
+//!
+//! # Basic Usage
+//!
 //! ```
 //! use swiftnav::{
 //!     coords::{Coordinate, ECEF},
-//!     reference_frame::{get_transformation, ReferenceFrame, TransformationNotFound},
+//!     reference_frame::{TransformationRepository, ReferenceFrame},
 //!     time::UtcTime
 //! };
 //!
-//! let transformation = get_transformation(ReferenceFrame::ITRF2014, ReferenceFrame::NAD83_2011)
-//!     .unwrap();
+//! let repo = TransformationRepository::from_builtin();
+//! let epoch = UtcTime::from_parts(2020, 3, 15, 0, 0, 0.).to_gps_hardcoded();
 //!
-//! let epoch_2020 = UtcTime::from_parts(2020, 3, 15, 0, 0, 0.).to_gps_hardcoded();
+//! // Create coordinate with position and velocity
 //! let itrf_coord = Coordinate::with_velocity(
-//!     ReferenceFrame::ITRF2014, // The reference frame of the coordinate
-//!     ECEF::new(-2703764.0, -4261273.0, 3887158.0), // The position of the coordinate
-//!     ECEF::new(-0.221, 0.254, 0.122), // The velocity of the coordinate
-//!     epoch_2020); // The epoch of the coordinate
+//!     ReferenceFrame::ITRF2014,
+//!     ECEF::new(-2703764.0, -4261273.0, 3887158.0),
+//!     ECEF::new(-0.221, 0.254, 0.122),
+//!     epoch
+//! );
 //!
-//! let epoch_2010 = UtcTime::from_parts(2010, 1, 1, 0, 0, 0.).to_gps_hardcoded();
-//! let itrf_coord = itrf_coord.adjust_epoch(&epoch_2010); // Change the epoch of the coordinate
-//!
-//! let nad83_coord = transformation.transform(&itrf_coord);
-//! // Alternatively, you can use the `transform_to` method on the coordinate itself
-//! let nad83_coord: Result<Coordinate, TransformationNotFound> =
-//!     itrf_coord.transform_to(ReferenceFrame::NAD83_2011);
+//! // Transform to different reference frame
+//! let nad83_coord = repo.transform(&itrf_coord, &ReferenceFrame::NAD83_2011)?;
+//! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 //!
+//! # Custom Transformations
+//!
+//! ```
+//! # use nalgebra::Vector3;
+//! # use swiftnav::reference_frame::*;
+//! let mut repo = TransformationRepository::new();
+//!
+//! let custom_transform = Transformation {
+//!     from: ReferenceFrame::ITRF2020,
+//!     to: ReferenceFrame::Other("LOCAL_FRAME".to_string()),
+//!     params: TimeDependentHelmertParams::default(),
+//! };
+//!
+//! repo.add_transformation(custom_transform);
+//! ```
 
 use crate::coords::{Coordinate, ECEF};
 use nalgebra::{Matrix3, Vector3};
@@ -84,10 +78,30 @@ use strum::{Display, EnumIter, EnumString};
 
 mod params;
 
-/// Reference Frames
-#[derive(
-    Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, EnumString, Display, EnumIter, Hash,
-)]
+/// Geodetic reference frame identifiers
+///
+/// Enumerates well-known global and regional reference frames with support
+/// for custom frames via the [`Other`] variant.
+///
+/// # Examples
+/// ```
+/// # use swiftnav::reference_frame::ReferenceFrame;
+/// # use std::str::FromStr;
+/// // Use predefined frames
+/// let itrf = ReferenceFrame::ITRF2020;
+/// let nad83 = ReferenceFrame::NAD83_2011;
+///
+/// // Parse from string
+/// let parsed: ReferenceFrame = "ITRF2014".parse()?;
+/// let custom: ReferenceFrame = "MY_LOCAL_FRAME".parse()?;
+///
+/// // Custom frames
+/// let local = ReferenceFrame::Other("SITE_FRAME_2023".to_string());
+/// # Ok::<(), Box<dyn std::error::Error>>(())
+/// ```
+///
+/// [`Other`]: ReferenceFrame::Other
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, EnumString, Display, EnumIter, Hash)]
 #[strum(serialize_all = "UPPERCASE")]
 pub enum ReferenceFrame {
     ITRF88,
@@ -135,6 +149,21 @@ pub enum ReferenceFrame {
     #[allow(non_camel_case_types)]
     #[strum(to_string = "WGS84(G2296)", serialize = "WGS84_G2296")]
     WGS84_G2296,
+    /// Custom reference frame with user-defined name
+    #[strum(transparent, default)]
+    Other(String),
+}
+
+impl PartialEq<&ReferenceFrame> for ReferenceFrame {
+    fn eq(&self, other: &&ReferenceFrame) -> bool {
+        self == *other
+    }
+}
+
+impl PartialEq<ReferenceFrame> for &ReferenceFrame {
+    fn eq(&self, other: &ReferenceFrame) -> bool {
+        *self == other
+    }
 }
 
 /// 15-parameter Helmert transformation parameters
@@ -163,37 +192,86 @@ pub enum ReferenceFrame {
 /// Where $p$ is the constant value, $\dot{p}$ is the rate of
 /// change, and $\tau$ is the reference epoch.
 ///
+/// # Parameter Units
+///
+/// Input parameters are stored in standard geodetic units:
+/// - **Translation** (`tx`, `ty`, `tz`): millimeters (mm)  
+/// - **Translation rates** (`tx_dot`, `ty_dot`, `tz_dot`): mm/year
+/// - **Scale** (`s`): parts per billion (ppb)
+/// - **Scale rate** (`s_dot`): ppb/year  
+/// - **Rotation** (`rx`, `ry`, `rz`): milliarcseconds (mas)
+/// - **Rotation rates** (`rx_dot`, `ry_dot`, `rz_dot`): mas/year
+/// - **Reference epoch** (`epoch`): decimal years
+///
+/// These units are automatically converted to SI units during computation.
+///
+/// # Sign Convention
+///
 /// There are several sign conventions in use for the rotation
 /// parameters in Helmert transformations. In this implementation
 /// we follow the IERS conventions, which is opposite of the original
 /// formulation of the Helmert transformation.
 #[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
 pub struct TimeDependentHelmertParams {
-    t: Vector3<f64>,
-    t_dot: Vector3<f64>,
-    s: f64,
-    s_dot: f64,
-    r: Vector3<f64>,
-    r_dot: Vector3<f64>,
-    epoch: f64,
+    pub t: Vector3<f64>,
+    pub t_dot: Vector3<f64>,
+    pub s: f64,
+    pub s_dot: f64,
+    pub r: Vector3<f64>,
+    pub r_dot: Vector3<f64>,
+    pub epoch: f64,
 }
 
 impl TimeDependentHelmertParams {
-    const TRANSLATE_SCALE: f64 = 1.0e-3;
-    const SCALE_SCALE: f64 = 1.0e-9;
-    const ROTATE_SCALE: f64 = (std::f64::consts::PI / 180.0) * (0.001 / 3600.0);
+    /// Scale factor for translation parameters (converts mm to m)
+    pub const TRANSLATE_SCALE: f64 = 1.0e-3;
+    /// Scale factor for scale parameters (converts ppb to unit scale)
+    pub const SCALE_SCALE: f64 = 1.0e-9;
+    /// Scale factor for rotation parameters (converts milliarcseconds to radians)
+    pub const ROTATE_SCALE: f64 = (std::f64::consts::PI / 180.0) * (0.001 / 3600.0);
+
+    /// Create a [`TimeDependentHelmertParams`] object with zero in every field.
+    ///
+    /// # Note
+    ///
+    /// The [`TimeDependentHelmertParams::epoch`] field needs to represent a real time, and an
+    /// epoch of `0.0` is almost certainly not what you intend. This is best used to initialize
+    /// all other fields to zero like this:
+    ///
+    /// ```rust
+    /// # use swiftnav::reference_frame::TimeDependentHelmertParams;
+    /// let params = TimeDependentHelmertParams {
+    ///   epoch: 2020.0,
+    ///   ..TimeDependentHelmertParams::zeros()
+    /// };
+    /// ```
+    #[must_use]
+    pub const fn zeros() -> TimeDependentHelmertParams {
+        TimeDependentHelmertParams {
+            t: Vector3::new(0.0, 0.0, 0.0),
+            t_dot: Vector3::new(0.0, 0.0, 0.0),
+            s: 0.0,
+            s_dot: 0.0,
+            r: Vector3::new(0.0, 0.0, 0.0),
+            r_dot: Vector3::new(0.0, 0.0, 0.0),
+            epoch: 0.0,
+        }
+    }
 
     /// Reverses the transformation. Since this is a linear transformation we simply negate all terms
-    pub fn invert(&mut self) {
+    #[must_use]
+    pub fn invert(mut self) -> Self {
         self.t *= -1.0;
         self.t_dot *= -1.0;
         self.s *= -1.0;
         self.s_dot *= -1.0;
         self.r *= -1.0;
         self.r_dot *= -1.0;
+
+        self
     }
 
-    /// Apply the transformation on a position at a specific epoch
+    /// Apply the transformation to a position at a specific epoch
     #[must_use]
     pub fn transform_position(&self, position: &ECEF, epoch: f64) -> ECEF {
         let dt = epoch - self.epoch;
@@ -206,7 +284,7 @@ impl TimeDependentHelmertParams {
         (position.as_vector() + t + m * position.as_vector()).into()
     }
 
-    /// Apply the transformation on a velocity at a specific position
+    /// Apply the transformation to a velocity at a specific position
     #[must_use]
     pub fn transform_velocity(&self, velocity: &ECEF, position: &ECEF) -> ECEF {
         let t = self.t_dot * Self::TRANSLATE_SCALE;
@@ -222,10 +300,44 @@ impl TimeDependentHelmertParams {
     fn make_rotation_matrix(s: f64, r: Vector3<f64>) -> Matrix3<f64> {
         Matrix3::new(s, -r.z, r.y, r.z, s, -r.x, -r.y, r.x, s)
     }
+
+    /// Apply the complete Helmert transformation to position and velocity
+    ///
+    /// Combines position and velocity transformations into a single operation.
+    /// The velocity transformation uses the rate terms from the Helmert parameters.
+    ///
+    /// # Arguments
+    /// * `position` - Position to transform
+    /// * `velocity` - Optional velocity to transform (None preserves None)
+    /// * `epoch` - Time epoch for position transformation
+    ///
+    /// # Returns
+    /// Tuple of transformed (position, velocity)
+    #[must_use]
+    pub fn transform(
+        &self,
+        position: &ECEF,
+        velocity: Option<&ECEF>,
+        epoch: f64,
+    ) -> (ECEF, Option<ECEF>) {
+        let position = self.transform_position(position, epoch);
+        let velocity = velocity.map(|v| self.transform_velocity(v, &position));
+
+        (position, velocity)
+    }
+}
+
+impl Default for TimeDependentHelmertParams {
+    fn default() -> Self {
+        Self {
+            epoch: 2020.0,
+            ..Self::zeros()
+        }
+    }
 }
 
 /// A transformation from one reference frame to another.
-#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct Transformation {
     pub from: ReferenceFrame,
     pub to: ReferenceFrame,
@@ -238,33 +350,37 @@ impl Transformation {
     /// Reference frame transformations do not change the epoch of the
     /// coordinate.
     ///
-    /// # Panics
+    /// # Errors
     ///
-    /// This function will panic if the given coordinate is not already in the reference
-    /// frame this [`Transformation`] converts from.
-    #[must_use]
-    pub fn transform(&self, coord: &Coordinate) -> Coordinate {
-        assert!(
-            coord.reference_frame() == self.from,
-            "Coordinate reference frame does not match transformation from reference frame"
-        );
+    /// [`TransformationNotFound`] Is returned as an error if there is a mismatch between
+    /// the coordinate reference frame and the [`Transformation::from`] field.
+    pub fn transform(&self, coord: &Coordinate) -> Result<Coordinate, TransformationNotFound> {
+        if coord.reference_frame() != self.from {
+            return Err(TransformationNotFound(
+                self.from.clone(),
+                coord.reference_frame().clone(),
+            ));
+        }
 
-        let new_position = self.params.transform_position(
+        let (new_position, new_velocity) = self.params.transform(
             &coord.position(),
+            coord.velocity().as_ref(),
             coord.epoch().to_fractional_year_hardcoded(),
         );
-        let new_velocity = coord
-            .velocity()
-            .as_ref()
-            .map(|velocity| self.params.transform_velocity(velocity, &coord.position()));
-        Coordinate::new(self.to, new_position, new_velocity, coord.epoch())
+
+        Ok(Coordinate::new(
+            self.to.clone(),
+            new_position,
+            new_velocity,
+            coord.epoch(),
+        ))
     }
 
     /// Reverse the transformation
     #[must_use]
     pub fn invert(mut self) -> Self {
         std::mem::swap(&mut self.from, &mut self.to);
-        self.params.invert();
+        self.params = self.params.invert();
         self
     }
 }
@@ -273,7 +389,7 @@ impl Transformation {
 ///
 /// This error is returned when trying to find a transformation between two reference frames
 /// and no transformation is found.
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone)]
 pub struct TransformationNotFound(ReferenceFrame, ReferenceFrame);
 
 impl fmt::Display for TransformationNotFound {
@@ -284,99 +400,176 @@ impl fmt::Display for TransformationNotFound {
 
 impl std::error::Error for TransformationNotFound {}
 
-/// Find a transformation from one reference frame to another
+type TransformationGraph =
+    HashMap<ReferenceFrame, HashMap<ReferenceFrame, TimeDependentHelmertParams>>;
+
+/// A repository for managing reference frame transformations
 ///
-/// We currently only support a limited set of transformations.
-/// If no transformation is found, `None` is returned.
-///
-/// # Errors
-///
-/// An error will be returned if a transformation between the two reference
-/// frames couldn't be found.
-pub fn get_transformation(
-    from: ReferenceFrame,
-    to: ReferenceFrame,
-) -> Result<Transformation, TransformationNotFound> {
-    params::TRANSFORMATIONS
-        .iter()
-        .find(|t| (t.from == from && t.to == to) || (t.from == to && t.to == from))
-        .map(|t| {
-            if t.from == from && t.to == to {
-                *t
-            } else {
-                (*t).invert()
-            }
-        })
-        .ok_or(TransformationNotFound(from, to))
+/// This struct allows for loading the builtin transformations
+/// as well as adding additional transformations from other sources.
+#[derive(Debug, Clone)]
+pub struct TransformationRepository {
+    transformations: TransformationGraph,
 }
 
-/// A helper type for finding transformations between reference frames that require multiple steps
-///
-/// This object can be used to determine which calls to [`get_transformation`]
-/// are needed when a single transformation does not exist between two reference frames.
-pub struct TransformationGraph {
-    graph: HashMap<ReferenceFrame, HashSet<ReferenceFrame>>,
-}
-
-impl TransformationGraph {
-    /// Create a new transformation graph, fully populated with the known transformations
+impl TransformationRepository {
+    /// Create an empty transformation repository
+    #[must_use]
     pub fn new() -> Self {
-        let mut graph = HashMap::new();
-        for transformation in &params::TRANSFORMATIONS {
-            graph
-                .entry(transformation.from)
-                .or_insert_with(HashSet::new)
-                .insert(transformation.to);
-            graph
-                .entry(transformation.to)
-                .or_insert_with(HashSet::new)
-                .insert(transformation.from);
+        Self {
+            transformations: TransformationGraph::new(),
         }
-        TransformationGraph { graph }
     }
 
-    /// Get the shortest path between two reference frames, if one exists
+    /// Create a repository from a list of transformations
     ///
-    /// This function will also search for reverse paths if no direct path is found.
-    /// The search is performed breadth-first.
+    /// # Note
+    ///
+    /// If there are duplicated transformations in the list, the
+    /// last one in the list will take priority
+    pub fn from_transformations<T: IntoIterator<Item = Transformation>>(
+        transformations: T,
+    ) -> Self {
+        let mut repo = Self::new();
+        repo.extend(transformations);
+        repo
+    }
+
+    /// Create a repository with the builtin transformations
     #[must_use]
-    pub fn get_shortest_path(
+    pub fn from_builtin() -> Self {
+        Self::from_transformations(builtin_transformations())
+    }
+
+    /// Add a transformation to the repository
+    ///
+    /// This will rebuild the internal graph to include the new transformation.
+    pub fn add_transformation(&mut self, transformation: Transformation) {
+        let from = transformation.from;
+        let to = transformation.to;
+        let params = transformation.params;
+        let inverted_params = params.invert();
+
+        self.transformations
+            .entry(from.clone())
+            .or_default()
+            .extend([(to.clone(), params)]);
+
+        // Add inverted parameters as well
+        self.transformations
+            .entry(to)
+            .or_default()
+            .extend([(from, inverted_params)]);
+    }
+
+    /// Transform a [`Coordinate`] to a new reference frame
+    ///
+    /// This function finds the shortest series of transformations from the coordinate's
+    /// initial reference frame to the requestest one, then sequentially applies
+    /// those transformations to get the new position and velocity. The epoch of the
+    /// coordinate is not modified in this process.
+    ///
+    /// # Errors
+    ///
+    /// [`TransformationNotFound`] is returned as an error if no path from the
+    /// coordinate's reference frame to the requested reference frame could be found
+    /// in the repository.
+    pub fn transform(
         &self,
-        from: ReferenceFrame,
-        to: ReferenceFrame,
-    ) -> Option<Vec<ReferenceFrame>> {
+        coord: &Coordinate,
+        to: &ReferenceFrame,
+    ) -> Result<Coordinate, TransformationNotFound> {
+        let epoch = coord.epoch().to_fractional_year_hardcoded();
+
+        let (position, velocity) = self
+            .get_shortest_path(coord.reference_frame(), to)?
+            .into_iter()
+            .fold(
+                (coord.position(), coord.velocity()),
+                |(pos, vel), params| params.transform(&pos, vel.as_ref(), epoch),
+            );
+
+        Ok(Coordinate::new(
+            to.clone(),
+            position,
+            velocity,
+            coord.epoch(),
+        ))
+    }
+
+    /// Find the shortest transformation path between reference frames
+    ///
+    /// Uses breadth-first search to find the minimal sequence of transformations
+    /// needed to convert between reference frames. The algorithm automatically
+    /// chains transformations when no direct path exists.
+    ///
+    /// Returns an empty vector if source and destination frames are identical.
+    ///
+    /// # Errors
+    ///
+    /// [`TransformationNotFound`] if no transformation path exists between the frames
+    fn get_shortest_path(
+        &self,
+        from: &ReferenceFrame,
+        to: &ReferenceFrame,
+    ) -> Result<Vec<&TimeDependentHelmertParams>, TransformationNotFound> {
         if from == to {
-            return None;
+            return Ok(Vec::new());
         }
 
-        let mut visited: HashSet<ReferenceFrame> = HashSet::new();
-        let mut queue: VecDeque<(ReferenceFrame, Vec<ReferenceFrame>)> = VecDeque::new();
-        queue.push_back((from, vec![from]));
+        let mut visited: HashSet<&ReferenceFrame> = HashSet::new();
+        let mut queue: VecDeque<(&ReferenceFrame, Vec<&TimeDependentHelmertParams>)> =
+            VecDeque::new();
+        queue.push_back((from, Vec::new()));
 
         while let Some((current_frame, path)) = queue.pop_front() {
             if current_frame == to {
-                return Some(path);
+                return Ok(path);
             }
 
-            if let Some(neighbors) = self.graph.get(&current_frame) {
+            if let Some(neighbors) = self.transformations.get(current_frame) {
                 for neighbor in neighbors {
-                    if !visited.contains(neighbor) {
-                        visited.insert(*neighbor);
+                    if !visited.contains(neighbor.0) {
+                        visited.insert(neighbor.0);
                         let mut new_path = path.clone();
-                        new_path.push(*neighbor);
-                        queue.push_back((*neighbor, new_path));
+                        new_path.push(neighbor.1);
+                        queue.push_back((neighbor.0, new_path));
                     }
                 }
             }
         }
-        None
+
+        Err(TransformationNotFound(from.clone(), to.clone()))
+    }
+
+    /// Get the number of transformations stored in the repository
+    #[must_use]
+    pub fn count(&self) -> usize {
+        self.transformations.values().map(HashMap::len).sum()
     }
 }
 
-impl Default for TransformationGraph {
+impl Default for TransformationRepository {
     fn default() -> Self {
-        TransformationGraph::new()
+        Self::from_builtin()
     }
+}
+
+impl Extend<Transformation> for TransformationRepository {
+    fn extend<T: IntoIterator<Item = Transformation>>(&mut self, iter: T) {
+        iter.into_iter()
+            .for_each(|transformation| self.add_transformation(transformation));
+    }
+}
+
+/// Get the builtin transformation parameters
+///
+/// Returns a Vec of all pre-defined transformations between common reference frames
+/// including ITRF, ETRF, NAD83, and WGS84 series. These transformations are sourced
+/// from authoritative geodetic organizations..
+#[must_use]
+fn builtin_transformations() -> Vec<Transformation> {
+    params::TRANSFORMATIONS.to_vec()
 }
 
 #[cfg(test)]
@@ -385,7 +578,6 @@ mod tests {
     use float_eq::assert_float_eq;
     use params::TRANSFORMATIONS;
     use std::str::FromStr;
-    use strum::IntoEnumIterator;
 
     #[test]
     fn reference_frame_strings() {
@@ -705,7 +897,7 @@ mod tests {
 
     #[test]
     fn helmert_invert() {
-        let mut params = TimeDependentHelmertParams {
+        let params = TimeDependentHelmertParams {
             t: Vector3::new(1.0, 2.0, 3.0),
             t_dot: Vector3::new(0.1, 0.2, 0.3),
             s: 4.0,
@@ -713,14 +905,15 @@ mod tests {
             r: Vector3::new(5.0, 6.0, 7.0),
             r_dot: Vector3::new(0.5, 0.6, 0.7),
             epoch: 2010.0,
-        };
-        params.invert();
+        }
+        .invert();
         assert_float_eq!(params.t.x, -1.0, abs_all <= 1e-4);
         assert_float_eq!(params.t_dot.x, -0.1, abs_all <= 1e-4);
         assert_float_eq!(params.t.y, -2.0, abs_all <= 1e-4);
         assert_float_eq!(params.t_dot.y, -0.2, abs_all <= 1e-4);
         assert_float_eq!(params.t.z, -3.0, abs_all <= 1e-4);
         assert_float_eq!(params.t_dot.z, -0.3, abs_all <= 1e-4);
+
         assert_float_eq!(params.s, -4.0, abs_all <= 1e-4);
         assert_float_eq!(params.s_dot, -0.4, abs_all <= 1e-4);
         assert_float_eq!(params.r.x, -5.0, abs_all <= 1e-4);
@@ -730,13 +923,14 @@ mod tests {
         assert_float_eq!(params.r.z, -7.0, abs_all <= 1e-4);
         assert_float_eq!(params.r_dot.z, -0.7, abs_all <= 1e-4);
         assert_float_eq!(params.epoch, 2010.0, abs_all <= 1e-4);
-        params.invert();
+        let params = params.invert();
         assert_float_eq!(params.t.x, 1.0, abs_all <= 1e-4);
         assert_float_eq!(params.t_dot.x, 0.1, abs_all <= 1e-4);
         assert_float_eq!(params.t.y, 2.0, abs_all <= 1e-4);
         assert_float_eq!(params.t_dot.y, 0.2, abs_all <= 1e-4);
         assert_float_eq!(params.t.z, 3.0, abs_all <= 1e-4);
         assert_float_eq!(params.t_dot.z, 0.3, abs_all <= 1e-4);
+
         assert_float_eq!(params.s, 4.0, abs_all <= 1e-4);
         assert_float_eq!(params.s_dot, 0.4, abs_all <= 1e-4);
         assert_float_eq!(params.r.x, 5.0, abs_all <= 1e-4);
@@ -756,29 +950,194 @@ mod tests {
         // Make sure there isn't a direct path
         assert!(!TRANSFORMATIONS.iter().any(|t| t.from == from && t.to == to));
 
-        let graph = TransformationGraph::new();
-        let path = graph.get_shortest_path(from, to);
-        assert!(path.is_some());
+        let graph: TransformationRepository = TransformationRepository::from_builtin();
+        let path = graph.get_shortest_path(&from, &to);
         // Make sure that the path is correct. N.B. this may change if more transformations
         // are added in the future
         let path = path.unwrap();
-        assert_eq!(path.len(), 3);
-        assert_eq!(path[0], from);
-        assert_eq!(path[1], ReferenceFrame::ITRF2000);
-        assert_eq!(path[2], to);
+        assert_eq!(path.len(), 2);
     }
 
     #[test]
-    fn fully_traversable_graph() {
-        let graph = TransformationGraph::new();
-        for from in ReferenceFrame::iter() {
-            for to in ReferenceFrame::iter() {
-                if from == to {
-                    continue;
-                }
-                let path = graph.get_shortest_path(from, to);
-                assert!(path.is_some(), "No path from {} to {}", from, to);
-            }
-        }
+    fn transformation_repository_empty() {
+        let repo = TransformationRepository::new();
+        assert_eq!(repo.count(), 0);
+
+        let result = repo.get_shortest_path(&ReferenceFrame::ITRF2020, &ReferenceFrame::ITRF2014);
+        result.unwrap_err();
+    }
+
+    #[test]
+    fn transformation_repository_from_builtin() {
+        let repo = TransformationRepository::from_builtin();
+        assert_eq!(repo.count(), TRANSFORMATIONS.len() * 2); // Also cound inverted transformations
+
+        // Test path finding
+        let path = repo.get_shortest_path(&ReferenceFrame::ITRF2020, &ReferenceFrame::ETRF2000);
+        path.unwrap();
+    }
+
+    #[test]
+    fn transformation_repository_add_transformation() {
+        let mut repo = TransformationRepository::new();
+
+        // Create a simple transformation for testing
+        let transformation = Transformation {
+            from: ReferenceFrame::ITRF2020,
+            to: ReferenceFrame::ITRF2014,
+            params: TimeDependentHelmertParams {
+                t: Vector3::new(1.0, 2.0, 3.0),
+                t_dot: Vector3::new(0.0, 0.0, 0.0),
+                s: 0.0,
+                s_dot: 0.0,
+                r: Vector3::new(0.0, 0.0, 0.0),
+                r_dot: Vector3::new(0.0, 0.0, 0.0),
+                epoch: 2015.0,
+            },
+        };
+
+        let params = transformation.params.clone();
+        repo.add_transformation(transformation);
+        assert_eq!(repo.count(), 2);
+
+        let result = repo.get_shortest_path(&ReferenceFrame::ITRF2020, &ReferenceFrame::ITRF2014);
+        assert_eq!(result.unwrap(), vec![&params]);
+
+        // Test reverse transformation
+        let params = params.invert();
+        let reverse_result =
+            repo.get_shortest_path(&ReferenceFrame::ITRF2014, &ReferenceFrame::ITRF2020);
+        assert_eq!(reverse_result.unwrap(), vec![&params]);
+    }
+
+    #[test]
+    fn transformation_repository_from_transformations() {
+        let transformations = vec![
+            Transformation {
+                from: ReferenceFrame::ITRF2020,
+                to: ReferenceFrame::ITRF2014,
+                params: TimeDependentHelmertParams {
+                    t: Vector3::new(1.0, 2.0, 3.0),
+                    t_dot: Vector3::new(0.0, 0.0, 0.0),
+                    s: 0.0,
+                    s_dot: 0.0,
+                    r: Vector3::new(0.0, 0.0, 0.0),
+                    r_dot: Vector3::new(0.0, 0.0, 0.0),
+                    epoch: 2015.0,
+                },
+            },
+            Transformation {
+                from: ReferenceFrame::ITRF2014,
+                to: ReferenceFrame::ITRF2000,
+                params: TimeDependentHelmertParams {
+                    t: Vector3::new(4.0, 5.0, 6.0),
+                    t_dot: Vector3::new(0.0, 0.0, 0.0),
+                    s: 0.0,
+                    s_dot: 0.0,
+                    r: Vector3::new(0.0, 0.0, 0.0),
+                    r_dot: Vector3::new(0.0, 0.0, 0.0),
+                    epoch: 2015.0,
+                },
+            },
+        ];
+
+        let repo = TransformationRepository::from_transformations(transformations.clone());
+        assert_eq!(repo.count(), 4);
+
+        // Test direct transformation
+        let result = repo.get_shortest_path(&ReferenceFrame::ITRF2020, &ReferenceFrame::ITRF2014);
+        result.unwrap();
+
+        // Test multi-step path
+        let path = repo.get_shortest_path(&ReferenceFrame::ITRF2020, &ReferenceFrame::ITRF2000);
+        let path = path.unwrap();
+        assert_eq!(path.len(), 2); // Two transformations: ITRF2020->ITRF2014 and ITRF2014->ITRF2000
+        assert_eq!(
+            path,
+            vec![&transformations[0].params, &transformations[1].params]
+        );
+    }
+
+    #[test]
+    fn custom_reference_frame_creation() {
+        let custom_frame = ReferenceFrame::Other("MyLocalFrame".to_string());
+        assert_eq!(custom_frame.to_string(), "MyLocalFrame");
+    }
+
+    #[test]
+    fn custom_reference_frame_from_str() {
+        let custom_frame: ReferenceFrame = "UnknownFrame".parse().unwrap();
+        assert_eq!(
+            custom_frame,
+            ReferenceFrame::Other("UnknownFrame".to_string())
+        );
+        assert_eq!(custom_frame.to_string(), "UnknownFrame");
+    }
+
+    #[test]
+    fn known_reference_frame_from_str() {
+        let itrf_frame: ReferenceFrame = "ITRF2020".parse().unwrap();
+        assert_eq!(itrf_frame, ReferenceFrame::ITRF2020);
+
+        let nad83_frame: ReferenceFrame = "NAD83(2011)".parse().unwrap();
+        assert_eq!(nad83_frame, ReferenceFrame::NAD83_2011);
+
+        let nad83_frame2: ReferenceFrame = "NAD83_2011".parse().unwrap();
+        assert_eq!(nad83_frame2, ReferenceFrame::NAD83_2011);
+    }
+
+    #[test]
+    fn custom_transformation() {
+        let transformation = Transformation {
+            from: ReferenceFrame::ITRF2020,
+            to: ReferenceFrame::Other("LocalFrame".to_string()),
+            params: TimeDependentHelmertParams {
+                t: Vector3::new(1.0, 2.0, 3.0),
+                t_dot: Vector3::new(0.0, 0.0, 0.0),
+                s: 0.0,
+                s_dot: 0.0,
+                r: Vector3::new(0.0, 0.0, 0.0),
+                r_dot: Vector3::new(0.0, 0.0, 0.0),
+                epoch: 2020.0,
+            },
+        };
+
+        assert_eq!(transformation.from, ReferenceFrame::ITRF2020);
+        assert_eq!(
+            transformation.to,
+            ReferenceFrame::Other("LocalFrame".to_string())
+        );
+    }
+
+    #[test]
+    fn custom_transformation_repository() {
+        let mut repo = TransformationRepository::new();
+        let transformation = Transformation {
+            from: ReferenceFrame::Other("Frame1".to_string()),
+            to: ReferenceFrame::Other("Frame2".to_string()),
+            params: TimeDependentHelmertParams {
+                t: Vector3::new(1.0, 2.0, 3.0),
+                t_dot: Vector3::new(0.0, 0.0, 0.0),
+                s: 0.0,
+                s_dot: 0.0,
+                r: Vector3::new(0.0, 0.0, 0.0),
+                r_dot: Vector3::new(0.0, 0.0, 0.0),
+                epoch: 2020.0,
+            },
+        };
+
+        repo.add_transformation(transformation);
+
+        let result = repo.get_shortest_path(
+            &ReferenceFrame::Other("Frame1".to_string()),
+            &ReferenceFrame::Other("Frame2".to_string()),
+        );
+        result.unwrap();
+
+        let reverse_result = repo.get_shortest_path(
+            &ReferenceFrame::Other("Frame2".to_string()),
+            &ReferenceFrame::Other("Frame1".to_string()),
+        );
+        reverse_result.unwrap();
     }
 }

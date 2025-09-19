@@ -2,7 +2,7 @@ use nalgebra::Vector3;
 
 use super::{ReferenceFrame, TimeDependentHelmertParams, Transformation};
 
-pub const TRANSFORMATIONS: [Transformation; 34] = [
+pub const TRANSFORMATIONS: [Transformation; 33] = [
     Transformation {
         from: ReferenceFrame::ITRF2020,
         to: ReferenceFrame::ITRF2014,
@@ -10,10 +10,8 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
             t: Vector3::new(-1.4, -0.9, 1.4),
             t_dot: Vector3::new(0.0, -0.1, 0.2),
             s: -0.42,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
-            r_dot: Vector3::new(0.0, 0.0, 0.0),
             epoch: 2015.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     Transformation {
@@ -24,9 +22,8 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
             t_dot: Vector3::new(0.0, -0.1, 0.1),
             s: -0.29,
             s_dot: 0.03,
-            r: Vector3::new(0.0, 0.0, 0.0),
-            r_dot: Vector3::new(0.0, 0.0, 0.0),
             epoch: 2015.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     Transformation {
@@ -37,9 +34,8 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
             t_dot: Vector3::new(0.3, -0.1, 0.1),
             s: 0.65,
             s_dot: 0.03,
-            r: Vector3::new(0.0, 0.0, 0.0),
-            r_dot: Vector3::new(0.0, 0.0, 0.0),
             epoch: 2015.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     Transformation {
@@ -50,9 +46,8 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
             t_dot: Vector3::new(0.1, 0.0, -1.7),
             s: 2.25,
             s_dot: 0.11,
-            r: Vector3::new(0.0, 0.0, 0.0),
-            r_dot: Vector3::new(0.0, 0.0, 0.0),
             epoch: 2015.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     Transformation {
@@ -176,26 +171,18 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
         from: ReferenceFrame::ITRF2020,
         to: ReferenceFrame::ETRF2020,
         params: TimeDependentHelmertParams {
-            t: Vector3::new(0.0, 0.0, 0.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
             r_dot: Vector3::new(0.086, 0.519, -0.753),
             epoch: 1989.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     Transformation {
         from: ReferenceFrame::ITRF2014,
         to: ReferenceFrame::ETRF2014,
         params: TimeDependentHelmertParams {
-            t: Vector3::new(0.0, 0.0, 0.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
             r_dot: Vector3::new(0.085, 0.531, -0.770),
             epoch: 1989.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     Transformation {
@@ -203,12 +190,9 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
         to: ReferenceFrame::ETRF2005,
         params: TimeDependentHelmertParams {
             t: Vector3::new(56.0, 48.0, -37.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
             r_dot: Vector3::new(0.054, 0.518, -0.781),
             epoch: 1989.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     Transformation {
@@ -216,12 +200,9 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
         to: ReferenceFrame::ETRF2000,
         params: TimeDependentHelmertParams {
             t: Vector3::new(54.0, 51.0, -48.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
             r_dot: Vector3::new(0.081, 0.490, -0.792),
             epoch: 1989.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     Transformation {
@@ -229,12 +210,9 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
         to: ReferenceFrame::ETRF97,
         params: TimeDependentHelmertParams {
             t: Vector3::new(41.0, 41.0, -49.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
             r_dot: Vector3::new(0.200, 0.500, -0.650),
             epoch: 1989.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     Transformation {
@@ -242,12 +220,9 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
         to: ReferenceFrame::ETRF96,
         params: TimeDependentHelmertParams {
             t: Vector3::new(41.0, 41.0, -49.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
             r_dot: Vector3::new(0.200, 0.500, -0.650),
             epoch: 1989.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     Transformation {
@@ -255,12 +230,9 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
         to: ReferenceFrame::ETRF94,
         params: TimeDependentHelmertParams {
             t: Vector3::new(41.0, 41.0, -49.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
             r_dot: Vector3::new(0.200, 0.500, -0.650),
             epoch: 1989.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     Transformation {
@@ -268,12 +240,9 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
         to: ReferenceFrame::ETRF93,
         params: TimeDependentHelmertParams {
             t: Vector3::new(19.0, 53.0, -21.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
             r_dot: Vector3::new(0.320, 0.780, -0.670),
             epoch: 1989.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     Transformation {
@@ -281,12 +250,9 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
         to: ReferenceFrame::ETRF92,
         params: TimeDependentHelmertParams {
             t: Vector3::new(38.0, 40.0, -37.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
             r_dot: Vector3::new(0.210, 0.520, -0.680),
             epoch: 1989.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     Transformation {
@@ -294,12 +260,9 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
         to: ReferenceFrame::ETRF91,
         params: TimeDependentHelmertParams {
             t: Vector3::new(21.0, 25.0, -37.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
             r_dot: Vector3::new(0.210, 0.520, -0.680),
             epoch: 1989.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     Transformation {
@@ -307,25 +270,18 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
         to: ReferenceFrame::ETRF90,
         params: TimeDependentHelmertParams {
             t: Vector3::new(19.0, 28.0, -23.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
             r_dot: Vector3::new(0.110, 0.570, -0.710),
             epoch: 1989.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     Transformation {
         from: ReferenceFrame::ITRF89,
         to: ReferenceFrame::ETRF89,
         params: TimeDependentHelmertParams {
-            t: Vector3::new(0.0, 0.0, 0.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
             r_dot: Vector3::new(0.110, 0.570, -0.710),
             epoch: 1989.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     Transformation {
@@ -339,19 +295,6 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
             r: Vector3::new(-26.78138, 0.42027, -10.93206),
             r_dot: Vector3::new(-0.06667, 0.75744, 0.05133),
             epoch: 2010.0,
-        },
-    },
-    Transformation {
-        from: ReferenceFrame::ITRF2014,
-        to: ReferenceFrame::ETRF2014,
-        params: TimeDependentHelmertParams {
-            t: Vector3::new(0.0, 0.0, 0.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
-            r_dot: Vector3::new(0.085, 0.531, -0.770),
-            epoch: 1989.0,
         },
     },
     Transformation {
@@ -411,13 +354,8 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
         from: ReferenceFrame::ITRF2020,
         to: ReferenceFrame::WGS84_G2296,
         params: TimeDependentHelmertParams {
-            t: Vector3::new(0.0, 0.0, 0.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
-            r_dot: Vector3::new(0.0, 0.0, 0.0),
             epoch: 2024.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     // WGS84(G2139) is defined to be the same as ITRF2014 at epoch 2016.0
@@ -425,13 +363,8 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
         from: ReferenceFrame::ITRF2014,
         to: ReferenceFrame::WGS84_G2139,
         params: TimeDependentHelmertParams {
-            t: Vector3::new(0.0, 0.0, 0.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
-            r_dot: Vector3::new(0.0, 0.0, 0.0),
             epoch: 2016.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
     // WGS84(G1762) is defined to be the same as ITRF2008 at epoch 2005.0
@@ -439,13 +372,8 @@ pub const TRANSFORMATIONS: [Transformation; 34] = [
         from: ReferenceFrame::ITRF2008,
         to: ReferenceFrame::WGS84_G1762,
         params: TimeDependentHelmertParams {
-            t: Vector3::new(0.0, 0.0, 0.0),
-            t_dot: Vector3::new(0.0, 0.0, 0.0),
-            s: 0.0,
-            s_dot: 0.0,
-            r: Vector3::new(0.0, 0.0, 0.0),
-            r_dot: Vector3::new(0.0, 0.0, 0.0),
             epoch: 2005.0,
+            ..TimeDependentHelmertParams::zeros()
         },
     },
 ];

@@ -84,10 +84,7 @@ pub use ellipsoid::*;
 pub use llh::*;
 pub use ned::*;
 
-use crate::{
-    reference_frame::{get_transformation, ReferenceFrame, TransformationNotFound},
-    time::GpsTime,
-};
+use crate::{reference_frame::ReferenceFrame, time::GpsTime};
 use nalgebra::Vector2;
 
 /// WGS84 local horizontal coordinates consisting of an Azimuth and Elevation, with angles stored as radians
@@ -193,7 +190,7 @@ impl AsMut<Vector2<f64>> for AzimuthElevation {
 /// Complete coordinate used for transforming between reference frames
 ///
 /// Velocities are optional, but when present they will be transformed
-#[derive(Debug, PartialEq, PartialOrd, Clone, Copy)]
+#[derive(Debug, PartialEq, PartialOrd, Clone)]
 pub struct Coordinate {
     reference_frame: ReferenceFrame,
     position: ECEF,
@@ -218,7 +215,7 @@ impl Coordinate {
         }
     }
 
-    /// Create a new [`Coordinate`] object with a velocity value
+    /// Create a new [`Coordinate`] object with no velocity value
     #[must_use]
     pub fn without_velocity(
         reference_frame: ReferenceFrame,
@@ -233,7 +230,7 @@ impl Coordinate {
         }
     }
 
-    /// Create a new [`Coordinate`] object with no velocity
+    /// Create a new [`Coordinate`] object with a velocity
     #[must_use]
     pub fn with_velocity(
         reference_frame: ReferenceFrame,
@@ -251,8 +248,8 @@ impl Coordinate {
 
     /// Get the reference frame of the coordinate
     #[must_use]
-    pub fn reference_frame(&self) -> ReferenceFrame {
-        self.reference_frame
+    pub fn reference_frame(&self) -> &ReferenceFrame {
+        &self.reference_frame
     }
 
     /// Get the position of the coordinate
@@ -276,7 +273,7 @@ impl Coordinate {
     /// Use the velocity term to adjust the epoch of the coordinate.
     /// When a coordinate has no velocity the position won't be changed.
     #[must_use]
-    pub fn adjust_epoch(&self, new_epoch: &GpsTime) -> Self {
+    pub fn adjust_epoch(self, new_epoch: &GpsTime) -> Self {
         let dt =
             new_epoch.to_fractional_year_hardcoded() - self.epoch.to_fractional_year_hardcoded();
         let v = self.velocity.unwrap_or_default();
@@ -287,17 +284,6 @@ impl Coordinate {
             epoch: *new_epoch,
             reference_frame: self.reference_frame,
         }
-    }
-
-    /// Transform the coordinate from into a new reference frame
-    ///
-    /// # Errors
-    ///
-    /// An error is returned if a transformation from the coordinate's reference frame to the requested
-    /// reference frame could not be found.
-    pub fn transform_to(&self, new_frame: ReferenceFrame) -> Result<Self, TransformationNotFound> {
-        get_transformation(self.reference_frame, new_frame)
-            .map(|transformation| transformation.transform(self))
     }
 }
 
@@ -519,7 +505,7 @@ mod tests {
             initial_epoch,
         );
 
-        let new_coord = initial_coord.adjust_epoch(&new_epoch);
+        let new_coord = initial_coord.clone().adjust_epoch(&new_epoch);
 
         assert_eq!(initial_coord.reference_frame, new_coord.reference_frame);
         assert_float_eq!(new_coord.position.x(), 1.0, abs <= 0.001);
