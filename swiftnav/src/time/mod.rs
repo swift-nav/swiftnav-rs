@@ -98,13 +98,13 @@ mod tests {
     #[test]
     fn conversions() {
         const TEST_CASES: [GpsTime; 10] = [
-            GpsTime::new_unchecked(1234, 567890.0),
-            GpsTime::new_unchecked(1234, 567890.5),
-            GpsTime::new_unchecked(1234, 567890.0),
+            GpsTime::new_unchecked(1234, 567_890.0),
+            GpsTime::new_unchecked(1234, 567_890.5),
+            GpsTime::new_unchecked(1234, 567_890.0),
             GpsTime::new_unchecked(1234, 0.0),
-            GpsTime::new_unchecked(1000, 604578.0),
+            GpsTime::new_unchecked(1000, 604_578.0),
             GpsTime::new_unchecked(1001, 222.222),
-            GpsTime::new_unchecked(1001, 604578.0),
+            GpsTime::new_unchecked(1001, 604_578.0),
             GpsTime::new_unchecked(1939, 222.222),
             GpsTime::new_unchecked(1930, 16.0),
             GpsTime::new_unchecked(1930, 18.0), /* around Jan 2017 leap second */

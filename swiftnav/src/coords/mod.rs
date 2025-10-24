@@ -303,6 +303,7 @@ mod tests {
     const MAX_ANGLE_ERROR_SECS: f64 = 1e-7;
     const MAX_ANGLE_ERROR_RAD: f64 = (MAX_ANGLE_ERROR_SECS / 3600.0).to_radians();
 
+    #[expect(clippy::float_cmp)]
     #[test]
     fn llhrad2deg() {
         let zeros = LLHRadians::default();
@@ -312,11 +313,11 @@ mod tests {
         assert_eq!(0.0, deg.longitude());
         assert_eq!(0.0, deg.height());
 
-        let swift_home: LLHDegrees = [37.779804, -122.391751, 60.0].into();
+        let swift_home: LLHDegrees = [37.779_804, -122.391_751, 60.0].into();
         let rads = swift_home.to_radians();
 
-        assert!((rads.latitude() - 0.659381970558).abs() < MAX_ANGLE_ERROR_RAD);
-        assert!((rads.longitude() + 2.136139032231).abs() < MAX_ANGLE_ERROR_RAD);
+        assert!((rads.latitude() - 0.659_381_970_558).abs() < MAX_ANGLE_ERROR_RAD);
+        assert!((rads.longitude() + 2.136_139_032_231).abs() < MAX_ANGLE_ERROR_RAD);
         assert!(
             rads.height() == swift_home.height(),
             "rads.height() = {}, swift_home.height() = {}",
@@ -339,7 +340,7 @@ mod tests {
     ];
 
     /* Semi-major axis. */
-    const EARTH_A: f64 = 6378137.0;
+    const EARTH_A: f64 = 6_378_137.0;
     /* Semi-minor axis. */
     const EARTH_B: f64 = 6_356_752.314_245_179;
 
@@ -404,7 +405,7 @@ mod tests {
 
     #[test]
     fn llh2ecef2llh() {
-        for llh_input in LLH_VALUES.iter() {
+        for llh_input in &LLH_VALUES {
             let llh_input: LLHRadians = llh_input.into();
             let llh_output = llh_input.to_ecef().to_llh();
 
@@ -425,7 +426,7 @@ mod tests {
 
     #[test]
     fn ecef2llh2ecef() {
-        for ecef_input in ECEF_VALUES.iter() {
+        for ecef_input in &ECEF_VALUES {
             let ecef_input: ECEF = ecef_input.into();
             let ecef_output = ecef_input.to_llh().to_ecef();
 

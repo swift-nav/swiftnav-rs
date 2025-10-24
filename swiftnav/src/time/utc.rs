@@ -485,32 +485,32 @@ mod tests {
         let test_cases: &[UtcOffsetTestdata] = &[
             /* July 1 1981 */
             UtcOffsetTestdata {
-                t: GpsTime::new_unchecked(77, 259199.0),
+                t: GpsTime::new_unchecked(77, 259_199.0),
                 d_utc: 0.0,
                 is_lse: false,
             },
             UtcOffsetTestdata {
-                t: GpsTime::new_unchecked(77, 259199.5),
+                t: GpsTime::new_unchecked(77, 259_199.5),
                 d_utc: 0.0,
                 is_lse: false,
             },
             UtcOffsetTestdata {
-                t: GpsTime::new_unchecked(77, 259200.0),
+                t: GpsTime::new_unchecked(77, 259_200.0),
                 d_utc: 0.0,
                 is_lse: true,
             },
             UtcOffsetTestdata {
-                t: GpsTime::new_unchecked(77, 259200.5),
+                t: GpsTime::new_unchecked(77, 259_200.5),
                 d_utc: 0.0,
                 is_lse: true,
             },
             UtcOffsetTestdata {
-                t: GpsTime::new_unchecked(77, 259201.0),
+                t: GpsTime::new_unchecked(77, 259_201.0),
                 d_utc: 1.0,
                 is_lse: false,
             },
             UtcOffsetTestdata {
-                t: GpsTime::new_unchecked(77, 259202.0),
+                t: GpsTime::new_unchecked(77, 259_202.0),
                 d_utc: 1.0,
                 is_lse: false,
             },
@@ -555,7 +555,10 @@ mod tests {
             let d_utc = test_case.t.gps_utc_offset_hardcoded();
             let is_lse = test_case.t.is_leap_second_event_hardcoded();
 
-            assert!(d_utc == test_case.d_utc && is_lse == test_case.is_lse, "test_case.t: {:?}, test_case.d_utc: {}, test_case.is_lse: {}, d_utc: {}, is_lse: {}", test_case.t, test_case.d_utc, test_case.is_lse, d_utc, is_lse);
+            #[expect(clippy::float_cmp)]
+            {
+                assert!(d_utc == test_case.d_utc && is_lse == test_case.is_lse, "test_case.t: {:?}, test_case.d_utc: {}, test_case.is_lse: {}, d_utc: {}, is_lse: {}", test_case.t, test_case.d_utc, test_case.is_lse, d_utc, is_lse);
+            }
         }
     }
 
@@ -567,7 +570,7 @@ mod tests {
             0.0,
             0.0,
             &GpsTime::new_unchecked(2080, 0.0),
-            &GpsTime::new_unchecked(2086, 259218.0 - 0.125),
+            &GpsTime::new_unchecked(2086, 259_218.0 - 0.125),
             18,
             19,
         )
@@ -579,7 +582,7 @@ mod tests {
             0.0,
             0.0,
             &GpsTime::new_unchecked(2080, 0.0),
-            &GpsTime::new_unchecked(2086, 259218.125),
+            &GpsTime::new_unchecked(2086, 259_218.125),
             18,
             19,
         )
@@ -593,7 +596,7 @@ mod tests {
             &GpsTime::new_unchecked(2080, 0.0),
             &GpsTime::new_unchecked(
                 2086,
-                259218.0 + 1e-12 * (6.0 * consts::WEEK_SECS as f64 + 259218.0),
+                259_218.0 + 1e-12 * (6.0 * f64::from(consts::WEEK_SECS) + 259_218.00),
             ),
             18,
             19,
@@ -608,13 +611,14 @@ mod tests {
             &GpsTime::new_unchecked(2080, 0.0),
             &GpsTime::new_unchecked(
                 2086,
-                259218.0 - 1e-12 * (6.0 * consts::WEEK_SECS as f64 + 259218.0),
+                259_218.0 - 1e-12 * (6.0 * f64::from(consts::WEEK_SECS) + 259_218.0),
             ),
             18,
             19,
         )
     }
 
+    #[expect(clippy::too_many_lines)]
     #[test]
     fn utc_params() {
         struct TestCase {
@@ -627,148 +631,148 @@ mod tests {
         let test_cases = [
             /* Jan 1 2020 (constant negative UTC offset) */
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.0 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259_217.0 - 0.125),
                 d_utc: 18.0 - 0.125,
                 is_lse: false,
                 params: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.5 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259_217.5 - 0.125),
                 d_utc: 18.0 - 0.125,
                 is_lse: false,
                 params: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.0 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259_218.0 - 0.125),
                 d_utc: 18.0 - 0.125,
                 is_lse: true,
                 params: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.5 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259_218.5 - 0.125),
                 d_utc: 18.0 - 0.125,
                 is_lse: true,
                 params: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.0 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259_219.0 - 0.125),
                 d_utc: 19.0 - 0.125,
                 is_lse: false,
                 params: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.5 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259_219.5 - 0.125),
                 d_utc: 19.0 - 0.125,
                 is_lse: false,
                 params: Some(make_p_neg_offset()),
             },
             /* Jan 1 2020 (constant positive UTC offset) */
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.125),
+                t: GpsTime::new_unchecked(2086, 259_217.125),
                 d_utc: 18.125,
                 is_lse: false,
                 params: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.5 + 0.125),
+                t: GpsTime::new_unchecked(2086, 259_217.5 + 0.125),
                 d_utc: 18.125,
                 is_lse: false,
                 params: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.125),
+                t: GpsTime::new_unchecked(2086, 259_218.125),
                 d_utc: 18.125,
                 is_lse: true,
                 params: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.5 + 0.125),
+                t: GpsTime::new_unchecked(2086, 259_218.5 + 0.125),
                 d_utc: 18.125,
                 is_lse: true,
                 params: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.125),
+                t: GpsTime::new_unchecked(2086, 259_219.125),
                 d_utc: 19.125,
                 is_lse: false,
                 params: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.5 + 0.125),
+                t: GpsTime::new_unchecked(2086, 259_219.5 + 0.125),
                 d_utc: 19.125,
                 is_lse: false,
                 params: Some(make_p_pos_offset()),
             },
             /* Jan 1 2020 (positive UTC linear correction) */
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.0),
+                t: GpsTime::new_unchecked(2086, 259_217.0),
                 d_utc: 18.0,
                 is_lse: false,
                 params: Some(make_p_pos_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.5),
+                t: GpsTime::new_unchecked(2086, 259_217.5),
                 d_utc: 18.0,
                 is_lse: false,
                 params: Some(make_p_pos_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.0001),
+                t: GpsTime::new_unchecked(2086, 259_218.000_1),
                 d_utc: 18.0,
                 is_lse: true,
                 params: Some(make_p_pos_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.5),
+                t: GpsTime::new_unchecked(2086, 259_218.5),
                 d_utc: 18.0,
                 is_lse: true,
                 params: Some(make_p_pos_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.0001),
+                t: GpsTime::new_unchecked(2086, 259_219.000_1),
                 d_utc: 19.0,
                 is_lse: false,
                 params: Some(make_p_pos_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.5),
+                t: GpsTime::new_unchecked(2086, 259_219.5),
                 d_utc: 19.0,
                 is_lse: false,
                 params: Some(make_p_pos_trend()),
             },
             /* Jan 1 2020 (negative UTC linear correction) */
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.0),
+                t: GpsTime::new_unchecked(2086, 259_217.0),
                 d_utc: 18.0,
                 is_lse: false,
                 params: Some(make_p_neg_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.5),
+                t: GpsTime::new_unchecked(2086, 259_217.5),
                 d_utc: 18.0,
                 is_lse: false,
                 params: Some(make_p_neg_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.0),
+                t: GpsTime::new_unchecked(2086, 259_218.0),
                 d_utc: 18.0,
                 is_lse: true,
                 params: Some(make_p_neg_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.5),
+                t: GpsTime::new_unchecked(2086, 259_218.5),
                 d_utc: 18.0,
                 is_lse: true,
                 params: Some(make_p_neg_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.0),
+                t: GpsTime::new_unchecked(2086, 259_219.0),
                 d_utc: 19.0,
                 is_lse: false,
                 params: Some(make_p_neg_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.5),
+                t: GpsTime::new_unchecked(2086, 259_219.5),
                 d_utc: 19.0,
                 is_lse: false,
                 params: Some(make_p_neg_trend()),
@@ -798,6 +802,7 @@ mod tests {
         }
     }
 
+    #[expect(clippy::too_many_lines)]
     #[test]
     fn gps2utc() {
         /* test leap second on 1st Jan 2020 */
@@ -841,27 +846,27 @@ mod tests {
         let test_cases = [
             /* July 1 1981 */
             TestCase {
-                t: GpsTime::new_unchecked(77, 259199.0),
+                t: GpsTime::new_unchecked(77, 259_199.0),
                 u: UtcExpectation::new(1981, 6, 30, 23, 59, 59.0),
                 p: None,
             },
             TestCase {
-                t: GpsTime::new_unchecked(77, 259199.5),
+                t: GpsTime::new_unchecked(77, 259_199.5),
                 u: UtcExpectation::new(1981, 6, 30, 23, 59, 59.5),
                 p: None,
             },
             TestCase {
-                t: GpsTime::new_unchecked(77, 259200.0),
+                t: GpsTime::new_unchecked(77, 259_200.0),
                 u: UtcExpectation::new(1981, 6, 30, 23, 59, 60.0),
                 p: None,
             },
             TestCase {
-                t: GpsTime::new_unchecked(77, 259200.5),
+                t: GpsTime::new_unchecked(77, 259_200.5),
                 u: UtcExpectation::new(1981, 6, 30, 23, 59, 60.5),
                 p: None,
             },
             TestCase {
-                t: GpsTime::new_unchecked(77, 259201.0),
+                t: GpsTime::new_unchecked(77, 259_201.0),
                 u: UtcExpectation::new(1981, 7, 1, 00, 00, 00.0),
                 p: None,
             },
@@ -920,108 +925,108 @@ mod tests {
             /* Jan 1 2020 (leap second announced in utc_params_t above, constant
             negative offset) */
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.0 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259_217.0 - 0.125),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 59.0),
                 p: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.5 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259_217.5 - 0.125),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 59.5),
                 p: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.0 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259_218.0 - 0.125),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 60.0),
                 p: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.5 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259_218.5 - 0.125),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 60.5),
                 p: Some(make_p_neg_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.0 - 0.125),
+                t: GpsTime::new_unchecked(2086, 259_219.0 - 0.125),
                 u: UtcExpectation::new(2020, 1, 1, 00, 00, 00.0),
                 p: Some(make_p_neg_offset()),
             },
             /* Jan 1 2020 (leap second announced in utc_params_t above, constant
             positive offset) */
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.125),
+                t: GpsTime::new_unchecked(2086, 259_217.125),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 59.0),
                 p: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.5 + 0.125),
+                t: GpsTime::new_unchecked(2086, 259_217.5 + 0.125),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 59.5),
                 p: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.125),
+                t: GpsTime::new_unchecked(2086, 259_218.125),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 60.0),
                 p: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.5 + 0.125),
+                t: GpsTime::new_unchecked(2086, 259_218.5 + 0.125),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 60.5),
                 p: Some(make_p_pos_offset()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.125),
+                t: GpsTime::new_unchecked(2086, 259_219.125),
                 u: UtcExpectation::new(2020, 1, 1, 00, 00, 00.0),
                 p: Some(make_p_pos_offset()),
             },
             /* Jan 1 2020 (leap second announced in utc_params_t above, positive UTC
             linear correction) */
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.0),
+                t: GpsTime::new_unchecked(2086, 259_217.0),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 59.0),
                 p: Some(make_p_pos_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.5),
+                t: GpsTime::new_unchecked(2086, 259_217.5),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 59.5),
                 p: Some(make_p_pos_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.0),
+                t: GpsTime::new_unchecked(2086, 259_218.0),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 60.0),
                 p: Some(make_p_pos_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.5),
+                t: GpsTime::new_unchecked(2086, 259_218.5),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 60.5),
                 p: Some(make_p_pos_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.00001),
+                t: GpsTime::new_unchecked(2086, 259_219.000_01),
                 u: UtcExpectation::new(2020, 1, 1, 00, 00, 00.0),
                 p: Some(make_p_pos_trend()),
             },
             /* Jan 1 2020 (leap second announced in utc_params_t above, negative UTC
             linear correction) */
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.0),
+                t: GpsTime::new_unchecked(2086, 259_217.0),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 59.0),
                 p: Some(make_p_neg_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259217.5),
+                t: GpsTime::new_unchecked(2086, 259_217.5),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 59.5),
                 p: Some(make_p_neg_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.0),
+                t: GpsTime::new_unchecked(2086, 259_218.0),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 60.0),
                 p: Some(make_p_neg_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259218.5),
+                t: GpsTime::new_unchecked(2086, 259_218.5),
                 u: UtcExpectation::new(2019, 12, 31, 23, 59, 60.5),
                 p: Some(make_p_neg_trend()),
             },
             TestCase {
-                t: GpsTime::new_unchecked(2086, 259219.0),
+                t: GpsTime::new_unchecked(2086, 259_219.0),
                 u: UtcExpectation::new(2020, 1, 1, 00, 00, 00.0),
                 p: Some(make_p_neg_trend()),
             },
@@ -1099,13 +1104,13 @@ mod tests {
             Utc,
         );
 
-        let converted: DateTime<Utc> = swift_date.clone().into();
+        let converted: DateTime<Utc> = swift_date.into();
         assert!((converted - expected_utc).to_std().unwrap() < epsilon);
-        assert_eq!(converted.year(), swift_date.year() as i32);
-        assert_eq!(converted.month(), swift_date.month() as u32);
-        assert_eq!(converted.day(), swift_date.day_of_month() as u32);
-        assert_eq!(converted.hour(), swift_date.hour() as u32);
-        assert_eq!(converted.minute(), swift_date.minute() as u32);
+        assert_eq!(converted.year(), i32::from(swift_date.year()));
+        assert_eq!(converted.month(), u32::from(swift_date.month()));
+        assert_eq!(converted.day(), u32::from(swift_date.day_of_month()));
+        assert_eq!(converted.hour(), u32::from(swift_date.hour()));
+        assert_eq!(converted.minute(), u32::from(swift_date.minute()));
         assert_eq!(converted.second(), swift_date.seconds() as u32);
     }
 }

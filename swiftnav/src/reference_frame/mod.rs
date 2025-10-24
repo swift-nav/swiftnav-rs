@@ -579,6 +579,7 @@ mod tests {
     use params::TRANSFORMATIONS;
     use std::str::FromStr;
 
+    #[expect(clippy::too_many_lines)]
     #[test]
     fn reference_frame_strings() {
         assert_eq!(ReferenceFrame::ITRF88.to_string(), "ITRF88");
@@ -996,7 +997,7 @@ mod tests {
             },
         };
 
-        let params = transformation.params.clone();
+        let params = transformation.params;
         repo.add_transformation(transformation);
         assert_eq!(repo.count(), 2);
 

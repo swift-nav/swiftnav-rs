@@ -359,6 +359,7 @@ impl MulAssign<&f64> for ECEF {
 mod tests {
     use super::*;
 
+    #[expect(clippy::float_cmp)]
     #[test]
     fn ecef_ops() {
         let a = ECEF::new(1.0, 2.0, 3.0);

@@ -742,7 +742,7 @@ mod tests {
     fn add_duration() {
         let mut t = GpsTime::new(0, 0.0).unwrap();
         let t_expected = GpsTime::new(0, 1.001).unwrap();
-        let d = Duration::new(1, 1000000);
+        let d = Duration::new(1, 1_000_000);
 
         t.add_duration(&d);
         assert_eq!(t, t_expected);
@@ -760,7 +760,7 @@ mod tests {
     fn subtract_duration() {
         let mut t = GpsTime::new(0, 1.001).unwrap();
         let t_expected = GpsTime::new(0, 0.0).unwrap();
-        let d = Duration::new(1, 1000000);
+        let d = Duration::new(1, 1_000_000);
 
         t.subtract_duration(&d);
         assert_eq!(t, t_expected);
@@ -783,14 +783,14 @@ mod tests {
         let epsilon = 1e-5;
 
         let test_cases = [
-            GpsTime::new_unchecked(1234, 567890.01),
-            GpsTime::new_unchecked(1234, 567890.0501),
-            GpsTime::new_unchecked(1234, 604800.06),
+            GpsTime::new_unchecked(1234, 567_890.01),
+            GpsTime::new_unchecked(1234, 567_890.050_1),
+            GpsTime::new_unchecked(1234, 604_800.06),
         ];
 
         let expectations = [
-            GpsTime::new_unchecked(1234, 567890.00),
-            GpsTime::new_unchecked(1234, 567890.10),
+            GpsTime::new_unchecked(1234, 567_890.00),
+            GpsTime::new_unchecked(1234, 567_890.10),
             GpsTime::new_unchecked(1235, 0.1),
         ];
 
@@ -812,14 +812,14 @@ mod tests {
         let epsilon = 1e-6;
 
         let test_cases = [
-            GpsTime::new_unchecked(1234, 567890.01),
-            GpsTime::new_unchecked(1234, 567890.0501),
-            GpsTime::new_unchecked(1234, 604800.06),
+            GpsTime::new_unchecked(1234, 567_890.01),
+            GpsTime::new_unchecked(1234, 567_890.050_1),
+            GpsTime::new_unchecked(1234, 604_800.06),
         ];
 
         let expectations = [
-            GpsTime::new_unchecked(1234, 567890.00),
-            GpsTime::new_unchecked(1234, 567890.00),
+            GpsTime::new_unchecked(1234, 567_890.00),
+            GpsTime::new_unchecked(1234, 567_890.00),
             GpsTime::new_unchecked(1235, 0.0),
         ];
 
@@ -840,7 +840,7 @@ mod tests {
 
         assert!(GalTime::new(-1, 0.0).is_err());
         assert!(GalTime::new(0, -1.0).is_err());
-        assert!(GalTime::new(0, consts::WEEK_SECS as f64 + 1.0).is_err());
+        assert!(GalTime::new(0, f64::from(consts::WEEK_SECS) + 1.0).is_err());
     }
 
     #[test]
@@ -854,6 +854,6 @@ mod tests {
 
         assert!(BdsTime::new(-1, 0.0).is_err());
         assert!(BdsTime::new(0, -1.0).is_err());
-        assert!(BdsTime::new(0, consts::WEEK_SECS as f64 + 1.0).is_err());
+        assert!(BdsTime::new(0, f64::from(consts::WEEK_SECS) + 1.0).is_err());
     }
 }

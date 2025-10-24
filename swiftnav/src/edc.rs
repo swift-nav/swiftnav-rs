@@ -332,6 +332,7 @@ mod tests {
     const TEST_DATA: &[u8] = "123456789".as_bytes();
 
     /// Helper function to append a CRC-24Q value as 3 bytes (big-endian) to a buffer
+    #[expect(clippy::cast_possible_truncation)]
     fn append_crc24q(data: &mut Vec<u8>, crc: u32) {
         data.push((crc >> 16) as u8);
         data.push((crc >> 8) as u8);
@@ -365,9 +366,9 @@ mod tests {
 
         /* Test value taken from python crcmod package tests, see:
          * http://crcmod.sourceforge.net/crcmod.predefined.html */
-        let crc = compute_crc24q(TEST_DATA, 0xB704CE);
+        let crc = compute_crc24q(TEST_DATA, 0x00B7_04CE);
         assert!(
-            crc == 0x21CF02,
+            crc == 0x0021_CF02,
             "CRC of \"123456789\" with init value 0xB704CE should be 0x21CF02, not {}",
             crc
         );
@@ -403,7 +404,7 @@ mod tests {
         #[test]
         fn prop_crc_stays_within_24_bits(data in prop::collection::vec(any::<u8>(), 0..1000), init in any::<u32>()) {
             let crc = compute_crc24q(&data, init);
-            prop_assert!(crc <= 0xFFFFFF, "CRC result 0x{:08X} exceeds 24-bit maximum", crc);
+            prop_assert!(crc <= 0x00FF_FFFF, "CRC result 0x{:08X} exceeds 24-bit maximum", crc);
         }
 
         /// Property: Incremental CRC calculation equals full calculation.
@@ -432,10 +433,10 @@ mod tests {
         #[test]
         fn prop_crc_initial_value_masked(data in prop::collection::vec(any::<u8>(), 0..100), init in any::<u32>()) {
             let crc1 = compute_crc24q(&data, init);
-            let crc2 = compute_crc24q(&data, init & 0xFFFFFF);
+            let crc2 = compute_crc24q(&data, init & 0x00FF_FFFF);
             prop_assert_eq!(crc1, crc2,
                 "CRC with init 0x{:08X} should equal CRC with masked init 0x{:06X}",
-                init, init & 0xFFFFFF);
+                init, init & 0x00FF_FFFF);
         }
 
         /// Property: Single bit errors are detected (CRC changes).

@@ -133,6 +133,7 @@ impl fmt::Display for GnssSignal {
 mod tests {
     use super::*;
 
+    #[expect(clippy::too_many_lines)]
     #[test]
     fn signal_to_constellation() {
         assert_eq!(

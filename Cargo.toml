@@ -1,5 +1,5 @@
 [workspace]
 members = [
     "swiftnav",
-    "swiftnav-sys"
+    # "swiftnav-sys"
 ]
