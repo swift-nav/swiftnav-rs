@@ -455,6 +455,7 @@ mod tests {
         assert!(Code::AuxBds.is_bds());
     }
 
+    #[expect(clippy::too_many_lines)]
     #[test]
     fn code_strings() {
         use std::str::FromStr;

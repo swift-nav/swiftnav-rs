@@ -889,7 +889,7 @@ fn dref91_r2016() {
         ReferenceFrame::ITRF2020,
         ECEF::new(3842152.805, 563402.164, 5042888.600),
         None,
-        UtcTime::from_parts(2023, 02, 22, 0, 0, 0.).to_gps_hardcoded(),
+        UtcTime::from_parts(2023, 2, 22, 0, 0, 0.).to_gps_hardcoded(),
     );
     let transformations = TransformationRepository::from_builtin();
 
