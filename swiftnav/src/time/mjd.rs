@@ -15,8 +15,9 @@
     reason = "We need to review the math for overflows"
 )]
 
-use crate::time::{consts, GpsTime, UtcParams, UtcTime};
 use std::time::Duration;
+
+use crate::time::{GpsTime, UtcParams, UtcTime, consts};
 
 /// Representation of modified julian dates (MJD)
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
@@ -51,7 +52,19 @@ impl MJD {
     #[must_use]
     pub fn from_parts(year: u16, month: u8, day: u8, hour: u8, minute: u8, seconds: f64) -> MJD {
         // Enforce our assumption that the date is just the MJD period
-        assert!(year > 1858 || (year == 1858 && month > 11) || (year == 1858 && month == 11 && day >= 17), "Attempting to convert a date prior to the start of the Modified Julian Date system ({}-{}-{}T{}:{}:{}Z", year, month, day, hour, minute, seconds);
+        assert!(
+            year > 1858
+                || (year == 1858 && month > 11)
+                || (year == 1858 && month == 11 && day >= 17),
+            "Attempting to convert a date prior to the start of the Modified Julian Date system \
+             ({}-{}-{}T{}:{}:{}Z",
+            year,
+            month,
+            day,
+            hour,
+            minute,
+            seconds
+        );
 
         let full_days = 367 * i64::from(year)
             - 7 * (i64::from(year) + (i64::from(month) + 9) / 12) / 4

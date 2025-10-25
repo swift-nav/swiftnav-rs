@@ -326,8 +326,9 @@ pub fn compute_crc24q(buf: &[u8], initial_value: u32) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use proptest::prelude::*;
+
+    use super::*;
 
     const TEST_DATA: &[u8] = "123456789".as_bytes();
 

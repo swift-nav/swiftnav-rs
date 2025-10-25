@@ -10,11 +10,7 @@
 
 /// We define a `const` max function since [`std::cmp::max`] isn't `const`
 pub(crate) const fn compile_time_max_u16(a: u16, b: u16) -> u16 {
-    if b < a {
-        a
-    } else {
-        b
-    }
+    if b < a { a } else { b }
 }
 
 /// Computes the square root of a given number at compile time using the Newton-Raphson method.
@@ -35,7 +31,8 @@ pub(crate) const fn compile_time_max_u16(a: u16, b: u16) -> u16 {
 /// # Notes
 ///
 /// - This function is marked as `const`, allowing it to be evaluated at compile time.
-/// - The algorithm iteratively refines the approximation of the square root until the result stabilizes.
+/// - The algorithm iteratively refines the approximation of the square root until the result
+///   stabilizes.
 #[expect(clippy::many_single_char_names, reason = "It's math, whatyagonnado?")]
 pub(crate) const fn compile_time_sqrt(s: f64) -> f64 {
     assert!(
@@ -57,7 +54,8 @@ pub(crate) const fn compile_time_sqrt(s: f64) -> f64 {
     x
 }
 
-/// Calculate the rotation matrix for rotating between an [`crate::coords::ECEF`] and [`crate::coords::NED`] frames
+/// Calculate the rotation matrix for rotating between an [`crate::coords::ECEF`] and
+/// [`crate::coords::NED`] frames
 #[must_use]
 pub(crate) fn ecef2ned_matrix(llh: crate::coords::LLHRadians) -> nalgebra::Matrix3<f64> {
     let sin_lat = llh.latitude().sin();
@@ -80,9 +78,10 @@ pub(crate) fn ecef2ned_matrix(llh: crate::coords::LLHRadians) -> nalgebra::Matri
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use float_eq::assert_float_eq;
     use proptest::prelude::*;
+
+    use super::*;
 
     proptest! {
         #![proptest_config(ProptestConfig::with_cases(1000))]

@@ -9,9 +9,9 @@
 // WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
 //! Geodetic reference frame transformations
 //!
-//! Transform coordinates between geodetic reference frames using time-dependent Helmert transformations.
-//! Supports both global frames (ITRF series) and regional frames (ETRF, NAD83, etc.) with runtime
-//! parameter loading.
+//! Transform coordinates between geodetic reference frames using time-dependent Helmert
+//! transformations. Supports both global frames (ITRF series) and regional frames (ETRF, NAD83,
+//! etc.) with runtime parameter loading.
 //!
 //! # Key Concepts
 //!
@@ -68,13 +68,15 @@
 //! repo.add_transformation(custom_transform);
 //! ```
 
-use crate::coords::{Coordinate, ECEF};
-use nalgebra::{Matrix3, Vector3};
 use std::{
     collections::{HashMap, HashSet, VecDeque},
     fmt,
 };
+
+use nalgebra::{Matrix3, Vector3};
 use strum::{Display, EnumIter, EnumString};
+
+use crate::coords::{Coordinate, ECEF};
 
 mod params;
 
@@ -195,10 +197,10 @@ impl PartialEq<ReferenceFrame> for &ReferenceFrame {
 /// # Parameter Units
 ///
 /// Input parameters are stored in standard geodetic units:
-/// - **Translation** (`tx`, `ty`, `tz`): millimeters (mm)  
+/// - **Translation** (`tx`, `ty`, `tz`): millimeters (mm)
 /// - **Translation rates** (`tx_dot`, `ty_dot`, `tz_dot`): mm/year
 /// - **Scale** (`s`): parts per billion (ppb)
-/// - **Scale rate** (`s_dot`): ppb/year  
+/// - **Scale rate** (`s_dot`): ppb/year
 /// - **Rotation** (`rx`, `ry`, `rz`): milliarcseconds (mas)
 /// - **Rotation rates** (`rx_dot`, `ry_dot`, `rz_dot`): mas/year
 /// - **Reference epoch** (`epoch`): decimal years
@@ -258,7 +260,8 @@ impl TimeDependentHelmertParams {
         }
     }
 
-    /// Reverses the transformation. Since this is a linear transformation we simply negate all terms
+    /// Reverses the transformation. Since this is a linear transformation we simply negate all
+    /// terms
     #[must_use]
     pub fn invert(mut self) -> Self {
         self.t *= -1.0;
@@ -574,10 +577,12 @@ fn builtin_transformations() -> Vec<Transformation> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::str::FromStr;
+
     use float_eq::assert_float_eq;
     use params::TRANSFORMATIONS;
-    use std::str::FromStr;
+
+    use super::*;
 
     #[expect(clippy::too_many_lines)]
     #[test]

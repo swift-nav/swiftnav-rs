@@ -44,11 +44,10 @@
 //! the more common algortihms based on the Newton-Raphson method.
 //!
 //! ## References
-//! * "A comparison of methods used in rectangular to Geodetic Coordinates
-//!   Transformations", Burtch R. R. (2006), American Congress for Surveying
-//!   and Mapping Annual Conference. Orlando, Florida.
-//! * "Transformation from Cartesian to Geodetic Coordinates Accelerated by
-//!   Halley’s Method", T. Fukushima (2006), Journal of Geodesy.
+//! * "A comparison of methods used in rectangular to Geodetic Coordinates Transformations", Burtch
+//!   R. R. (2006), American Congress for Surveying and Mapping Annual Conference. Orlando, Florida.
+//! * "Transformation from Cartesian to Geodetic Coordinates Accelerated by Halley’s Method", T.
+//!   Fukushima (2006), Journal of Geodesy.
 //!
 //! # Examples
 //!
@@ -84,16 +83,19 @@ pub use ecef::*;
 pub use ellipsoid::*;
 pub use hemisphere::*;
 pub use llh::*;
+use nalgebra::Vector2;
 pub use ned::*;
 
 use crate::{reference_frame::ReferenceFrame, time::GpsTime};
-use nalgebra::Vector2;
 
-/// WGS84 local horizontal coordinates consisting of an Azimuth and Elevation, with angles stored as radians
+/// WGS84 local horizontal coordinates consisting of an Azimuth and Elevation, with angles stored as
+/// radians
 ///
-/// Azimuth can range from $0$ to $2\pi$. North has an azimuth of $0$, east has an azimuth of $\frac{\pi}{2}$
+/// Azimuth can range from $0$ to $2\pi$. North has an azimuth of $0$, east has an azimuth of
+/// $\frac{\pi}{2}$
 ///
-/// Elevation can range from $-\frac{\pi}{2}$ to $\frac{\pi}{2}$. Up has an elevation of $\frac{\pi}{2}$, down an elevation of $-\frac{\pi}{2}$
+/// Elevation can range from $-\frac{\pi}{2}$ to $\frac{\pi}{2}$. Up has an elevation of
+/// $\frac{\pi}{2}$, down an elevation of $-\frac{\pi}{2}$
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default)]
 pub struct AzimuthElevation(Vector2<f64>);
 
@@ -292,11 +294,10 @@ impl Coordinate {
 #[cfg(test)]
 mod tests {
     use float_eq::assert_float_eq;
-
-    use crate::time::UtcTime;
+    use proptest::prelude::*;
 
     use super::*;
-    use proptest::prelude::*;
+    use crate::time::UtcTime;
 
     /* Maximum allowable error in quantities with units of length (in meters). */
     const MAX_DIST_ERROR_M: f64 = 1e-6;

@@ -99,7 +99,8 @@ impl GGA {
 
         let hdop = self.hdop;
 
-        // NOTE(ted): This is actually not the right value to use, however, we don't really use height for finding information like nearest station so it's ok to use for now
+        // NOTE(ted): This is actually not the right value to use, however, we don't really use
+        // height for finding information like nearest station so it's ok to use for now
         let height = "0.0";
 
         // if DGPS is not used, this should be a null field
@@ -120,7 +121,9 @@ impl GGA {
             .map_or(String::new(), |id| id.to_string());
 
         let sentence = format!(
-            "$GPGGA,{timestamp},{latitude:.6},{latitudinal_hemisphere},{longitude:.6},{longitudinal_hemisphere},{gps_quality},{sat_in_use},{hdop:.1},{height:.6},M,{geoidal_separation},{age_dgps:.1},{dgps_station_id}",
+            "$GPGGA,{timestamp},{latitude:.6},{latitudinal_hemisphere},{longitude:.6},\
+             {longitudinal_hemisphere},{gps_quality},{sat_in_use},{hdop:.1},{height:.6},M,\
+             {geoidal_separation},{age_dgps:.1},{dgps_station_id}",
         );
 
         // NOTE(ted): We should skip the first character in the sentence (the '$')
