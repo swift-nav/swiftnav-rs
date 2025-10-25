@@ -76,11 +76,13 @@
 
 mod ecef;
 mod ellipsoid;
+mod hemisphere;
 mod llh;
 mod ned;
 
 pub use ecef::*;
 pub use ellipsoid::*;
+pub use hemisphere::*;
 pub use llh::*;
 pub use ned::*;
 

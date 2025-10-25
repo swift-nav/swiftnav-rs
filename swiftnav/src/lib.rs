@@ -58,6 +58,7 @@
 pub mod coords;
 pub mod edc;
 mod math;
+pub mod nmea;
 pub mod reference_frame;
 pub mod signal;
 pub mod time;

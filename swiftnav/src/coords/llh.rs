@@ -1,3 +1,5 @@
+use crate::coords::{LatitudinalHemisphere, LongitudinalHemisphere};
+
 use super::{Ellipsoid, ECEF, WGS84};
 use nalgebra::Vector3;
 
@@ -44,10 +46,30 @@ impl LLHDegrees {
         self.0.x
     }
 
+    /// Get the latitudinal hemisphere
+    #[must_use]
+    pub fn latitudinal_hemisphere(&self) -> LatitudinalHemisphere {
+        if self.latitude() >= 0.0 {
+            LatitudinalHemisphere::North
+        } else {
+            LatitudinalHemisphere::South
+        }
+    }
+
     /// Get the longitude component
     #[must_use]
     pub fn longitude(&self) -> f64 {
         self.0.y
+    }
+
+    /// Get the longitudinal hemisphere
+    #[must_use]
+    pub fn longitudinal_hemisphere(&self) -> LongitudinalHemisphere {
+        if self.longitude() >= 0.0 {
+            LongitudinalHemisphere::East
+        } else {
+            LongitudinalHemisphere::West
+        }
     }
 
     /// Get the height component
