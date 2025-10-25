@@ -10,8 +10,9 @@
 
 #![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 
-use crate::time::{consts, is_leap_year, GpsTime, MJD};
 use std::time::Duration;
+
+use crate::time::{GpsTime, MJD, consts, is_leap_year};
 
 /// GPS UTC correction parameters
 #[derive(Clone)]
@@ -557,7 +558,16 @@ mod tests {
 
             #[expect(clippy::float_cmp)]
             {
-                assert!(d_utc == test_case.d_utc && is_lse == test_case.is_lse, "test_case.t: {:?}, test_case.d_utc: {}, test_case.is_lse: {}, d_utc: {}, is_lse: {}", test_case.t, test_case.d_utc, test_case.is_lse, d_utc, is_lse);
+                assert!(
+                    d_utc == test_case.d_utc && is_lse == test_case.is_lse,
+                    "test_case.t: {:?}, test_case.d_utc: {}, test_case.is_lse: {}, d_utc: {}, \
+                     is_lse: {}",
+                    test_case.t,
+                    test_case.d_utc,
+                    test_case.is_lse,
+                    d_utc,
+                    is_lse
+                );
             }
         }
     }

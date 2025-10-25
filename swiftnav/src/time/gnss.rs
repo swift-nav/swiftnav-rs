@@ -7,11 +7,12 @@
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
 // EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
 // WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
-use crate::time::{consts, UtcParams, UtcTime, MJD, UTC_LEAPS, WEEK};
 use std::{
     ops::{Add, AddAssign, Sub, SubAssign},
     time::Duration,
 };
+
+use crate::time::{MJD, UTC_LEAPS, UtcParams, UtcTime, WEEK, consts};
 
 /// Representation of GPS Time
 #[derive(Debug, Copy, Clone)]
@@ -189,7 +190,7 @@ impl GpsTime {
             assert!(utc_time.hour() == 23);
             assert!(utc_time.minute() == 59);
             assert!(utc_time.seconds_int() == 59);
-            /* add the extra second back in*/
+            /* add the extra second back in */
             utc_time.add_second();
         }
 

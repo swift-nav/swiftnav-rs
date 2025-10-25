@@ -1,5 +1,6 @@
-use nalgebra::Vector3;
 use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
+
+use nalgebra::Vector3;
 
 use crate::{
     coords::{AzimuthElevation, Ellipsoid, LLHDegrees, LLHRadians, NED, WGS84},
