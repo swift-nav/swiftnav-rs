@@ -8,7 +8,7 @@ use chrono::{DateTime, Timelike, Utc};
 
 use crate::{
     coords::LLHDegrees,
-    nmea::{self, Source},
+    nmea::{self},
 };
 
 /// Quality of GPS solution
@@ -108,8 +108,9 @@ impl GGA {
             .geoidal_separation
             .map_or(String::new(), |sep| format!("{sep:.2}"));
 
-        let reference_station_id = self.reference_station_id
-                .map_or(String::new(), |id| id.to_string())
+        let reference_station_id = self
+            .reference_station_id
+            .map_or(String::new(), |id| id.to_string());
 
         let sentence = format!(
             "GPGGA,{timestamp},{latitude:.6},{latitudinal_hemisphere},{longitude:.6},{longitudinal_hemisphere},{gps_quality},{sat_in_use},{hdop},{height:.6},M,{geoidal_separation},{age_dgps:.1},{reference_station_id}",
