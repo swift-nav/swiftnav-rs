@@ -25,19 +25,14 @@ fn u8_to_ascii_char(nibble: u8) -> char {
 pub fn calculate_checksum(sentence: &str) -> String {
     let mut checksum = 0;
 
-    // this flag indicates if we have reached the '*' character or anything beyond that such as the
-    // actual checksum value or the end sequence (<CR><LF>)
-    let mut at_or_past_checksum_field = false;
-
     for (i, byte) in sentence.bytes().enumerate() {
         // Skip the starting '$' and the '*' before the checksum
-        if (i == 0 && byte == b'$') || at_or_past_checksum_field {
+        if i == 0 && byte == b'$' {
             continue;
         }
 
         if byte == b'*' {
-            at_or_past_checksum_field = true;
-            continue;
+            break;
         }
 
         checksum ^= byte;

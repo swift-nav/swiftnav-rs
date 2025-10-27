@@ -12,12 +12,13 @@ use crate::{
 };
 
 /// Quality of GPS solution
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub enum GPSQuality {
     /// Fix not available or invalid
+    #[default]
     NoFix,
     /// GPS SPS Mode, fix valid
-    GPS,
+    SPS,
     /// Differential GPS, SPS Mode, fix valid
     DGPS,
     /// GPS PPS (pulse per second), fix valid
@@ -27,7 +28,7 @@ pub enum GPSQuality {
     /// Float RTK, satelite system used in RTK mode, floating integers
     FRTK,
     /// Estimated (dead reckoning) mode.
-    Estimated,
+    DeadReckoning,
     /// Manual input mode
     Manual,
     /// Simulated mode
@@ -38,12 +39,12 @@ impl fmt::Display for GPSQuality {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             GPSQuality::NoFix => write!(f, "0"),
-            GPSQuality::GPS => write!(f, "1"),
+            GPSQuality::SPS => write!(f, "1"),
             GPSQuality::DGPS => write!(f, "2"),
             GPSQuality::PPS => write!(f, "3"),
             GPSQuality::RTK => write!(f, "4"),
             GPSQuality::FRTK => write!(f, "5"),
-            GPSQuality::Estimated => write!(f, "6"),
+            GPSQuality::DeadReckoning => write!(f, "6"),
             GPSQuality::Manual => write!(f, "7"),
             GPSQuality::Simulated => write!(f, "8"),
         }
@@ -59,7 +60,7 @@ pub struct GGA {
     /// Latitude, longitude and height in degrees.
     pub llh: LLHDegrees,
     /// Quality of GPS solution.
-    #[builder(default = GPSQuality::NoFix)]
+    #[builder(default = GPSQuality::default())]
     pub gps_quality: GPSQuality,
     /// Sattelites in use
     pub sat_in_use: Option<u8>,
@@ -87,11 +88,11 @@ impl GGA {
 
         let timestamp = format!("{hour}{minute}{:.2}", second + second_fracs);
 
-        let latitude = self.llh.latitude();
-        let latitudinal_hemisphere = self.llh.latitudinal_hemisphere();
+        let (lat_deg, lat_mins) = self.llh.latitude_degree_decimal_minutes();
+        let lat_hemisphere = self.llh.latitudinal_hemisphere();
 
-        let longitude = self.llh.longitude();
-        let longitudinal_hemisphere = self.llh.longitudinal_hemisphere();
+        let (lon_deg, lon_mins) = self.llh.longitude_degree_decimal_minutes();
+        let lon_hemisphere = self.llh.longitudinal_hemisphere();
 
         let gps_quality = self.gps_quality;
 
@@ -116,8 +117,8 @@ impl GGA {
             .map_or(String::new(), |id| id.to_string());
 
         let sentence = format!(
-            "GPGGA,{timestamp},{latitude:.6},{latitudinal_hemisphere},{longitude:.6},\
-             {longitudinal_hemisphere},{gps_quality},{sat_in_use},{hdop},{height:.6},M,\
+            "GPGGA,{timestamp},{lat_deg:02}{lat_mins:010.7},{lat_hemisphere},{lon_deg:\
+             03}{lon_mins:010.7},{lon_hemisphere},{gps_quality},{sat_in_use},{hdop},{height:.6},M,\
              {geoidal_separation},{age_dgps:.1},{reference_station_id}",
         );
 
@@ -138,7 +139,7 @@ mod test {
         let gga = GGA::builder()
             .sat_in_use(12)
             .time(DateTime::from_timestamp(1_761_351_489, 0).unwrap())
-            .gps_quality(GPSQuality::GPS)
+            .gps_quality(GPSQuality::SPS)
             .hdop(0.9)
             .llh(super::LLHDegrees::new(37.7749, -122.4194, 10.0))
             .build();
@@ -147,7 +148,7 @@ mod test {
 
         assert_eq!(
             sentence,
-            "$GPGGA,0189.00,37.774900,N,-122.419400,W,1,12,0.9,0.0,M,,,*26\r\n"
+            "$GPGGA,0189.00,3746.4940000,N,12225.1640000,W,1,12,0.9,0.0,M,,,*01\r\n"
         );
     }
 
@@ -168,7 +169,7 @@ mod test {
 
         assert_eq!(
             sentence,
-            "$GPGGA,0189.00,34.052200,N,-118.243700,W,2,8,1.2,0.0,M,1.00,2,42*37\r\n"
+            "$GPGGA,0189.00,3403.1320000,N,11814.6220000,W,2,8,1.2,0.0,M,1.00,2,42*1D\r\n"
         );
     }
 

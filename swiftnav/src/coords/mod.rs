@@ -538,11 +538,11 @@ mod tests {
 
             let lat_err = llh_input.latitude() - llh_output.latitude();
             assert!(lat_err.abs() < MAX_ANGLE_ERROR_RAD,
-                "Converting random WGS84 LLH to ECEF and back again does not return the original values. Initial: {:?}, ECEF: {:?}, Final: {:?}, Lat error (rad): {}", llh_input, ecef, llh_output, lat_err);
+                "Converting random WGS84 LLH to ECEF and back again does not return the original values. Initial: {llh_input:?}, ECEF: {ecef:?}, Final: {llh_output:?}, Lat error (rad): {lat_err}");
 
             let lon_err = llh_input.longitude() - llh_output.longitude();
             assert!(lon_err.abs() < MAX_ANGLE_ERROR_RAD,
-                "Converting random WGS84 LLH to ECEF and back again does not return the original values. Initial: {:?}, ECEF: {:?}, Final: {:?}, Lon error (rad): {}", llh_input, ecef, llh_output, lon_err);
+                "Converting random WGS84 LLH to ECEF and back again does not return the original values. Initial: {llh_input:?}, ECEF: {ecef:?}, Final: {llh_output:?}, Lon error (rad): {lon_err}");
 
             let hgt_err = llh_input.height() - llh_output.height();
             assert!(hgt_err.abs() < MAX_DIST_ERROR_M,

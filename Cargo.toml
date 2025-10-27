@@ -1,5 +1,3 @@
 [workspace]
-members = [
-    "swiftnav",
-    # "swiftnav-sys"
-]
+resolver = "3"
+members = ["swiftnav"]

@@ -57,13 +57,7 @@ impl MJD {
                 || (year == 1858 && month > 11)
                 || (year == 1858 && month == 11 && day >= 17),
             "Attempting to convert a date prior to the start of the Modified Julian Date system \
-             ({}-{}-{}T{}:{}:{}Z",
-            year,
-            month,
-            day,
-            hour,
-            minute,
-            seconds
+             ({year}-{month}-{day}T{hour}:{minute}:{seconds}Z"
         );
 
         let full_days = 367 * i64::from(year)

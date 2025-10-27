@@ -354,15 +354,13 @@ mod tests {
         let crc = compute_crc24q(&TEST_DATA[0..0], 0);
         assert!(
             crc == 0,
-            "CRC of empty buffer with starting value 0 should be 0, not {}",
-            crc
+            "CRC of empty buffer with starting value 0 should be 0, not {crc}",
         );
 
         let crc = compute_crc24q(&TEST_DATA[0..0], 22);
         assert!(
             crc == 22,
-            "CRC of empty buffer with starting value 22 should be 22, not {}",
-            crc
+            "CRC of empty buffer with starting value 22 should be 22, not {crc}",
         );
 
         /* Test value taken from python crcmod package tests, see:
@@ -370,8 +368,7 @@ mod tests {
         let crc = compute_crc24q(TEST_DATA, 0x00B7_04CE);
         assert!(
             crc == 0x0021_CF02,
-            "CRC of \"123456789\" with init value 0xB704CE should be 0x21CF02, not {}",
-            crc
+            "CRC of \"123456789\" with init value 0xB704CE should be 0x21CF02, not {crc}",
         );
     }
 

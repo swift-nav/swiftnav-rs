@@ -2,12 +2,12 @@
 name = "swiftnav"
 version = "0.10.0"
 authors = ["Swift Navigation <dev@swiftnav.com>"]
-edition = "2018"
+edition = "2024"
 description = "GNSS positioning and related utilities"
 readme = "README.md"
 repository = "https://github.com/swift-nav/swiftnav-rs"
 license = "LGPL-3.0"
-rust-version = "1.85.0"
+rust-version = "1.87.0"
 
 [dependencies]
 bon = "3.8.1"

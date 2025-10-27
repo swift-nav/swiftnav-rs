@@ -47,6 +47,22 @@ impl LLHDegrees {
         self.0.x
     }
 
+    /// Get the latitude in degrees and decimal minutes
+    #[must_use]
+    pub fn latitude_degree_decimal_minutes(&self) -> (u16, f64) {
+        let lat = self.latitude();
+
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "We are using trunc() and abs() already to remove the fractional part"
+        )]
+        let degrees = lat.trunc().abs() as u16;
+        let minutes = lat.fract().abs() * 60.0;
+
+        (degrees, minutes)
+    }
+
     /// Get the latitudinal hemisphere
     #[must_use]
     pub fn latitudinal_hemisphere(&self) -> LatitudinalHemisphere {
@@ -61,6 +77,22 @@ impl LLHDegrees {
     #[must_use]
     pub fn longitude(&self) -> f64 {
         self.0.y
+    }
+
+    /// Get the latitude in degrees and decimal minutes
+    #[must_use]
+    pub fn longitude_degree_decimal_minutes(&self) -> (u16, f64) {
+        let lon = self.longitude();
+
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "We are using trunc() and abs() already to remove the fractional part"
+        )]
+        let degrees = lon.trunc().abs() as u16;
+        let minutes = lon.fract().abs() * 60.0;
+
+        (degrees, minutes)
     }
 
     /// Get the longitudinal hemisphere
