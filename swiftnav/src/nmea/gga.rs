@@ -53,27 +53,24 @@ impl fmt::Display for GPSQuality {
 /// Geographic coordinates including altitude, GPS solution quality, DGPS usage information.
 #[derive(Debug, PartialEq, Clone, Builder)]
 pub struct GGA {
-    /// Navigational system.
-    #[builder(default = Source::GPS)]
-    pub source: Source,
     /// Time of fix in UTC.
     #[builder(default = Utc::now())]
     pub time: DateTime<Utc>,
     /// Latitude, longitude and height in degrees.
     pub llh: LLHDegrees,
     /// Quality of GPS solution.
-    #[builder(default = GPSQuality::GPS)]
+    #[builder(default = GPSQuality::NoFix)]
     pub gps_quality: GPSQuality,
     /// Sattelites in use
-    pub sat_in_use: u8,
+    pub sat_in_use: Option<u8>,
     /// Horizontal dilusion of presicion
-    pub hdop: f32,
+    pub hdop: Option<f32>,
     /// The difference between reference ellipsoid surface and mean-sea-level.
     pub geoidal_separation: Option<f32>,
-    /// DGPS data age. None if DGPS not in use.
+    /// DGPS data age
     pub age_dgps: Option<Duration>,
-    /// ID of reference DGPS station used for fix. None if DGPS not in use.
-    pub dgps_station_id: Option<u16>,
+    /// ID of reference DGPS station used for fix
+    pub reference_station_id: Option<u16>,
 }
 
 impl GGA {
@@ -98,35 +95,24 @@ impl GGA {
 
         let gps_quality = self.gps_quality;
 
-        let sat_in_use = self.sat_in_use;
+        let sat_in_use = self.sat_in_use.map_or(String::new(), |sat| sat.to_string());
 
-        let hdop = self.hdop;
+        let hdop = self.hdop.map_or(String::new(), |hdop| format!("{hdop:.1}"));
 
         // NOTE(ted): This is actually not the right value to use, however, we don't really use height for finding information like nearest station so it's ok to use for now
         let height = "0.0";
 
-        // if DGPS is not used, this should be a null field
-        let age_dgps = if matches!(gps_quality, GPSQuality::DGPS) {
-            let age = self.age_dgps.map_or(0.0, |age| age.as_secs_f64());
-
-            format!("{age:.1}")
-        } else {
-            String::new()
-        };
+        let age_dgps = self.age_dgps.map_or(0.0, |age| age.as_secs_f64());
 
         let geoidal_separation = self
             .geoidal_separation
             .map_or(String::new(), |sep| format!("{sep:.2}"));
 
-        let dgps_station_id = if matches!(gps_quality, GPSQuality::DGPS) {
-            self.dgps_station_id
+        let reference_station_id = self.reference_station_id
                 .map_or(String::new(), |id| id.to_string())
-        } else {
-            String::new()
-        };
 
         let sentence = format!(
-            "GPGGA,{timestamp},{latitude:.6},{latitudinal_hemisphere},{longitude:.6},{longitudinal_hemisphere},{gps_quality},{sat_in_use},{hdop:.1},{height:.6},M,{geoidal_separation},{age_dgps:.1},{dgps_station_id}",
+            "GPGGA,{timestamp},{latitude:.6},{latitudinal_hemisphere},{longitude:.6},{longitudinal_hemisphere},{gps_quality},{sat_in_use},{hdop},{height:.6},M,{geoidal_separation},{age_dgps:.1},{reference_station_id}",
         );
 
         let checksum = nmea::calculate_checksum(&sentence);
@@ -168,7 +154,7 @@ mod test {
             .gps_quality(GPSQuality::DGPS)
             .age_dgps(Duration::from_secs_f64(2.5))
             .geoidal_separation(1.0)
-            .dgps_station_id(42)
+            .reference_station_id(42)
             .build();
 
         let sentence = gga.to_sentence();
@@ -189,7 +175,7 @@ mod test {
             .gps_quality(GPSQuality::GPS)
             .age_dgps(Duration::from_secs_f64(2.5))
             .geoidal_separation(1.0)
-            .dgps_station_id(42)
+            .reference_station_id(42)
             .build();
 
         let sentence = gga.to_sentence();
@@ -215,7 +201,7 @@ mod test {
             .gps_quality(GPSQuality::DGPS)
             .age_dgps(Duration::from_secs_f64(2.500_000_000_001))
             .geoidal_separation(1.00)
-            .dgps_station_id(1023) // 1023 is the max value for a 4 digit station ID
+            .reference_station_id(1023) // 1023 is the max value for a 4 digit station ID
             .build();
 
         let sentence = gga.to_sentence();
