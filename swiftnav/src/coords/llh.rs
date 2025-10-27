@@ -1,11 +1,12 @@
-use crate::coords::{LatitudinalHemisphere, LongitudinalHemisphere};
-
-use super::{Ellipsoid, ECEF, WGS84};
 use nalgebra::Vector3;
+
+use super::{ECEF, Ellipsoid, WGS84};
+use crate::coords::{LatitudinalHemisphere, LongitudinalHemisphere};
 
 /// WGS84 geodetic coordinates (Latitude, Longitude, Height), with angles in degrees.
 ///
-/// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude, and height above the ellipsoid in meters
+/// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude, and height above
+/// the ellipsoid in meters
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default)]
 pub struct LLHDegrees(Vector3<f64>);
 
@@ -157,7 +158,8 @@ impl AsMut<Vector3<f64>> for LLHDegrees {
 
 /// WGS84 geodetic coordinates (Latitude, Longitude, Height), with angles in radians.
 ///
-/// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude, and height above the ellipsoid in meters
+/// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude, and height above
+/// the ellipsoid in meters
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default)]
 pub struct LLHRadians(Vector3<f64>);
 

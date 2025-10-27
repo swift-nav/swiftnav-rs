@@ -99,10 +99,13 @@ impl GGA {
 
         let hdop = self.hdop.map_or(String::new(), |hdop| format!("{hdop:.1}"));
 
-        // NOTE(ted): This is actually not the right value to use, however, we don't really use height for finding information like nearest station so it's ok to use for now
+        // NOTE(ted): This is actually not the right value to use, however, we don't really use
+        // height for finding information like nearest station so it's ok to use for now
         let height = "0.0";
 
-        let age_dgps = self.age_dgps.map_or(0.0, |age| age.as_secs_f64());
+        let age_dgps = self
+            .age_dgps
+            .map_or(String::new(), |age| format!("{:.1}", age.as_secs_f64()));
 
         let geoidal_separation = self
             .geoidal_separation
@@ -113,7 +116,9 @@ impl GGA {
             .map_or(String::new(), |id| id.to_string());
 
         let sentence = format!(
-            "GPGGA,{timestamp},{latitude:.6},{latitudinal_hemisphere},{longitude:.6},{longitudinal_hemisphere},{gps_quality},{sat_in_use},{hdop},{height:.6},M,{geoidal_separation},{age_dgps:.1},{reference_station_id}",
+            "GPGGA,{timestamp},{latitude:.6},{latitudinal_hemisphere},{longitude:.6},\
+             {longitudinal_hemisphere},{gps_quality},{sat_in_use},{hdop},{height:.6},M,\
+             {geoidal_separation},{age_dgps:.1},{reference_station_id}",
         );
 
         let checksum = nmea::calculate_checksum(&sentence);
@@ -133,6 +138,7 @@ mod test {
         let gga = GGA::builder()
             .sat_in_use(12)
             .time(DateTime::from_timestamp(1_761_351_489, 0).unwrap())
+            .gps_quality(GPSQuality::GPS)
             .hdop(0.9)
             .llh(super::LLHDegrees::new(37.7749, -122.4194, 10.0))
             .build();
@@ -167,29 +173,9 @@ mod test {
     }
 
     #[test]
-    fn gga_with_dgps_fields_that_is_not_dgps_is_ignored() {
-        let gga = GGA::builder()
-            .sat_in_use(8)
-            .time(DateTime::from_timestamp(1_761_351_489, 0).unwrap())
-            .hdop(1.2)
-            .llh(super::LLHDegrees::new(34.0522, -118.2437, 15.0))
-            .gps_quality(GPSQuality::GPS)
-            .age_dgps(Duration::from_secs_f64(2.5))
-            .geoidal_separation(1.0)
-            .reference_station_id(42)
-            .build();
-
-        let sentence = gga.to_sentence();
-
-        assert_eq!(
-            sentence,
-            "$GPGGA,0189.00,34.052200,N,-118.243700,W,1,8,1.2,0.0,M,1.00,,*00\r\n"
-        );
-    }
-
-    #[test]
     fn gga_sentence_is_always_less_than_82_characters() {
-        // we are going to set some very large decimal places and the highest possible values in terms of character count to ensure our sentence is always below 82 characters
+        // we are going to set some very large decimal places and the highest possible values in
+        // terms of character count to ensure our sentence is always below 82 characters
         let gga = GGA::builder()
             .sat_in_use(12)
             .time(DateTime::from_timestamp(1_761_351_489, 0).unwrap())

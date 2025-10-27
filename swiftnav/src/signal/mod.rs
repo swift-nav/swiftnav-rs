@@ -16,7 +16,8 @@
 //! This module provides:
 //! - [`Constellation`] - Representing the supporting GNSS constellations
 //! - [`Code`] - Representing the codes broadcast from the GNSS satellites
-//! - [`GnssSignal`] - Represents a [`Code`] broadcast by a specific satellite, using the satellite PRN as the identifier
+//! - [`GnssSignal`] - Represents a [`Code`] broadcast by a specific satellite, using the satellite
+//!   PRN as the identifier
 //!
 //! # Examples
 //!
@@ -37,9 +38,10 @@ mod code;
 mod constellation;
 pub mod consts;
 
+use std::fmt;
+
 pub use code::*;
 pub use constellation::*;
-use std::fmt;
 
 /// GNSS Signal identifier
 #[derive(Debug, Copy, Clone, Ord, PartialOrd, Eq, PartialEq, Hash)]
