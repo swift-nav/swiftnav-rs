@@ -127,14 +127,16 @@ impl GGA {
         };
 
         let sentence = format!(
-            "$GPGGA,{timestamp},{latitude:.6},{latitudinal_hemisphere},{longitude:.6},\
+            "GPGGA,{timestamp},{latitude:.6},{latitudinal_hemisphere},{longitude:.6},\
              {longitudinal_hemisphere},{gps_quality},{sat_in_use},{hdop:.1},{height:.6},M,\
              {geoidal_separation},{age_dgps:.1},{dgps_station_id}",
         );
 
         let checksum = nmea::calculate_checksum(&sentence);
 
-        format!("{sentence}*{checksum}\r\n")
+        let sentence = format!("${sentence}*{checksum}\r\n");
+
+        sentence
     }
 }
 
@@ -199,5 +201,29 @@ mod test {
             sentence,
             "$GPGGA,0189.00,34.052200,N,-118.243700,W,1,8,1.2,0.0,M,1.00,,*00\r\n"
         );
+    }
+
+    #[test]
+    fn gga_sentence_is_always_less_than_82_characters() {
+        // we are going to set some very large decimal places and the highest possible values in
+        // terms of character count to ensure our sentence is always below 82 characters
+        let gga = GGA::builder()
+            .sat_in_use(12)
+            .time(DateTime::from_timestamp(1_761_351_489, 0).unwrap())
+            .hdop(1.210_123_1)
+            .llh(super::LLHDegrees::new(
+                -90.000_000_001,
+                -180.000_000_000_1,
+                1_000.000_000_000,
+            ))
+            .gps_quality(GPSQuality::DGPS)
+            .age_dgps(Duration::from_secs_f64(2.500_000_000_001))
+            .geoidal_separation(1.00)
+            .dgps_station_id(1023) // 1023 is the max value for a 4 digit station ID
+            .build();
+
+        let sentence = gga.to_sentence();
+
+        assert!(sentence.len() < 82);
     }
 }
