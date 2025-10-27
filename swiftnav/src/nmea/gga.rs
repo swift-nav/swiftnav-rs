@@ -18,7 +18,7 @@ use chrono::{DateTime, Timelike, Utc};
 
 use crate::{
     coords::LLHDegrees,
-    nmea::{self},
+    nmea::{self, Source},
 };
 
 /// Quality of GPS solution
@@ -31,7 +31,7 @@ pub enum GPSQuality {
     SPS,
     /// Differential GPS, SPS Mode, fix valid
     DGPS,
-    /// GPS PPS (pulse per second), fix valid
+    /// GPS PPS (precise positioning service, military encrypted signals), fix valid
     PPS,
     /// RTK (real time kinematic). System used in RTK mode with fixed integers
     RTK,
@@ -61,17 +61,28 @@ impl fmt::Display for GPSQuality {
     }
 }
 
+#[derive(thiserror::Error, Debug)]
+pub enum GGAParseError {
+    #[error("Invalid time format")]
+    InvalidTimeFormat,
+
+    #[error("Invalid or missing GPS quality")]
+    InvalidGPSQuality,
+}
+
 /// Global Positioning System Fix Data including time, position and fix related data for a GNSS
 /// receiver
 #[derive(Debug, PartialEq, Clone, Builder)]
 pub struct GGA {
+    #[builder(default)]
+    pub source: Source,
     /// Time of fix in UTC.
     #[builder(default = Utc::now())]
     pub time: DateTime<Utc>,
     /// Latitude, longitude and height in degrees.
     pub llh: LLHDegrees,
     /// Quality of GPS solution.
-    #[builder(default = GPSQuality::default())]
+    #[builder(default)]
     pub gps_quality: GPSQuality,
     /// Sattelites in use
     pub sat_in_use: Option<u8>,
@@ -86,10 +97,18 @@ pub struct GGA {
 }
 
 impl GGA {
-    // converts the GGA struct into an NMEA sentence
-    // http://lefebure.com/articles/nmea-gga/
+    /// converts the GGA struct into an NMEA sentence
+    ///
+    /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gga_global_positioning_system_fix_data>
+    ///
+    /// ```text
+    ///        1         2       3 4        5 6 7  8   9  10 |  12 13  14   15
+    ///        |         |       | |        | | |  |   |   | |   | |   |    |
+    /// $--GGA,hhmmss.ss,ddmm.mm,a,ddmm.mm,a,x,xx,x.x,x.x,M,x.x,M,x.x,xxxx*hh<CR><LF>
+    /// ```
     #[must_use]
     pub fn to_sentence(&self) -> String {
+        let talker_id = self.source.to_nmea_talker_id();
         // NOTE(ted): We are formatting here a bit strange because for some ungodly reason,
         // chrono chose not to allow for abitrary fractional seconds precision when formatting
         // Construct timestamp in HHMMSS.SS format
@@ -129,7 +148,7 @@ impl GGA {
             .map_or(String::new(), |id| id.to_string());
 
         let sentence = format!(
-            "GPGGA,{timestamp},{lat_deg:02}{lat_mins:010.7},{lat_hemisphere},{lon_deg:\
+            "{talker_id}GGA,{timestamp},{lat_deg:02}{lat_mins:010.7},{lat_hemisphere},{lon_deg:\
              03}{lon_mins:010.7},{lon_hemisphere},{gps_quality},{sat_in_use},{hdop},{height:.6},M,\
              {geoidal_separation},{age_dgps:.1},{reference_station_id}",
         );

@@ -36,7 +36,7 @@ pub fn calculate_checksum(sentence: &str) -> String {
     let mut checksum = 0;
 
     for (i, byte) in sentence.bytes().enumerate() {
-        // Skip the starting '$' and the '*' before the checksum
+        // Skip the starting '$'
         if i == 0 && byte == b'$' {
             continue;
         }
