@@ -1,9 +1,12 @@
-use super::{Ellipsoid, ECEF, WGS84};
 use nalgebra::Vector3;
+
+use super::{ECEF, Ellipsoid, WGS84};
+use crate::coords::{LatitudinalHemisphere, LongitudinalHemisphere};
 
 /// WGS84 geodetic coordinates (Latitude, Longitude, Height), with angles in degrees.
 ///
-/// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude, and height above the ellipsoid in meters
+/// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude, and height above
+/// the ellipsoid in meters
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default)]
 pub struct LLHDegrees(Vector3<f64>);
 
@@ -44,10 +47,62 @@ impl LLHDegrees {
         self.0.x
     }
 
+    /// Get the latitude in degrees and decimal minutes
+    #[must_use]
+    pub fn latitude_degree_decimal_minutes(&self) -> (u16, f64) {
+        let lat = self.latitude();
+
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "We are using trunc() and abs() already to remove the fractional part"
+        )]
+        let degrees = lat.trunc().abs() as u16;
+        let minutes = lat.fract().abs() * 60.0;
+
+        (degrees, minutes)
+    }
+
+    /// Get the latitudinal hemisphere
+    #[must_use]
+    pub fn latitudinal_hemisphere(&self) -> LatitudinalHemisphere {
+        if self.latitude() >= 0.0 {
+            LatitudinalHemisphere::North
+        } else {
+            LatitudinalHemisphere::South
+        }
+    }
+
     /// Get the longitude component
     #[must_use]
     pub fn longitude(&self) -> f64 {
         self.0.y
+    }
+
+    /// Get the latitude in degrees and decimal minutes
+    #[must_use]
+    pub fn longitude_degree_decimal_minutes(&self) -> (u16, f64) {
+        let lon = self.longitude();
+
+        #[expect(
+            clippy::cast_possible_truncation,
+            clippy::cast_sign_loss,
+            reason = "We are using trunc() and abs() already to remove the fractional part"
+        )]
+        let degrees = lon.trunc().abs() as u16;
+        let minutes = lon.fract().abs() * 60.0;
+
+        (degrees, minutes)
+    }
+
+    /// Get the longitudinal hemisphere
+    #[must_use]
+    pub fn longitudinal_hemisphere(&self) -> LongitudinalHemisphere {
+        if self.longitude() >= 0.0 {
+            LongitudinalHemisphere::East
+        } else {
+            LongitudinalHemisphere::West
+        }
     }
 
     /// Get the height component
@@ -135,7 +190,8 @@ impl AsMut<Vector3<f64>> for LLHDegrees {
 
 /// WGS84 geodetic coordinates (Latitude, Longitude, Height), with angles in radians.
 ///
-/// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude, and height above the ellipsoid in meters
+/// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude, and height above
+/// the ellipsoid in meters
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default)]
 pub struct LLHRadians(Vector3<f64>);
 

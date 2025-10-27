@@ -10,8 +10,9 @@
 
 #![allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
 
-use crate::time::{consts, is_leap_year, GpsTime, MJD};
 use std::time::Duration;
+
+use crate::time::{GpsTime, MJD, consts, is_leap_year};
 
 /// GPS UTC correction parameters
 #[derive(Clone)]
@@ -399,7 +400,6 @@ impl From<MJD> for UtcTime {
     }
 }
 
-#[cfg(feature = "chrono")]
 impl From<UtcTime> for chrono::DateTime<chrono::offset::Utc> {
     fn from(utc: UtcTime) -> chrono::DateTime<chrono::offset::Utc> {
         use chrono::prelude::*;
@@ -425,7 +425,6 @@ impl From<UtcTime> for chrono::DateTime<chrono::offset::Utc> {
     }
 }
 
-#[cfg(feature = "chrono")]
 impl<Tz: chrono::offset::TimeZone> From<chrono::DateTime<Tz>> for UtcTime {
     fn from(chrono: chrono::DateTime<Tz>) -> UtcTime {
         use chrono::prelude::*;
@@ -557,7 +556,16 @@ mod tests {
 
             #[expect(clippy::float_cmp)]
             {
-                assert!(d_utc == test_case.d_utc && is_lse == test_case.is_lse, "test_case.t: {:?}, test_case.d_utc: {}, test_case.is_lse: {}, d_utc: {}, is_lse: {}", test_case.t, test_case.d_utc, test_case.is_lse, d_utc, is_lse);
+                assert!(
+                    d_utc == test_case.d_utc && is_lse == test_case.is_lse,
+                    "test_case.t: {:?}, test_case.d_utc: {}, test_case.is_lse: {}, d_utc: {}, \
+                     is_lse: {}",
+                    test_case.t,
+                    test_case.d_utc,
+                    test_case.is_lse,
+                    d_utc,
+                    is_lse
+                );
             }
         }
     }
@@ -1090,7 +1098,6 @@ mod tests {
         }
     }
 
-    #[cfg(feature = "chrono")]
     #[test]
     fn chrono_conversions() {
         use chrono::prelude::*;

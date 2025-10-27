@@ -44,11 +44,10 @@
 //! the more common algortihms based on the Newton-Raphson method.
 //!
 //! ## References
-//! * "A comparison of methods used in rectangular to Geodetic Coordinates
-//!   Transformations", Burtch R. R. (2006), American Congress for Surveying
-//!   and Mapping Annual Conference. Orlando, Florida.
-//! * "Transformation from Cartesian to Geodetic Coordinates Accelerated by
-//!   Halley’s Method", T. Fukushima (2006), Journal of Geodesy.
+//! * "A comparison of methods used in rectangular to Geodetic Coordinates Transformations", Burtch
+//!   R. R. (2006), American Congress for Surveying and Mapping Annual Conference. Orlando, Florida.
+//! * "Transformation from Cartesian to Geodetic Coordinates Accelerated by Halley’s Method", T.
+//!   Fukushima (2006), Journal of Geodesy.
 //!
 //! # Examples
 //!
@@ -76,22 +75,27 @@
 
 mod ecef;
 mod ellipsoid;
+mod hemisphere;
 mod llh;
 mod ned;
 
 pub use ecef::*;
 pub use ellipsoid::*;
+pub use hemisphere::*;
 pub use llh::*;
+use nalgebra::Vector2;
 pub use ned::*;
 
 use crate::{reference_frame::ReferenceFrame, time::GpsTime};
-use nalgebra::Vector2;
 
-/// WGS84 local horizontal coordinates consisting of an Azimuth and Elevation, with angles stored as radians
+/// WGS84 local horizontal coordinates consisting of an Azimuth and Elevation, with angles stored as
+/// radians
 ///
-/// Azimuth can range from $0$ to $2\pi$. North has an azimuth of $0$, east has an azimuth of $\frac{\pi}{2}$
+/// Azimuth can range from $0$ to $2\pi$. North has an azimuth of $0$, east has an azimuth of
+/// $\frac{\pi}{2}$
 ///
-/// Elevation can range from $-\frac{\pi}{2}$ to $\frac{\pi}{2}$. Up has an elevation of $\frac{\pi}{2}$, down an elevation of $-\frac{\pi}{2}$
+/// Elevation can range from $-\frac{\pi}{2}$ to $\frac{\pi}{2}$. Up has an elevation of
+/// $\frac{\pi}{2}$, down an elevation of $-\frac{\pi}{2}$
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd, Default)]
 pub struct AzimuthElevation(Vector2<f64>);
 
@@ -290,11 +294,10 @@ impl Coordinate {
 #[cfg(test)]
 mod tests {
     use float_eq::assert_float_eq;
-
-    use crate::time::UtcTime;
+    use proptest::prelude::*;
 
     use super::*;
-    use proptest::prelude::*;
+    use crate::time::UtcTime;
 
     /* Maximum allowable error in quantities with units of length (in meters). */
     const MAX_DIST_ERROR_M: f64 = 1e-6;
@@ -535,11 +538,11 @@ mod tests {
 
             let lat_err = llh_input.latitude() - llh_output.latitude();
             assert!(lat_err.abs() < MAX_ANGLE_ERROR_RAD,
-                "Converting random WGS84 LLH to ECEF and back again does not return the original values. Initial: {:?}, ECEF: {:?}, Final: {:?}, Lat error (rad): {}", llh_input, ecef, llh_output, lat_err);
+                "Converting random WGS84 LLH to ECEF and back again does not return the original values. Initial: {llh_input:?}, ECEF: {ecef:?}, Final: {llh_output:?}, Lat error (rad): {lat_err}");
 
             let lon_err = llh_input.longitude() - llh_output.longitude();
             assert!(lon_err.abs() < MAX_ANGLE_ERROR_RAD,
-                "Converting random WGS84 LLH to ECEF and back again does not return the original values. Initial: {:?}, ECEF: {:?}, Final: {:?}, Lon error (rad): {}", llh_input, ecef, llh_output, lon_err);
+                "Converting random WGS84 LLH to ECEF and back again does not return the original values. Initial: {llh_input:?}, ECEF: {ecef:?}, Final: {llh_output:?}, Lon error (rad): {lon_err}");
 
             let hgt_err = llh_input.height() - llh_output.height();
             assert!(hgt_err.abs() < MAX_DIST_ERROR_M,

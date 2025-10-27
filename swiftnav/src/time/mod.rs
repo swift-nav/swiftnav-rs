@@ -79,7 +79,7 @@ pub const WEEK: Duration = Duration::from_secs(consts::WEEK_SECS as u64);
 /// All year values are treated as if they are in the Gregorian calendar
 #[must_use]
 pub fn is_leap_year(year: u16) -> bool {
-    ((year % 4 == 0) && (year % 100 != 0)) || (year % 400 == 0)
+    (year.is_multiple_of(4) && !year.is_multiple_of(100)) || year.is_multiple_of(400)
 }
 
 #[cfg(test)]
@@ -119,11 +119,8 @@ mod tests {
             let diff = test_case.diff(&round_trip).abs();
             assert!(
                 diff < TOW_TOL,
-                "gps2mjd2gps failure. original: {:?}, round trip: {:?}, diff: {}, TOW_TOL: {}",
-                test_case,
-                round_trip,
-                diff,
-                TOW_TOL
+                "gps2mjd2gps failure. original: {test_case:?}, round trip: {round_trip:?}, diff: \
+                 {diff}, TOW_TOL: {TOW_TOL}"
             );
 
             // test mjd -> date -> mjd
@@ -132,11 +129,8 @@ mod tests {
             let diff = (mjd.as_f64() - round_trip.as_f64()).abs();
             assert!(
                 diff < TOW_TOL,
-                "mjd2date2mjd failure. original: {:?}, round trip: {:?}, diff: {}, TOW_TOL: {}",
-                mjd,
-                round_trip,
-                diff,
-                TOW_TOL
+                "mjd2date2mjd failure. original: {mjd:?}, round trip: {round_trip:?}, diff: \
+                 {diff}, TOW_TOL: {TOW_TOL}"
             );
 
             // test mjd -> utc -> mjd
@@ -145,11 +139,8 @@ mod tests {
             let diff = (mjd.as_f64() - round_trip.as_f64()).abs();
             assert!(
                 diff < TOW_TOL,
-                "mjd2utc2mjd failure. original: {:?}, round trip: {:?}, diff: {}, TOW_TOL: {}",
-                mjd,
-                round_trip,
-                diff,
-                TOW_TOL
+                "mjd2utc2mjd failure. original: {mjd:?}, round trip: {round_trip:?}, diff: \
+                 {diff}, TOW_TOL: {TOW_TOL}"
             );
 
             // test gps -> date -> gps
@@ -158,11 +149,8 @@ mod tests {
             let diff = test_case.diff(&round_trip).abs();
             assert!(
                 diff < TOW_TOL,
-                "gps2date2gps failure. original: {:?}, round trip: {:?}, diff: {}, TOW_TOL: {}",
-                test_case,
-                round_trip,
-                diff,
-                TOW_TOL
+                "gps2date2gps failure. original: {test_case:?}, round trip: {round_trip:?}, diff: \
+                 {diff}, TOW_TOL: {TOW_TOL}"
             );
 
             // test utc -> date -> utc
@@ -171,11 +159,8 @@ mod tests {
             let diff = utc.to_mjd().as_f64() - mjd.as_f64();
             assert!(
                 diff < TOW_TOL,
-                "utc2date2utc failure. original: {:?}, round trip: {:?}, diff: {}, TOW_TOL: {}",
-                mjd,
-                round_trip,
-                diff,
-                TOW_TOL
+                "utc2date2utc failure. original: {mjd:?}, round trip: {round_trip:?}, diff: \
+                 {diff}, TOW_TOL: {TOW_TOL}"
             );
         }
     }
