@@ -58,6 +58,14 @@ mod tests {
         let sentence = "GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,";
         let checksum = super::calculate_checksum(sentence);
         assert_eq!(checksum, "47");
+
+        let sentence = "$GPGLL,5057.970,N,00146.110,E,142451,A";
+        let checksum = super::calculate_checksum(sentence);
+        assert_eq!(checksum, "27");
+
+        let sentence = "$GPVTG,089.0,T,,,15.2,N,,";
+        let checksum = super::calculate_checksum(sentence);
+        assert_eq!(checksum, "7F");
     }
 
     #[test]
