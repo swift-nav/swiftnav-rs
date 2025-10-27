@@ -76,6 +76,7 @@ pub struct GGA {
 
 impl GGA {
     // converts the GGA struct into an NMEA sentence
+    // http://lefebure.com/articles/nmea-gga/
     #[must_use]
     pub fn to_sentence(&self) -> String {
         // NOTE(ted): We are formatting here a bit strange because for some ungodly reason,
@@ -158,7 +159,7 @@ mod test {
             .sat_in_use(8)
             .time(DateTime::from_timestamp(1_761_351_489, 0).unwrap())
             .hdop(1.2)
-            .llh(super::LLHDegrees::new(34.0522, -118.2437, 15.0))
+            .llh(super::LLHDegrees::new(34.0522, -18.2437, 15.0))
             .gps_quality(GPSQuality::DGPS)
             .age_dgps(Duration::from_secs_f64(2.5))
             .geoidal_separation(1.0)
@@ -169,7 +170,7 @@ mod test {
 
         assert_eq!(
             sentence,
-            "$GPGGA,0189.00,3403.1320000,N,11814.6220000,W,2,8,1.2,0.0,M,1.00,2,42*1D\r\n"
+            "$GPGGA,0189.00,3403.1320000,N,01814.6220000,W,2,8,1.2,0.0,M,1.00,2,42*1C\r\n"
         );
     }
 
