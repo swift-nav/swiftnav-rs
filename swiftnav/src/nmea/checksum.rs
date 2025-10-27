@@ -25,9 +25,16 @@ fn u8_to_ascii_char(nibble: u8) -> char {
 pub fn calculate_checksum(sentence: &str) -> String {
     let mut checksum = 0;
 
+    let mut at_checksum_validation_value = false;
+
     for (i, byte) in sentence.bytes().enumerate() {
         // Skip the starting '$' and the '*' before the checksum
-        if (i == 0 && byte == b'$') || byte == b'*' {
+        if (i == 0 && byte == b'$') || at_checksum_validation_value {
+            continue;
+        }
+
+        if byte == b'*' {
+            at_checksum_validation_value = true;
             continue;
         }
 
@@ -40,4 +47,44 @@ pub fn calculate_checksum(sentence: &str) -> String {
     let char2 = u8_to_ascii_char(nibble2);
 
     format!("{char1}{char2}")
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_calculate_checksum() {
+        let sentence = "GPGGA,123519,4807.038,N,01131.000,E,1,08,0.9,545.4,M,46.9,M,,";
+        let checksum = super::calculate_checksum(sentence);
+        assert_eq!(checksum, "47");
+    }
+
+    #[test]
+    fn calculate_checksum_ignores_dollar_and_asterisk_tails() {
+        // NOTE(ted): All of these examples should produce the same checksum
+
+        // check with '$'
+        let sentence = "$GPGGA,0189.00,34.052200,N,-118.243700,W,2,8,1.2,0.0,M,1.00,2,42";
+        let checksum = super::calculate_checksum(sentence);
+        assert_eq!(checksum, "37");
+
+        //check with '$' and '*'
+        let sentence = "$GPGGA,0189.00,34.052200,N,-118.243700,W,2,8,1.2,0.0,M,1.00,2,42*";
+        let checksum = super::calculate_checksum(sentence);
+        assert_eq!(checksum, "37");
+
+        //check with '$' and '*' and fake checksum
+        let sentence = "$GPGGA,0189.00,34.052200,N,-118.243700,W,2,8,1.2,0.0,M,1.00,2,42*00";
+        let checksum = super::calculate_checksum(sentence);
+        assert_eq!(checksum, "37");
+
+        //check '*'
+        let sentence = "GPGGA,0189.00,34.052200,N,-118.243700,W,2,8,1.2,0.0,M,1.00,2,42*";
+        let checksum = super::calculate_checksum(sentence);
+        assert_eq!(checksum, "37");
+
+        //check '*' and fake checksum
+        let sentence = "GPGGA,0189.00,34.052200,N,-118.243700,W,2,8,1.2,0.0,M,1.00,2,42*00";
+        let checksum = super::calculate_checksum(sentence);
+        assert_eq!(checksum, "37");
+    }
 }

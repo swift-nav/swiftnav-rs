@@ -118,9 +118,12 @@ impl GGA {
             .geoidal_separation
             .map_or(String::new(), |sep| format!("{sep:.2}"));
 
-        let dgps_station_id = self
-            .dgps_station_id
-            .map_or(String::new(), |id| id.to_string());
+        let dgps_station_id = if matches!(gps_quality, GPSQuality::DGPS) {
+            self.dgps_station_id
+                .map_or(String::new(), |id| id.to_string())
+        } else {
+            String::new()
+        };
 
         let sentence = format!(
             "$GPGGA,{timestamp},{latitude:.6},{latitudinal_hemisphere},{longitude:.6},{longitudinal_hemisphere},{gps_quality},{sat_in_use},{hdop:.1},{height:.6},M,{geoidal_separation},{age_dgps:.1},{dgps_station_id}",
@@ -150,6 +153,48 @@ mod test {
         assert_eq!(
             sentence,
             "$GPGGA,0189.00,37.774900,N,-122.419400,W,1,12,0.9,0.0,M,,,*26\r\n"
+        );
+    }
+
+    #[test]
+    fn gga_with_dgps_can_be_turned_into_an_nmea_sentence() {
+        let gga = GGA::builder()
+            .sat_in_use(8)
+            .time(DateTime::from_timestamp(1_761_351_489, 0).unwrap())
+            .hdop(1.2)
+            .llh(super::LLHDegrees::new(34.0522, -118.2437, 15.0))
+            .gps_quality(GPSQuality::DGPS)
+            .age_dgps(Duration::from_secs_f64(2.5))
+            .geoidal_separation(1.0)
+            .dgps_station_id(42)
+            .build();
+
+        let sentence = gga.to_sentence();
+
+        assert_eq!(
+            sentence,
+            "$GPGGA,0189.00,34.052200,N,-118.243700,W,2,8,1.2,0.0,M,1.00,2,42*37\r\n"
+        );
+    }
+
+    #[test]
+    fn gga_with_dgps_fields_that_is_not_dgps_is_ignored() {
+        let gga = GGA::builder()
+            .sat_in_use(8)
+            .time(DateTime::from_timestamp(1_761_351_489, 0).unwrap())
+            .hdop(1.2)
+            .llh(super::LLHDegrees::new(34.0522, -118.2437, 15.0))
+            .gps_quality(GPSQuality::GPS)
+            .age_dgps(Duration::from_secs_f64(2.5))
+            .geoidal_separation(1.0)
+            .dgps_station_id(42)
+            .build();
+
+        let sentence = gga.to_sentence();
+
+        assert_eq!(
+            sentence,
+            "$GPGGA,0189.00,34.052200,N,-118.243700,W,1,8,1.2,0.0,M,1.00,,*00\r\n"
         );
     }
 }
