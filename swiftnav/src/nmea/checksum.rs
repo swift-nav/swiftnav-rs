@@ -1,7 +1,7 @@
 fn u8_to_nibbles(byte: u8) -> (u8, u8) {
     // The high nibble is obtained by shifting the byte 4 bits to the right.
     // This discards the lower 4 bits and moves the upper 4 bits into the lower 4 bit positions.
-    let high_nibble = byte >> 4;
+    let high_nibble = (byte >> 4) & 0x0F;
 
     // The low nibble is obtained by masking the byte with 0x0F (binary 0000_1111).
     // This keeps only the lower 4 bits and sets the upper 4 bits to zero.
