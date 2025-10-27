@@ -1,3 +1,13 @@
+// Copyright (c) 2025 Swift Navigation Inc.
+// Contact: Swift Navigation <dev@swiftnav.com>
+//
+// This source is subject to the license found in the file 'LICENSE' which must
+// be be distributed together with this source. All other rights reserved.
+//
+// THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND,
+// EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
+
 fn u8_to_nibbles(byte: u8) -> (u8, u8) {
     // The high nibble is obtained by shifting the byte 4 bits to the right.
     // This discards the lower 4 bits and moves the upper 4 bits into the lower 4 bit positions.
