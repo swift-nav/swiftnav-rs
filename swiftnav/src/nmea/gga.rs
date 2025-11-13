@@ -117,7 +117,7 @@ impl GGA {
         let second = f64::from(self.time.second());
         let second_fracs = f64::from(self.time.nanosecond()) / 1_000_000_000.0;
 
-        let timestamp = format!("{hour}{minute}{:.2}", second + second_fracs);
+        let timestamp = format!("{hour:0>2}{minute:0>2}{:05.2}", second + second_fracs);
 
         let (lat_deg, lat_mins) = self.llh.latitude_degree_decimal_minutes();
         let lat_hemisphere = self.llh.latitudinal_hemisphere();
@@ -164,6 +164,27 @@ impl GGA {
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn nmea_crate_can_parse_gga_sentence() {
+        let gga = GGA::builder()
+            .sat_in_use(12)
+            .time(DateTime::from_timestamp(1_761_351_489, 89_999_999).unwrap())
+            .gps_quality(GPSQuality::SPS)
+            .hdop(0.9)
+            .llh(super::LLHDegrees::new(37.7749, -122.4194, 10.0))
+            .build();
+
+        let parse_result = ::nmea::parse_str(dbg!(&gga.to_sentence().as_str()))
+            .expect("Failed to parse GGA sentence");
+
+        let ::nmea::ParseResult::GGA(parsed_gga) = parse_result else {
+            panic!("Parsed result is not a GGA sentence");
+        };
+
+        assert_eq!(parsed_gga.latitude.unwrap(), 37.7749);
+        assert_eq!(parsed_gga.longitude.unwrap(), -122.4194);
+    }
 
     #[test]
     fn gga_can_be_turned_into_an_nmea_sentence() {
