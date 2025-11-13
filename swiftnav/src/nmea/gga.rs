@@ -166,6 +166,7 @@ mod test {
     use super::*;
 
     #[test]
+    #[allow(clippy::float_cmp, reason = "testing exact parsing")]
     fn nmea_crate_can_parse_gga_sentence() {
         let gga = GGA::builder()
             .sat_in_use(12)
@@ -175,8 +176,8 @@ mod test {
             .llh(super::LLHDegrees::new(37.7749, -122.4194, 10.0))
             .build();
 
-        let parse_result = ::nmea::parse_str(dbg!(&gga.to_sentence().as_str()))
-            .expect("Failed to parse GGA sentence");
+        let parse_result =
+            ::nmea::parse_str(&gga.to_sentence()).expect("Failed to parse GGA sentence");
 
         let ::nmea::ParseResult::GGA(parsed_gga) = parse_result else {
             panic!("Parsed result is not a GGA sentence");
