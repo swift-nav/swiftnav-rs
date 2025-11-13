@@ -117,7 +117,7 @@ impl GGA {
         let second = f64::from(self.time.second());
         let second_fracs = f64::from(self.time.nanosecond()) / 1_000_000_000.0;
 
-        let timestamp = format!("{hour}{minute}{:.2}", second + second_fracs);
+        let timestamp = format!("{hour:0>2}{minute:0>2}{:05.2}", second + second_fracs);
 
         let (lat_deg, lat_mins) = self.llh.latitude_degree_decimal_minutes();
         let lat_hemisphere = self.llh.latitudinal_hemisphere();
@@ -166,6 +166,28 @@ mod test {
     use super::*;
 
     #[test]
+    #[allow(clippy::float_cmp, reason = "testing exact parsing")]
+    fn nmea_crate_can_parse_gga_sentence() {
+        let gga = GGA::builder()
+            .sat_in_use(12)
+            .time(DateTime::from_timestamp(1_761_351_489, 89_999_999).unwrap())
+            .gps_quality(GPSQuality::SPS)
+            .hdop(0.9)
+            .llh(super::LLHDegrees::new(37.7749, -122.4194, 10.0))
+            .build();
+
+        let parse_result =
+            ::nmea::parse_str(&gga.to_sentence()).expect("Failed to parse GGA sentence");
+
+        let ::nmea::ParseResult::GGA(parsed_gga) = parse_result else {
+            panic!("Parsed result is not a GGA sentence");
+        };
+
+        assert_eq!(parsed_gga.latitude.unwrap(), 37.7749);
+        assert_eq!(parsed_gga.longitude.unwrap(), -122.4194);
+    }
+
+    #[test]
     fn gga_can_be_turned_into_an_nmea_sentence() {
         let gga = GGA::builder()
             .sat_in_use(12)
@@ -179,7 +201,7 @@ mod test {
 
         assert_eq!(
             sentence,
-            "$GPGGA,0189.00,3746.4940000,N,12225.1640000,W,1,12,0.9,0.0,M,,,*01\r\n"
+            "$GPGGA,001809.00,3746.4940000,N,12225.1640000,W,1,12,0.9,0.0,M,,,*01\r\n"
         );
     }
 
@@ -200,7 +222,7 @@ mod test {
 
         assert_eq!(
             sentence,
-            "$GPGGA,0189.00,3403.1320000,N,01814.6220000,W,2,8,1.2,0.0,M,1.00,2,42*1C\r\n"
+            "$GPGGA,001809.00,3403.1320000,N,01814.6220000,W,2,8,1.2,0.0,M,1.00,2,42*1C\r\n"
         );
     }
 
