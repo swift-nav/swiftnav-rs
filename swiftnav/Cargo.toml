@@ -1,6 +1,6 @@
 [package]
 name = "swiftnav"
-version = "0.10.0"
+version = "0.11.0"
 authors = ["Swift Navigation <dev@swiftnav.com>"]
 edition = "2024"
 description = "GNSS positioning and related utilities"
