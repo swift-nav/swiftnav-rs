@@ -39,6 +39,17 @@ jobs:
       - name: Docs
         run: just docs
 
+  doc-rs:
+    name: Doc-rs test
+    runs-on: ubuntu-latest
+    env:
+      RUSTDOCFLAGS: -Dwarnings
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/install@cargo-docs-rs
+      - run: cargo docs-rs
+
   build:
     name: Build and test
     runs-on: ${{ matrix.os }}
