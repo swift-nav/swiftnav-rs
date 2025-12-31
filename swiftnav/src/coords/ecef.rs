@@ -1,4 +1,4 @@
-use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
+use std::{ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign}, fmt};
 
 use nalgebra::Vector3;
 
@@ -356,6 +356,12 @@ impl MulAssign<&f64> for ECEF {
     }
 }
 
+impl fmt::Display for ECEF {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:.3}m {:.3}m {:.3}m", self.x(), self.y(), self.z())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -403,5 +409,12 @@ mod tests {
         assert_eq!(2.0, result.x());
         assert_eq!(4.0, result.y());
         assert_eq!(6.0, result.z());
+    }
+
+    #[test]
+    fn ecef_string() {
+        let p = ECEF::new(0.1, -2.3, 4.5678);
+
+        assert_eq!("0.100m -2.300m 4.568m", p.to_string());
     }
 }

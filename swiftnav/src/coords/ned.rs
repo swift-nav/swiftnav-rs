@@ -1,3 +1,5 @@
+use std::fmt;
+
 use nalgebra::Vector3;
 
 use crate::{coords::ECEF, math};
@@ -113,5 +115,23 @@ impl AsMut<[f64; 3]> for NED {
 impl AsMut<Vector3<f64>> for NED {
     fn as_mut(&mut self) -> &mut Vector3<f64> {
         self.as_vector_mut()
+    }
+}
+
+impl fmt::Display for NED {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{:.3}m North {:.3}m East {:.3}m Down", self.n(), self.e(), self.d())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn ned_string() {
+        let p = NED::new(0.1, -2.3, 4.5678);
+
+        assert_eq!("0.100m North -2.300m East 4.568m Down", p.to_string());
     }
 }
