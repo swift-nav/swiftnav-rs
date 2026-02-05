@@ -141,7 +141,7 @@ impl GGA {
 
         let geoidal_separation = self
             .geoidal_separation
-            .map_or(String::new(), |sep| format!("{sep:.2}"));
+            .map_or(String::new(), |sep| format!("{sep:.1}"));
 
         let reference_station_id = self
             .reference_station_id
@@ -150,7 +150,7 @@ impl GGA {
         let sentence = format!(
             "{talker_id}GGA,{timestamp},{lat_deg:02}{lat_mins:010.7},{lat_hemisphere},{lon_deg:\
              03}{lon_mins:010.7},{lon_hemisphere},{gps_quality},{sat_in_use},{hdop},{height:.6},M,\
-             {geoidal_separation},{age_dgps:.1},{reference_station_id}",
+             {geoidal_separation},M,{age_dgps},{reference_station_id}",
         );
 
         let checksum = nmea::calculate_checksum(&sentence);
@@ -201,7 +201,7 @@ mod test {
 
         assert_eq!(
             sentence,
-            "$GPGGA,001809.00,3746.4940000,N,12225.1640000,W,1,12,0.9,0.0,M,,,*01\r\n"
+            "$GPGGA,001809.00,3746.4940000,N,12225.1640000,W,1,12,0.9,0.0,M,,M,,*60\r\n"
         );
     }
 
@@ -222,7 +222,7 @@ mod test {
 
         assert_eq!(
             sentence,
-            "$GPGGA,001809.00,3403.1320000,N,01814.6220000,W,2,8,1.2,0.0,M,1.00,2,42*1C\r\n"
+            "$GPGGA,001809.00,3403.1320000,N,01814.6220000,W,2,8,1.2,0.0,M,1.0,M,2.5,42*56\r\n"
         );
     }
 
@@ -247,6 +247,6 @@ mod test {
 
         let sentence = gga.to_sentence();
 
-        assert!(sentence.len() < 82);
+        assert!(sentence.len() <= 82);
     }
 }
