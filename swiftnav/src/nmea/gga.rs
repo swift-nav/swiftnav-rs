@@ -139,8 +139,7 @@ impl GGA {
 
     /// Writes the variable-width tail fields (everything after the lon hemisphere).
     fn write_tail(&self, w: &mut impl fmt::Write) {
-        write!(w, ",{}", self.gps_quality).unwrap();
-        write!(w, ",").unwrap();
+        write!(w, ",{},", self.gps_quality).unwrap();
         if let Some(sat) = self.sat_in_use {
             write!(w, "{sat}").unwrap();
         }
