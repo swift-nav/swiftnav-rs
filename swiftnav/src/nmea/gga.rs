@@ -108,7 +108,27 @@ impl GGA {
     #[must_use]
     pub fn to_sentence(&self) -> String {
         let talker_id = self.source.to_nmea_talker_id();
-        let dp = self.coordinate_decimal_places(talker_id);
+
+        // Format the tail first so we can figure out how many decimal places we can use
+        let mut tail = String::with_capacity(32);
+        self.write_tail(&mut tail);
+
+        let dp = if self.strict {
+            // Fixed overhead (everything except tail and lat/lon minute decimals):
+            //   $ (1) + talker_id + GGA (3) + timestamp (9) + 6 head commas (6)
+            //   + lat DD (2) + lat MM (2) + hemisphere (1)
+            //   + lon DDD (3) + lon MM (2) + hemisphere (1)
+            //   + * (1) + checksum (2) + \r\n (2)
+            let base_len = talker_id.len() + 34 + tail.len();
+            let remaining = 82usize.saturating_sub(base_len);
+            if remaining >= 4 {
+                ((remaining - 2) / 2).min(7)
+            } else {
+                0
+            }
+        } else {
+            7
+        };
         let w = if dp > 0 { 3 + dp } else { 2 };
 
         let seconds = f64::from(self.time.second()) + f64::from(self.time.nanosecond()) / 1e9;
@@ -119,9 +139,8 @@ impl GGA {
         sentence.push('$');
         write!(
             sentence,
-            "{talker_id}GGA,{:02}{:02}{:05.2},\
-             {lat_deg:02}{lat_mins:0w$.dp$},{},\
-             {lon_deg:03}{lon_mins:0w$.dp$},{}",
+            "{talker_id}GGA,{:02}{:02}{:05.2},{lat_deg:02}{lat_mins:0w$.dp$},{},{lon_deg:\
+             03}{lon_mins:0w$.dp$},{}",
             self.time.hour(),
             self.time.minute(),
             seconds,
@@ -130,7 +149,7 @@ impl GGA {
             dp = dp,
         )
         .unwrap();
-        self.write_tail(&mut sentence);
+        sentence.push_str(&tail);
 
         let checksum = calculate_checksum(&sentence);
         write!(sentence, "*{checksum:02X}\r\n").unwrap();
@@ -161,40 +180,6 @@ impl GGA {
         if let Some(id) = self.reference_station_id {
             write!(w, "{id}").unwrap();
         }
-    }
-
-    /// Computes the maximum coordinate decimal places that fit within 82 characters.
-    fn coordinate_decimal_places(&self, talker_id: &str) -> usize {
-        if !self.strict {
-            return 7;
-        }
-
-        let mut counter = ByteCounter(0);
-        self.write_tail(&mut counter);
-
-        // Fixed overhead (everything except tail and lat/lon minute decimals):
-        //   $ (1) + talker_id + GGA (3) + timestamp (9) + 6 head commas (6)
-        //   + lat DD (2) + lat MM (2) + hemisphere (1)
-        //   + lon DDD (3) + lon MM (2) + hemisphere (1)
-        //   + * (1) + checksum (2) + \r\n (2)
-        let base_len = talker_id.len() + 34 + counter.0;
-
-        let remaining = 82usize.saturating_sub(base_len);
-        if remaining >= 4 {
-            ((remaining - 2) / 2).min(7)
-        } else {
-            0
-        }
-    }
-}
-
-/// A [`fmt::Write`] implementation that counts bytes without writing anything.
-struct ByteCounter(usize);
-
-impl fmt::Write for ByteCounter {
-    fn write_str(&mut self, s: &str) -> fmt::Result {
-        self.0 += s.len();
-        Ok(())
     }
 }
 
