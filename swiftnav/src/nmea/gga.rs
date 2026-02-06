@@ -9,7 +9,7 @@
 // WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A PARTICULAR PURPOSE.
 
 use std::{
-    fmt::{self},
+    fmt::{self, Write},
     time::Duration,
 };
 
@@ -18,7 +18,7 @@ use chrono::{DateTime, Timelike, Utc};
 
 use crate::{
     coords::LLHDegrees,
-    nmea::{self, Source},
+    nmea::{Source, calculate_checksum},
 };
 
 /// Quality of GPS solution
@@ -94,159 +94,238 @@ pub struct GGA {
     pub age_dgps: Option<Duration>,
     /// ID of reference DGPS station used for fix
     pub reference_station_id: Option<u16>,
+    /// If true, enforces the NMEA 0183 82-character limit by truncating coordinate precision.
+    #[builder(default = true)]
+    pub strict: bool,
 }
 
 impl GGA {
-    /// converts the GGA struct into an NMEA sentence
+    /// Converts the GGA struct into an NMEA sentence.
     ///
-    /// <https://gpsd.gitlab.io/gpsd/NMEA.html#_gga_global_positioning_system_fix_data>
-    ///
-    /// ```text
-    ///        1         2       3 4        5 6 7  8   9  10 |  12 13  14   15
-    ///        |         |       | |        | | |  |   |   | |   | |   |    |
-    /// $--GGA,hhmmss.ss,ddmm.mm,a,ddmm.mm,a,x,xx,x.x,x.x,M,x.x,M,x.x,xxxx*hh<CR><LF>
-    /// ```
+    /// In strict mode, coordinate decimal places are dynamically reduced to
+    /// stay within the 82-character NMEA 0183 limit. In non-strict mode,
+    /// 7 decimal places (~1.8mm resolution) are always used.
     #[must_use]
     pub fn to_sentence(&self) -> String {
         let talker_id = self.source.to_nmea_talker_id();
-        // NOTE(ted): We are formatting here a bit strange because for some ungodly reason,
-        // chrono chose not to allow for abitrary fractional seconds precision when formatting
-        // Construct timestamp in HHMMSS.SS format
-        let hour = self.time.hour();
-        let minute = self.time.minute();
-        let second = f64::from(self.time.second());
-        let second_fracs = f64::from(self.time.nanosecond()) / 1_000_000_000.0;
 
-        let timestamp = format!("{hour:0>2}{minute:0>2}{:05.2}", second + second_fracs);
+        // Format the tail first so we can figure out how many decimal places we can use
+        let mut tail = String::with_capacity(32);
+        self.write_tail(&mut tail);
 
+        let dp = if self.strict {
+            // Fixed overhead (everything except tail and lat/lon minute decimals):
+            //   $ (1) + talker_id + GGA (3) + timestamp (9) + 6 head commas (6)
+            //   + lat DD (2) + lat MM (2) + hemisphere (1)
+            //   + lon DDD (3) + lon MM (2) + hemisphere (1)
+            //   + * (1) + checksum (2) + \r\n (2)
+            let base_len = talker_id.len() + 34 + tail.len();
+            let remaining = 82usize.saturating_sub(base_len);
+            if remaining >= 4 {
+                ((remaining - 2) / 2).min(7)
+            } else {
+                0
+            }
+        } else {
+            7
+        };
+        let w = if dp > 0 { 3 + dp } else { 2 };
+
+        let seconds = f64::from(self.time.second()) + f64::from(self.time.nanosecond()) / 1e9;
         let (lat_deg, lat_mins) = self.llh.latitude_degree_decimal_minutes();
-        let lat_hemisphere = self.llh.latitudinal_hemisphere();
-
         let (lon_deg, lon_mins) = self.llh.longitude_degree_decimal_minutes();
-        let lon_hemisphere = self.llh.longitudinal_hemisphere();
 
-        let gps_quality = self.gps_quality;
+        let mut sentence = String::with_capacity(88);
+        sentence.push('$');
+        write!(
+            sentence,
+            "{talker_id}GGA,{:02}{:02}{:05.2},{lat_deg:02}{lat_mins:0w$.dp$},{},{lon_deg:\
+             03}{lon_mins:0w$.dp$},{}",
+            self.time.hour(),
+            self.time.minute(),
+            seconds,
+            self.llh.latitudinal_hemisphere(),
+            self.llh.longitudinal_hemisphere(),
+            dp = dp,
+        )
+        .unwrap();
+        sentence.push_str(&tail);
 
-        let sat_in_use = self.sat_in_use.map_or(String::new(), |sat| sat.to_string());
+        let checksum = calculate_checksum(&sentence);
+        write!(sentence, "*{checksum:02X}\r\n").unwrap();
+        sentence
+    }
 
-        let hdop = self.hdop.map_or(String::new(), |hdop| format!("{hdop:.1}"));
-
+    /// Writes the variable-width tail fields (everything after the lon hemisphere).
+    fn write_tail(&self, w: &mut impl fmt::Write) {
+        write!(w, ",{},", self.gps_quality).unwrap();
+        if let Some(sat) = self.sat_in_use {
+            write!(w, "{sat}").unwrap();
+        }
+        write!(w, ",").unwrap();
+        if let Some(h) = self.hdop {
+            write!(w, "{h:.1}").unwrap();
+        }
         // NOTE(ted): This is actually not the right value to use, however, we don't really use
         // height for finding information like nearest station so it's ok to use for now
-        let height = "0.0";
-
-        let age_dgps = self
-            .age_dgps
-            .map_or(String::new(), |age| format!("{:.1}", age.as_secs_f64()));
-
-        let geoidal_separation = self
-            .geoidal_separation
-            .map_or(String::new(), |sep| format!("{sep:.2}"));
-
-        let reference_station_id = self
-            .reference_station_id
-            .map_or(String::new(), |id| id.to_string());
-
-        let sentence = format!(
-            "{talker_id}GGA,{timestamp},{lat_deg:02}{lat_mins:010.7},{lat_hemisphere},{lon_deg:\
-             03}{lon_mins:010.7},{lon_hemisphere},{gps_quality},{sat_in_use},{hdop},{height:.6},M,\
-             {geoidal_separation},{age_dgps:.1},{reference_station_id}",
-        );
-
-        let checksum = nmea::calculate_checksum(&sentence);
-
-        let sentence = format!("${sentence}*{checksum}\r\n");
-
-        sentence
+        write!(w, ",0.0,M,").unwrap();
+        if let Some(sep) = self.geoidal_separation {
+            write!(w, "{sep:.1}").unwrap();
+        }
+        write!(w, ",M,").unwrap();
+        if let Some(age) = self.age_dgps {
+            write!(w, "{:.1}", age.as_secs_f64()).unwrap();
+        }
+        write!(w, ",").unwrap();
+        if let Some(id) = self.reference_station_id {
+            write!(w, "{id}").unwrap();
+        }
     }
 }
 
 #[cfg(test)]
 mod test {
+    use proptest::prelude::*;
+
     use super::*;
 
-    #[test]
-    #[allow(clippy::float_cmp, reason = "testing exact parsing")]
-    fn nmea_crate_can_parse_gga_sentence() {
-        let gga = GGA::builder()
-            .sat_in_use(12)
-            .time(DateTime::from_timestamp(1_761_351_489, 89_999_999).unwrap())
-            .gps_quality(GPSQuality::SPS)
-            .hdop(0.9)
-            .llh(super::LLHDegrees::new(37.7749, -122.4194, 10.0))
-            .build();
+    const ALL_QUALITIES: [GPSQuality; 9] = [
+        GPSQuality::NoFix,
+        GPSQuality::SPS,
+        GPSQuality::DGPS,
+        GPSQuality::PPS,
+        GPSQuality::RTK,
+        GPSQuality::FRTK,
+        GPSQuality::DeadReckoning,
+        GPSQuality::Manual,
+        GPSQuality::Simulated,
+    ];
 
-        let parse_result =
-            ::nmea::parse_str(&gga.to_sentence()).expect("Failed to parse GGA sentence");
+    proptest! {
+        #![proptest_config(ProptestConfig::with_cases(1000))]
 
-        let ::nmea::ParseResult::GGA(parsed_gga) = parse_result else {
-            panic!("Parsed result is not a GGA sentence");
-        };
+        #[test]
+        fn gga_sentence_can_be_parsed_by_nmea_crate(
+            sat_in_use in 0u8..=99,
+            timestamp in 0i64..=4_102_444_800,
+            hdop in 0.0f32..=99.9,
+            lat in -90.0f64..=90.0,
+            lon in -180.0f64..=180.0,
+            height in -1000.0f64..=100_000.0,
+            gps_quality in 0usize..=8,
+            age_dgps in proptest::option::of(0.0f64..=999.9),
+            geoidal_separation in proptest::option::of(-999.9f32..=999.9),
+            reference_station_id in proptest::option::of(0u16..=1023),
+            strict in proptest::bool::ANY,
+        ) {
 
-        assert_eq!(parsed_gga.latitude.unwrap(), 37.7749);
-        assert_eq!(parsed_gga.longitude.unwrap(), -122.4194);
-    }
+            let gga = GGA {
+                source: Source::default(),
+                time: DateTime::from_timestamp(timestamp, 0).unwrap(),
+                llh: LLHDegrees::new(lat, lon, height),
+                gps_quality: ALL_QUALITIES[gps_quality],
+                sat_in_use: Some(sat_in_use),
+                hdop: Some(hdop),
+                geoidal_separation,
+                age_dgps: age_dgps.map(Duration::from_secs_f64),
+                reference_station_id,
+                strict,
+            };
 
-    #[test]
-    fn gga_can_be_turned_into_an_nmea_sentence() {
-        let gga = GGA::builder()
-            .sat_in_use(12)
-            .time(DateTime::from_timestamp(1_761_351_489, 0).unwrap())
-            .gps_quality(GPSQuality::SPS)
-            .hdop(0.9)
-            .llh(super::LLHDegrees::new(37.7749, -122.4194, 10.0))
-            .build();
+            let sentence = gga.to_sentence();
 
-        let sentence = gga.to_sentence();
+            let parse_result = ::nmea::parse_str(&sentence);
+            prop_assert!(parse_result.is_ok(), "Failed to parse: {sentence}");
 
-        assert_eq!(
-            sentence,
-            "$GPGGA,001809.00,3746.4940000,N,12225.1640000,W,1,12,0.9,0.0,M,,,*01\r\n"
-        );
-    }
+            let ::nmea::ParseResult::GGA(parsed) = parse_result.unwrap() else {
+                prop_assert!(false, "Parsed result is not GGA");
+                unreachable!();
+            };
 
-    #[test]
-    fn gga_with_dgps_can_be_turned_into_an_nmea_sentence() {
-        let gga = GGA::builder()
-            .sat_in_use(8)
-            .time(DateTime::from_timestamp(1_761_351_489, 0).unwrap())
-            .hdop(1.2)
-            .llh(super::LLHDegrees::new(34.0522, -18.2437, 15.0))
-            .gps_quality(GPSQuality::DGPS)
-            .age_dgps(Duration::from_secs_f64(2.5))
-            .geoidal_separation(1.0)
-            .reference_station_id(42)
-            .build();
+            let parsed_lat = parsed.latitude.unwrap();
+            let parsed_lon = parsed.longitude.unwrap();
 
-        let sentence = gga.to_sentence();
+            // Lat/lon minute precision varies dynamically (4-7 decimal places) to
+            // fit within the 82-char NMEA limit. At worst case (4dp), the max
+            // formatting error is ~8.3e-7 degrees.
+            prop_assert!(
+                (parsed_lat - lat).abs() < 1e-5,
+                "Latitude mismatch: expected {lat}, got {parsed_lat}",
+            );
+            prop_assert!(
+                (parsed_lon - lon).abs() < 1e-5,
+                "Longitude mismatch: expected {lon}, got {parsed_lon}",
+            );
+        }
 
-        assert_eq!(
-            sentence,
-            "$GPGGA,001809.00,3403.1320000,N,01814.6220000,W,2,8,1.2,0.0,M,1.00,2,42*1C\r\n"
-        );
-    }
+        #[test]
+        fn strict_gga_sentence_is_always_less_than_or_equal_to_82_characters(
+            sat_in_use in proptest::option::of(0u8..=99),
+            timestamp in 0i64..=4_102_444_800,
+            nanosecond in 0u32..=999_999_999,
+            hdop in proptest::option::of(0.0f32..=99.9),
+            lat in -90.0f64..=90.0,
+            lon in -180.0f64..=180.0,
+            height in -1000.0f64..=100_000.0,
+            gps_quality in 0usize..=8,
+            age_dgps in proptest::option::of(0.0f64..=999.9),
+            geoidal_separation in proptest::option::of(-999.9f32..=999.9),
+            reference_station_id in proptest::option::of(0u16..=1023),
+        ) {
+            let gga = GGA {
+                source: Source::default(),
+                time: DateTime::from_timestamp(timestamp, nanosecond).unwrap(),
+                llh: LLHDegrees::new(lat, lon, height),
+                gps_quality: ALL_QUALITIES[gps_quality],
+                sat_in_use,
+                hdop,
+                geoidal_separation,
+                age_dgps: age_dgps.map(Duration::from_secs_f64),
+                reference_station_id,
+                strict: true,
+            };
 
-    #[test]
-    fn gga_sentence_is_always_less_than_82_characters() {
-        // we are going to set some very large decimal places and the highest possible values in
-        // terms of character count to ensure our sentence is always below 82 characters
-        let gga = GGA::builder()
-            .sat_in_use(12)
-            .time(DateTime::from_timestamp(1_761_351_489, 0).unwrap())
-            .hdop(1.210_123_1)
-            .llh(super::LLHDegrees::new(
-                -90.000_000_001,
-                -180.000_000_000_1,
-                1_000.000_000_000,
-            ))
-            .gps_quality(GPSQuality::DGPS)
-            .age_dgps(Duration::from_secs_f64(2.500_000_000_001))
-            .geoidal_separation(1.00)
-            .reference_station_id(1023) // 1023 is the max value for a 4 digit station ID
-            .build();
+            let sentence = gga.to_sentence();
 
-        let sentence = gga.to_sentence();
+            prop_assert!(
+                sentence.len() <= 82,
+                "Sentence length {} exceeds 82 characters: {}", sentence.len(), sentence
+            );
+        }
 
-        assert!(sentence.len() < 82);
+        #[test]
+        fn gga_sentence_is_always_less_than_or_equal_to_88_characters(
+            sat_in_use in proptest::option::of(0u8..=99),
+            timestamp in 0i64..=4_102_444_800,
+            nanosecond in 0u32..=999_999_999,
+            hdop in proptest::option::of(0.0f32..=99.9),
+            lat in -90.0f64..=90.0,
+            lon in -180.0f64..=180.0,
+            height in -1000.0f64..=100_000.0,
+            gps_quality in 0usize..=8,
+            age_dgps in proptest::option::of(0.0f64..=999.9),
+            geoidal_separation in proptest::option::of(-999.9f32..=999.9),
+            reference_station_id in proptest::option::of(0u16..=1023),
+        ) {
+            let gga = GGA {
+                source: Source::default(),
+                time: DateTime::from_timestamp(timestamp, nanosecond).unwrap(),
+                llh: LLHDegrees::new(lat, lon, height),
+                gps_quality: ALL_QUALITIES[gps_quality],
+                sat_in_use,
+                hdop,
+                geoidal_separation,
+                age_dgps: age_dgps.map(Duration::from_secs_f64),
+                reference_station_id,
+                strict: false,
+            };
+
+            let sentence = gga.to_sentence();
+
+            prop_assert!(
+                sentence.len() <= 88,
+                "Sentence length {} exceeds 88 characters: {}", sentence.len(), sentence
+            );
+        }
     }
 }
