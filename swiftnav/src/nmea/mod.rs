@@ -13,9 +13,11 @@
 //! NMEA sentences and parsing/serialization of those sentences.
 
 mod checksum;
+#[cfg(feature = "chrono")]
 mod gga;
 mod source;
 
 pub use checksum::*;
+#[cfg(feature = "chrono")]
 pub use gga::*;
 pub use source::*;
