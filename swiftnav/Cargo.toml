@@ -13,7 +13,7 @@ rust-version = "1.87.0"
 bon = "3.8.1"
 rustversion = "1.0.22"
 chrono = { version = "0.4.42" }
-strum = { version = "0.27.2", features = ["derive"] }
+strum = { version = "0.28.0", features = ["derive"] }
 nalgebra = "0.34.1"
 thiserror = "2.0.17"
 
