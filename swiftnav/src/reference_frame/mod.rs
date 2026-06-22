@@ -151,6 +151,9 @@ pub enum ReferenceFrame {
     #[allow(non_camel_case_types)]
     #[strum(to_string = "WGS84(G2296)", serialize = "WGS84_G2296")]
     WGS84_G2296,
+    #[allow(non_camel_case_types)]
+    #[strum(to_string = "WGS84(G1674)", serialize = "WGS84_G1674")]
+    WGS84_G1674,
     /// Custom reference frame with user-defined name
     #[strum(transparent, default)]
     Other(String),
