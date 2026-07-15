@@ -1,0 +1,1 @@
+pre-release-hook = ["cargo", "semver-checks", "--baseline-rev", "{{crate_name}}-v{{prev_version}}"]
