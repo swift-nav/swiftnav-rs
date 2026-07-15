@@ -187,9 +187,9 @@ impl GpsTime {
         let mut utc_time: UtcTime = UtcTime::from_gps_no_leap(utc_time);
 
         if is_lse {
-            assert!(utc_time.hour() == 23);
-            assert!(utc_time.minute() == 59);
-            assert!(utc_time.seconds_int() == 59);
+            assert_eq!(utc_time.hour(), 23);
+            assert_eq!(utc_time.minute(), 59);
+            assert_eq!(utc_time.seconds_int(), 59);
             /* add the extra second back in */
             utc_time.add_second();
         }
