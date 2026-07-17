@@ -62,6 +62,16 @@ impl ECEF {
         self.0.z
     }
 
+    #[must_use]
+    pub fn to_array(&self) -> [f64; 3] {
+        [self.x(), self.y(), self.z()]
+    }
+
+    #[must_use]
+    pub fn from_array(array: [f64; 3]) -> Self {
+        Self::new(array[0], array[1], array[2])
+    }
+
     /// Converts a [`ECEF`] position into a [`LLHRadians`] position.
     #[must_use]
     pub fn to_llh(&self) -> LLHRadians {
@@ -403,5 +413,27 @@ mod tests {
         assert_eq!(2.0, result.x());
         assert_eq!(4.0, result.y());
         assert_eq!(6.0, result.z());
+    }
+
+    #[expect(clippy::float_cmp)]
+    #[test]
+    fn ecef_to_array() {
+        let a = ECEF::new(1.0, 2.0, 3.0);
+        assert_eq!([1.0, 2.0, 3.0], a.to_array());
+    }
+
+    #[expect(clippy::float_cmp)]
+    #[test]
+    fn ecef_from_array() {
+        let a = ECEF::from_array([1.0, 2.0, 3.0]);
+        assert_eq!(1.0, a.x());
+        assert_eq!(2.0, a.y());
+        assert_eq!(3.0, a.z());
+    }
+
+    #[test]
+    fn ecef_array_round_trip() {
+        let a = ECEF::new(1.0, 2.0, 3.0);
+        assert_eq!(a, ECEF::from_array(a.to_array()));
     }
 }
