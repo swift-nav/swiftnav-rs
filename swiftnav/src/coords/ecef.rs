@@ -234,6 +234,12 @@ impl From<LLHDegrees> for ECEF {
     }
 }
 
+impl From<ECEF> for [f64; 3] {
+    fn from(ecef: ECEF) -> Self {
+        *ecef.as_array()
+    }
+}
+
 impl AsRef<[f64; 3]> for ECEF {
     fn as_ref(&self) -> &[f64; 3] {
         self.as_array()
@@ -359,6 +365,22 @@ impl MulAssign<&f64> for ECEF {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[expect(clippy::float_cmp)]
+    #[test]
+    fn ecef_to_array() {
+        let ecef = ECEF::new(1.0, 2.0, 3.0);
+        let array: [f64; 3] = ecef.into();
+        assert_eq!(array, [1.0, 2.0, 3.0]);
+    }
+
+    #[test]
+    fn ecef_array_round_trip() {
+        let original = ECEF::new(1.0, 2.0, 3.0);
+        let array: [f64; 3] = original.into();
+        let restored = ECEF::from(array);
+        assert_eq!(original, restored);
+    }
 
     #[expect(clippy::float_cmp)]
     #[test]
