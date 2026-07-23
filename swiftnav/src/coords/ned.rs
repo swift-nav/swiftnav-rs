@@ -1,3 +1,5 @@
+use std::fmt;
+
 use nalgebra::Vector3;
 
 use crate::{coords::ECEF, math};
@@ -113,5 +115,28 @@ impl AsMut<[f64; 3]> for NED {
 impl AsMut<Vector3<f64>> for NED {
     fn as_mut(&mut self) -> &mut Vector3<f64> {
         self.as_vector_mut()
+    }
+}
+
+impl fmt::Display for NED {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "NED {{ N: {}, E: {}, D: {} }}",
+            self.n(),
+            self.e(),
+            self.d()
+        )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display_ned() {
+        let test = NED::new(-1.5, 2.78, 3.0);
+        assert_eq!(format!("{test}"), "NED { N: -1.5, E: 2.78, D: 3 }");
     }
 }

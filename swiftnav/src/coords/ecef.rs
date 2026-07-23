@@ -1,3 +1,4 @@
+use std::fmt;
 use std::ops::{Add, AddAssign, Mul, MulAssign, Sub, SubAssign};
 
 use nalgebra::Vector3;
@@ -356,9 +357,27 @@ impl MulAssign<&f64> for ECEF {
     }
 }
 
+impl fmt::Display for ECEF {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "ECEF {{ x: {}, y: {}, z: {} }}",
+            self.x(),
+            self.y(),
+            self.z()
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn display_ecef() {
+        let test = ECEF::new(-1.5, 2.78, 3.0);
+        assert_eq!(format!("{test}"), "ECEF { x: -1.5, y: 2.78, z: 3 }");
+    }
 
     #[expect(clippy::float_cmp)]
     #[test]

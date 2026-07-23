@@ -87,6 +87,7 @@ use nalgebra::Vector2;
 pub use ned::*;
 
 use crate::{reference_frame::ReferenceFrame, time::GpsTime};
+use std::fmt;
 
 /// WGS84 local horizontal coordinates consisting of an Azimuth and Elevation, with angles stored as
 /// radians
@@ -191,6 +192,17 @@ impl AsMut<Vector2<f64>> for AzimuthElevation {
     }
 }
 
+impl fmt::Display for AzimuthElevation {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "AzimuthElevation {{ az: {}, el: {} }}",
+            self.az(),
+            self.el()
+        )
+    }
+}
+
 /// Complete coordinate used for transforming between reference frames
 ///
 /// Velocities are optional, but when present they will be transformed
@@ -291,6 +303,30 @@ impl Coordinate {
     }
 }
 
+impl fmt::Display for Coordinate {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self.velocity {
+            Some(v) => write!(
+                f,
+                "Coordinate {{ ref_frame: {}, pos: {}, vel: {}, epoch: wn={} tow={} }}",
+                self.reference_frame,
+                self.position,
+                v,
+                self.epoch.wn(),
+                self.epoch.tow()
+            ),
+            None => write!(
+                f,
+                "Coordinate {{ ref_frame: {}, pos: {}, vel: None, epoch: wn={} tow={} }}",
+                self.reference_frame,
+                self.position,
+                self.epoch.wn(),
+                self.epoch.tow()
+            ),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use float_eq::assert_float_eq;
@@ -298,6 +334,49 @@ mod tests {
 
     use super::*;
     use crate::time::UtcTime;
+
+    #[test]
+    fn display_azimuth_elevation() {
+        let azel = AzimuthElevation::new(1.2, -2.1);
+        assert_eq!(format!("{azel}"), "AzimuthElevation { az: 1.2, el: -2.1 }");
+    }
+
+    #[test]
+    fn display_coordinate_with_velocity() {
+        let epoch = UtcTime::from_parts(2020, 1, 1, 0, 0, 0.).to_gps_hardcoded();
+        let coord = Coordinate::with_velocity(
+            ReferenceFrame::ITRF2014,
+            ECEF::new(1.0, 2.0, 3.0),
+            ECEF::new(4.0, 5.0, 6.0),
+            epoch,
+        );
+        assert_eq!(
+            format!("{coord}"),
+            format!(
+                "Coordinate {{ ref_frame: ITRF2014, pos: ECEF {{ x: 1, y: 2, z: 3 }}, vel: ECEF {{ x: 4, y: 5, z: 6 }}, epoch: wn={} tow={} }}",
+                epoch.wn(),
+                epoch.tow()
+            )
+        );
+    }
+
+    #[test]
+    fn display_coordinate() {
+        let epoch = UtcTime::from_parts(2020, 1, 1, 23, 2, 4.0).to_gps_hardcoded();
+        let coord = Coordinate::without_velocity(
+            ReferenceFrame::ITRF2020,
+            ECEF::new(-1.5, 2.78, 3.0),
+            epoch,
+        );
+        assert_eq!(
+            format!("{coord}"),
+            format!(
+                "Coordinate {{ ref_frame: ITRF2020, pos: ECEF {{ x: -1.5, y: 2.78, z: 3 }}, vel: None, epoch: wn={} tow={} }}",
+                epoch.wn(),
+                epoch.tow()
+            )
+        );
+    }
 
     /* Maximum allowable error in quantities with units of length (in meters). */
     const MAX_DIST_ERROR_M: f64 = 1e-6;

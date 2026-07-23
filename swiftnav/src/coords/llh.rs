@@ -1,3 +1,5 @@
+use std::fmt;
+
 use nalgebra::Vector3;
 
 use super::{ECEF, Ellipsoid, WGS84};
@@ -188,6 +190,18 @@ impl AsMut<Vector3<f64>> for LLHDegrees {
     }
 }
 
+impl fmt::Display for LLHDegrees {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "LLHDegrees {{ lat: {}, lon: {}, ht: {} }}",
+            self.latitude(),
+            self.longitude(),
+            self.height()
+        )
+    }
+}
+
 /// WGS84 geodetic coordinates (Latitude, Longitude, Height), with angles in radians.
 ///
 /// Internally stored as an array of 3 [f64](std::f64) values: latitude, longitude, and height above
@@ -326,5 +340,40 @@ impl AsMut<[f64; 3]> for LLHRadians {
 impl AsMut<Vector3<f64>> for LLHRadians {
     fn as_mut(&mut self) -> &mut Vector3<f64> {
         self.as_vector_mut()
+    }
+}
+
+impl fmt::Display for LLHRadians {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "LLHRadians {{ lat: {}, lon: {}, ht: {} }}",
+            self.latitude(),
+            self.longitude(),
+            self.height()
+        )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display_llh_degrees() {
+        let test = LLHDegrees::new(-1.5, 2.78, 3.0);
+        assert_eq!(
+            format!("{test}"),
+            "LLHDegrees { lat: -1.5, lon: 2.78, ht: 3 }"
+        );
+    }
+
+    #[test]
+    fn display_llh_radians() {
+        let llh = LLHRadians::new(-1.5, 2.78, 3.0);
+        assert_eq!(
+            format!("{llh}"),
+            "LLHRadians { lat: -1.5, lon: 2.78, ht: 3 }"
+        );
     }
 }

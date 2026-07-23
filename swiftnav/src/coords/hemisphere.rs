@@ -41,3 +41,32 @@ impl fmt::Display for Hemisphere {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display_latitudinal_hemisphere() {
+        assert_eq!(format!("{}", LatitudinalHemisphere::North), "N");
+        assert_eq!(format!("{}", LatitudinalHemisphere::South), "S");
+    }
+
+    #[test]
+    fn display_longitudinal_hemisphere() {
+        assert_eq!(format!("{}", LongitudinalHemisphere::East), "E");
+        assert_eq!(format!("{}", LongitudinalHemisphere::West), "W");
+    }
+
+    #[test]
+    fn display_hemisphere() {
+        assert_eq!(
+            format!("{}", Hemisphere::Latitudinal(LatitudinalHemisphere::North)),
+            "N"
+        );
+        assert_eq!(
+            format!("{}", Hemisphere::Longitudinal(LongitudinalHemisphere::West)),
+            "W"
+        );
+    }
+}
