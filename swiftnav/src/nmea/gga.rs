@@ -166,13 +166,9 @@ impl GGA {
         if let Some(h) = self.hdop {
             write!(w, "{h:.1}").unwrap();
         }
-        // NOTE(ted): This is actually not the right value to use, however, we don't really use
-        // height for finding information like nearest station so it's ok to use for now
-        write!(w, ",0.0,M,").unwrap();
-        if let Some(sep) = self.geoidal_separation {
-            write!(w, "{sep:.1}").unwrap();
-        }
-        write!(w, ",M,").unwrap();
+        write!(w, ",{:.2},M,", self.llh.height()).unwrap();
+        let geoidal_separation = self.geoidal_separation.unwrap_or(0.0);
+        write!(w, "{geoidal_separation:.1},M,").unwrap();
         if let Some(age) = self.age_dgps {
             write!(w, "{:.1}", age.as_secs_f64()).unwrap();
         }
@@ -245,16 +241,23 @@ mod test {
             let parsed_lat = parsed.latitude.unwrap();
             let parsed_lon = parsed.longitude.unwrap();
 
-            // Lat/lon minute precision varies dynamically (4-7 decimal places) to
-            // fit within the 82-char NMEA limit. At worst case (4dp), the max
-            // formatting error is ~8.3e-7 degrees.
+            // Lat/lon minute precision is reduced dynamically in strict mode so the
+            // sentence still fits the 82-char NMEA limit. Now that the altitude field
+            // carries the real height (up to 9 chars) rather than the old hardcoded
+            // "0.0", the tail can be long enough to push the minutes down to a single
+            // decimal place, so the round-trip tolerance has to track the number of
+            // decimal places actually emitted: rounding the minutes to `dp` places
+            // bounds the error at 0.5 * 10^-dp minutes (converted to degrees below).
+            let dp = minute_decimal_places(&sentence);
+            let dp_pow = i32::try_from(dp).expect("dp is at most 7");
+            let tol = 0.5 / 10f64.powi(dp_pow) / 60.0 + 1e-5;
             prop_assert!(
-                (parsed_lat - lat).abs() < 1e-5,
-                "Latitude mismatch: expected {lat}, got {parsed_lat}",
+                (parsed_lat - lat).abs() < tol,
+                "Latitude mismatch: expected {lat}, got {parsed_lat} (dp={dp}, tol={tol})",
             );
             prop_assert!(
-                (parsed_lon - lon).abs() < 1e-5,
-                "Longitude mismatch: expected {lon}, got {parsed_lon}",
+                (parsed_lon - lon).abs() < tol,
+                "Longitude mismatch: expected {lon}, got {parsed_lon} (dp={dp}, tol={tol})",
             );
         }
 
@@ -322,10 +325,59 @@ mod test {
 
             let sentence = gga.to_sentence();
 
+            // Non-strict mode always uses 7 decimal places for the minutes and does not
+            // enforce the 82-char NMEA limit. Emitting the real altitude (worst case
+            // "100000.00", 9 chars) instead of the old hardcoded "0.0" (3 chars) adds up
+            // to 6 characters, so the worst-case length grows from 88 to 94.
             prop_assert!(
-                sentence.len() <= 88,
-                "Sentence length {} exceeds 88 characters: {}", sentence.len(), sentence
+                sentence.len() <= 94,
+                "Sentence length {} exceeds 94 characters: {}", sentence.len(), sentence
             );
         }
+    }
+
+    /// Returns the number of decimal places used for the latitude minutes field in a
+    /// GGA sentence, i.e. the dynamic `dp` chosen by [`GGA::to_sentence`]. The latitude
+    /// is the third comma-separated field (`$..GGA`, time, latitude, hemisphere, ...).
+    fn minute_decimal_places(sentence: &str) -> usize {
+        let lat_field = sentence.split(',').nth(2).unwrap_or("");
+        match lat_field.split_once('.') {
+            Some((_, frac)) => frac.len(),
+            None => 0,
+        }
+    }
+
+    #[test]
+    fn gga_sentence_emits_real_altitude_not_zero() {
+        let height = 117.46_f32;
+        let gga = GGA {
+            source: Source::default(),
+            time: DateTime::from_timestamp(0, 0).unwrap(),
+            llh: LLHDegrees::new(37.5, -122.3, f64::from(height)),
+            gps_quality: GPSQuality::RTK,
+            sat_in_use: Some(12),
+            hdop: Some(0.8),
+            geoidal_separation: None,
+            age_dgps: None,
+            reference_station_id: None,
+            strict: true,
+        };
+
+        let sentence = gga.to_sentence();
+
+        assert!(
+            sentence.contains(",117.46,M,0.0,M,"),
+            "expected real altitude and 0.0 geoid separation, got: {sentence}"
+        );
+
+        let ::nmea::ParseResult::GGA(parsed) = ::nmea::parse_str(&sentence).unwrap() else {
+            panic!("parsed result is not GGA: {sentence}");
+        };
+        let parsed_alt = parsed.altitude.expect("altitude present");
+        assert!(
+            (parsed_alt - height).abs() < 1e-2,
+            "altitude mismatch: expected {height}, got {parsed_alt}"
+        );
+        assert_eq!(parsed.geoid_separation, Some(0.0));
     }
 }
