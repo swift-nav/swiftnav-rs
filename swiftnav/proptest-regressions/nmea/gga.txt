@@ -1,0 +1,8 @@
+# Seeds for failure cases proptest has generated in the past. It is
+# automatically read and these particular cases re-run before any
+# novel cases are generated.
+#
+# It is recommended to check this file in to source control so that
+# everyone who runs the test benefits from these saved cases.
+cc e72c89dd89158ddc20250a1db919a82514be1d0be4396824b553693fc023e568 # shrinks to sat_in_use = None, timestamp = 0, nanosecond = 0, hdop = Some(0.0), lat = 0.0, lon = 0.0, height = 79953.27802074983, gps_quality = 0, age_dgps = Some(140.55204422472545), geoidal_separation = Some(-997.0628), reference_station_id = Some(100)
+cc 5e8a95bd818cd3e3bb67317a03406cbd6c0856dd90849346fd4a3496b6d6d586 # shrinks to sat_in_use = 10, timestamp = 0, hdop = 87.426094, lat = 0.0, lon = -122.80980310562526, height = 80762.0424264378, gps_quality = 0, age_dgps = Some(475.442422039741), geoidal_separation = Some(-473.5831), reference_station_id = Some(10), strict = true
