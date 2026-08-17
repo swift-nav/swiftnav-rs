@@ -194,12 +194,21 @@ impl AsMut<Vector2<f64>> for AzimuthElevation {
 
 impl fmt::Display for AzimuthElevation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "AzimuthElevation {{ az: {}, el: {} }}",
-            self.az(),
-            self.el()
-        )
+        if let Some(decimals) = f.precision() {
+            write!(
+                f,
+                "AzimuthElevation {{ az: {:.decimals$}, el: {:.decimals$} }}",
+                self.az(),
+                self.el()
+            )
+        } else {
+            write!(
+                f,
+                "AzimuthElevation {{ az: {}, el: {} }}",
+                self.az(),
+                self.el()
+            )
+        }
     }
 }
 
@@ -339,6 +348,14 @@ mod tests {
     fn display_azimuth_elevation() {
         let azel = AzimuthElevation::new(1.2, -2.1);
         assert_eq!(format!("{azel}"), "AzimuthElevation { az: 1.2, el: -2.1 }");
+        assert_eq!(
+            format!("{azel:.1}"),
+            "AzimuthElevation { az: 1.2, el: -2.1 }"
+        );
+        assert_eq!(
+            format!("{azel:.3}"),
+            "AzimuthElevation { az: 1.200, el: -2.100 }"
+        );
     }
 
     #[test]

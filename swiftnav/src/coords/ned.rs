@@ -120,13 +120,23 @@ impl AsMut<Vector3<f64>> for NED {
 
 impl fmt::Display for NED {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "NED {{ N: {}, E: {}, D: {} }}",
-            self.n(),
-            self.e(),
-            self.d()
-        )
+        if let Some(decimals) = f.precision() {
+            write!(
+                f,
+                "NED {{ N: {:.decimals$}, E: {:.decimals$}, D: {:.decimals$} }}",
+                self.n(),
+                self.e(),
+                self.d()
+            )
+        } else {
+            write!(
+                f,
+                "NED {{ N: {}, E: {}, D: {} }}",
+                self.n(),
+                self.e(),
+                self.d()
+            )
+        }
     }
 }
 
@@ -138,5 +148,10 @@ mod tests {
     fn display_ned() {
         let test = NED::new(-1.5, 2.78, 3.0);
         assert_eq!(format!("{test}"), "NED { N: -1.5, E: 2.78, D: 3 }");
+        assert_eq!(format!("{test:.1}"), "NED { N: -1.5, E: 2.8, D: 3.0 }");
+        assert_eq!(
+            format!("{test:.3}"),
+            "NED { N: -1.500, E: 2.780, D: 3.000 }"
+        );
     }
 }

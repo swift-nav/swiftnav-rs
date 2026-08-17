@@ -359,13 +359,23 @@ impl MulAssign<&f64> for ECEF {
 
 impl fmt::Display for ECEF {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
-            f,
-            "ECEF {{ x: {}, y: {}, z: {} }}",
-            self.x(),
-            self.y(),
-            self.z()
-        )
+        if let Some(decimals) = f.precision() {
+            write!(
+                f,
+                "ECEF {{ x: {:.decimals$}, y: {:.decimals$}, z: {:.decimals$} }}",
+                self.x(),
+                self.y(),
+                self.z()
+            )
+        } else {
+            write!(
+                f,
+                "ECEF {{ x: {}, y: {}, z: {} }}",
+                self.x(),
+                self.y(),
+                self.z()
+            )
+        }
     }
 }
 
@@ -377,6 +387,11 @@ mod tests {
     fn display_ecef() {
         let test = ECEF::new(-1.5, 2.78, 3.0);
         assert_eq!(format!("{test}"), "ECEF { x: -1.5, y: 2.78, z: 3 }");
+        assert_eq!(format!("{test:.1}"), "ECEF { x: -1.5, y: 2.8, z: 3.0 }");
+        assert_eq!(
+            format!("{test:.3}"),
+            "ECEF { x: -1.500, y: 2.780, z: 3.000 }"
+        );
     }
 
     #[expect(clippy::float_cmp)]
