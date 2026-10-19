@@ -37,7 +37,7 @@
 //! };
 //!
 //! let repo = TransformationRepository::from_builtin();
-//! let epoch = UtcTime::from_parts(2020, 3, 15, 0, 0, 0.).to_gps_hardcoded();
+//! let epoch = UtcTime::from_parts(2020, 3, 15, 0, 0, 0.).to_gps();
 //!
 //! // Create coordinate with position and velocity
 //! let itrf_coord = Coordinate::with_velocity(

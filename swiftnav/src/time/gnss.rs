@@ -92,7 +92,7 @@ impl GpsTime {
         minute: u8,
         seconds: f64,
     ) -> GpsTime {
-        MJD::from_parts(year, month, day, hour, minute, seconds).to_gps()
+        Self::from_parts(year, month, day, hour, minute, seconds)
     }
 
     /// Gets the week number
@@ -265,7 +265,7 @@ impl GpsTime {
     #[deprecated(since = "0.14.0", note = "Use [`GpsTime::to_mjd`] instead")]
     #[must_use]
     pub fn to_mjd_hardcoded(self) -> MJD {
-        self.to_utc().to_mjd()
+        self.to_mjd()
     }
 
     /// Gets the GPS time of the nearest solution epoch
