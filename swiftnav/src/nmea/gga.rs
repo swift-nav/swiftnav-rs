@@ -14,6 +14,7 @@ use std::{
 };
 
 use bon::Builder;
+#[cfg(feature = "chrono")]
 use chrono::{DateTime, Timelike, Utc};
 
 use crate::{
@@ -73,6 +74,7 @@ pub enum GGAParseError {
 /// Global Positioning System Fix Data including time, position and fix related data for a GNSS
 /// receiver
 #[derive(Debug, PartialEq, Clone, Builder)]
+#[cfg(feature = "chrono")]
 pub struct GGA {
     #[builder(default)]
     pub source: Source,
@@ -99,6 +101,7 @@ pub struct GGA {
     pub strict: bool,
 }
 
+#[cfg(feature = "chrono")]
 impl GGA {
     /// Converts the GGA struct into an NMEA sentence.
     ///
@@ -201,6 +204,7 @@ mod test {
         #![proptest_config(ProptestConfig::with_cases(1000))]
 
         #[test]
+        #[cfg(feature = "chrono")]
         fn gga_sentence_can_be_parsed_by_nmea_crate(
             sat_in_use in 0u8..=99,
             timestamp in 0i64..=4_102_444_800,
@@ -262,6 +266,7 @@ mod test {
         }
 
         #[test]
+        #[cfg(feature = "chrono")]
         fn strict_gga_sentence_is_always_less_than_or_equal_to_82_characters(
             sat_in_use in proptest::option::of(0u8..=99),
             timestamp in 0i64..=4_102_444_800,
@@ -297,6 +302,7 @@ mod test {
         }
 
         #[test]
+        #[cfg(feature = "chrono")]
         fn gga_sentence_is_always_less_than_or_equal_to_88_characters(
             sat_in_use in proptest::option::of(0u8..=99),
             timestamp in 0i64..=4_102_444_800,
@@ -348,6 +354,7 @@ mod test {
     }
 
     #[test]
+    #[cfg(feature = "chrono")]
     fn gga_sentence_emits_real_altitude_not_zero() {
         let height = 117.46_f32;
         let gga = GGA {
