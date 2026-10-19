@@ -23,34 +23,16 @@
 //! intended that all times are to converted to [`GpsTime`] before use with
 //! swiftnav.
 //!
-//! # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
-//! UTC time occasinally adds additional seconds to keep it synchronized with the
-//! slowly changing spin of the earth. This complicates time keeping, so most
-//! GNSS time bases ignore leap seconds and thus slowly grow out of sync with UTC.
-//! This is fine when dealing with GNSS data, but it's common that people want time
-//! to be represented as a UTC time since that's what people are more familiar with.
-//! swiftnav provides ways to convert to and from UTC synchronized time bases
-//! and is able to correctly compensate for leap seconds in two ways.
+//! # ⚠️ 🦘⏱️ ⚠️ - Leap Seconds
+//! UTC time occasinally adds additional seconds to keep it synchronized with
+//! the slowly changing spin of the earth. Meanwhile the GPS timebase has
+//! ignored these leap seconds, so the difference between UTC and those GPS has
+//! not been constant. [As of October 2026 it has been announced that leap seconds
+//! will no longer be added to UTC](https://www.doi.org/10.59161/CGPM2026RES5E).
 //!
-//! The first is by using the UTC conversion parameters broadcast by GNSS systems
-//! that receivers can decode. [`UtcParams`] is how swiftnav represents this
-//! information. This is the prefered method since it  is usually available when
-//! processing raw GNSS data and ensures that the right  offset is applied at the
-//! right time.
-//!
-//! The second way is to use a table of historical leap seconds that is compiled
-//! in to swftnav-rs. This list is kept up to date in the source code as new leap
-//! seconds are announced, but once the code is compiled there is no way to update
-//! this table with new leap seconds. This obviously means that sooner or later
-//! the hard coded leap second information will become out of date and the
-//! converted times will be inaccurate. This is fine if you are processing
-//! historical data, but processing live data runs the risk of an incorrect time
-//! conversion.
-//!
-//! When converting to or from a time base that uses leap seconds (e.g. [`UtcTime`])
-//! two functions are always provided, one which takes a  [`UtcParams`] object to
-//! handle the leap second conversion and one which doesn't take a [`UtcParams`]
-//! object but has `_hardcoded` appended to the function name.
+//! This crate maintains an internal table of historical leap seconds and when
+//! converting between UTC and GPS time it will correctly account for those leap
+//! seconds.
 
 use std::time::Duration;
 
@@ -114,8 +96,8 @@ mod tests {
 
         for test_case in TEST_CASES {
             // test gps -> mjd -> gps
-            let mjd = test_case.to_mjd_hardcoded();
-            let round_trip = mjd.to_gps_hardcoded();
+            let mjd = test_case.to_mjd();
+            let round_trip = mjd.to_gps();
             let diff = test_case.diff(&round_trip).abs();
             assert!(
                 diff < TOW_TOL,
@@ -144,8 +126,8 @@ mod tests {
             );
 
             // test gps -> date -> gps
-            let (year, month, day, hour, minute, second) = test_case.to_date_hardcoded();
-            let round_trip = GpsTime::from_parts_hardcoded(year, month, day, hour, minute, second);
+            let (year, month, day, hour, minute, second) = test_case.to_date();
+            let round_trip = GpsTime::from_parts(year, month, day, hour, minute, second);
             let diff = test_case.diff(&round_trip).abs();
             assert!(
                 diff < TOW_TOL,

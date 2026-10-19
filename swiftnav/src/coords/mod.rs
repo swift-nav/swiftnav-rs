@@ -299,8 +299,7 @@ impl Coordinate {
     /// When a coordinate has no velocity the position won't be changed.
     #[must_use]
     pub fn adjust_epoch(self, new_epoch: &GpsTime) -> Self {
-        let dt =
-            new_epoch.to_fractional_year_hardcoded() - self.epoch.to_fractional_year_hardcoded();
+        let dt = new_epoch.to_fractional_year() - self.epoch.to_fractional_year();
         let v = self.velocity.unwrap_or_default();
 
         Coordinate {
@@ -360,7 +359,7 @@ mod tests {
 
     #[test]
     fn display_coordinate_with_velocity() {
-        let epoch = UtcTime::from_parts(2020, 1, 1, 0, 0, 0.).to_gps_hardcoded();
+        let epoch = UtcTime::from_parts(2020, 1, 1, 0, 0, 0.).to_gps();
         let coord = Coordinate::with_velocity(
             ReferenceFrame::ITRF2014,
             ECEF::new(1.0, 2.0, 3.0),
@@ -379,7 +378,7 @@ mod tests {
 
     #[test]
     fn display_coordinate() {
-        let epoch = UtcTime::from_parts(2020, 1, 1, 23, 2, 4.0).to_gps_hardcoded();
+        let epoch = UtcTime::from_parts(2020, 1, 1, 23, 2, 4.0).to_gps();
         let coord = Coordinate::without_velocity(
             ReferenceFrame::ITRF2020,
             ECEF::new(-1.5, 2.78, 3.0),
@@ -596,8 +595,8 @@ mod tests {
 
     #[test]
     fn coordinate_epoch() {
-        let initial_epoch = UtcTime::from_parts(2020, 1, 1, 0, 0, 0.).to_gps_hardcoded();
-        let new_epoch = UtcTime::from_parts(2021, 1, 1, 0, 0, 0.).to_gps_hardcoded();
+        let initial_epoch = UtcTime::from_parts(2020, 1, 1, 0, 0, 0.).to_gps();
+        let new_epoch = UtcTime::from_parts(2021, 1, 1, 0, 0, 0.).to_gps();
         let initial_coord = Coordinate::with_velocity(
             ReferenceFrame::ITRF2020,
             ECEF::new(0.0, 0.0, 0.0),

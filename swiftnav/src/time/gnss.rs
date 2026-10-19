@@ -12,7 +12,7 @@ use std::{
     time::Duration,
 };
 
-use crate::time::{MJD, UTC_LEAPS, UtcParams, UtcTime, WEEK, consts};
+use crate::time::{MJD, UTC_LEAPS, UtcTime, WEEK, consts};
 
 /// Representation of GPS Time
 #[derive(Debug, Copy, Clone)]
@@ -77,17 +77,12 @@ impl GpsTime {
         hour: u8,
         minute: u8,
         seconds: f64,
-        utc_params: &UtcParams,
     ) -> GpsTime {
-        MJD::from_parts(year, month, day, hour, minute, seconds).to_gps(utc_params)
+        MJD::from_parts(year, month, day, hour, minute, seconds).to_gps()
     }
 
-    /// Makes a new GPS time object from a date and time using a hardcoded list of leap seconds
-    ///
-    /// # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
-    ///
-    /// The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use [`GpsTime::from_parts()`] with the newest set of UTC parameters
+    /// Makes a new GPS time object from a date and time
+    #[deprecated(since = "0.14.0", note = "Use [`GpsTime::from_parts`] instead")]
     #[must_use]
     pub fn from_parts_hardcoded(
         year: u16,
@@ -97,7 +92,7 @@ impl GpsTime {
         minute: u8,
         seconds: f64,
     ) -> GpsTime {
-        MJD::from_parts(year, month, day, hour, minute, seconds).to_gps_hardcoded()
+        MJD::from_parts(year, month, day, hour, minute, seconds).to_gps()
     }
 
     /// Gets the week number
@@ -153,20 +148,17 @@ impl GpsTime {
         dt + f64::from(self.wn - other.wn) * f64::from(consts::WEEK_SECS)
     }
 
-    /// Convert a [`GpsTime`] into a [`UtcTime`] using the [`UtcParams`] if
-    /// available, or hardcoded leap seconds otherwise
-    fn internal_to_utc(self, params: Option<&UtcParams>) -> UtcTime {
+    /// Converts the GPS time into UTC time
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the GPS time is not valid
+    #[must_use]
+    pub fn to_utc(self) -> UtcTime {
         // Is it during a (positive) leap second event
         // Get the UTC offset at the time we're converting
-        let (is_lse, dt_utc) = params.map_or_else(
-            || {
-                (
-                    self.is_leap_second_event_hardcoded(),
-                    self.gps_utc_offset_hardcoded(),
-                )
-            },
-            |p| (self.is_leap_second_event(p), self.gps_utc_offset(p)),
-        );
+        let is_lse = self.is_leap_second_event();
+        let dt_utc = self.gps_utc_offset();
 
         let mut tow_utc = self.tow - dt_utc;
 
@@ -202,54 +194,14 @@ impl GpsTime {
     /// # Panics
     ///
     /// This function will panic if the GPS time is not valid
-    #[must_use]
-    pub fn to_utc(self, utc_params: &UtcParams) -> UtcTime {
-        self.internal_to_utc(Some(utc_params))
-    }
-
-    /// Converts the GPS time into UTC time using the hardcoded list of leap
-    /// seconds.
-    ///
-    /// # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
-    ///
-    /// The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use [`GpsTime::to_utc()`] with the newest set of UTC parameters
-    ///
-    /// # Panics
-    ///
-    /// This function will panic if the GPS time is not valid
+    #[deprecated(since = "0.14.0", note = "Use [`GpsTime::to_utc`] instead")]
     #[must_use]
     pub fn to_utc_hardcoded(self) -> UtcTime {
-        self.internal_to_utc(None)
+        self.to_utc()
     }
 
-    /// Gets the number of seconds difference between GPS and UTC times
-    pub(crate) fn gps_utc_offset(&self, utc_params: &UtcParams) -> f64 {
-        let dt = self.diff(&utc_params.tot());
-
-        /* The polynomial UTC to GPS correction */
-        let mut dt_utc: f64 =
-            utc_params.a0() + (utc_params.a1() * dt) + (utc_params.a2() * dt * dt);
-
-        /* the new UTC offset takes effect after the leap second event */
-        if self.diff(&utc_params.t_lse()) >= 1.0 {
-            dt_utc += f64::from(utc_params.dt_lsf());
-        } else {
-            dt_utc += f64::from(utc_params.dt_ls());
-        }
-
-        dt_utc
-    }
-
-    /// Gets the number of seconds difference between GPS and UTC using the hardcoded
-    /// list of leap seconds
-    ///
-    /// # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
-    ///
-    /// The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use [`GpsTime::gps_utc_offset()`] with the newest set
-    /// of UTC parameters
-    pub(crate) fn gps_utc_offset_hardcoded(&self) -> f64 {
+    /// Gets the number of seconds difference between GPS and UTC
+    pub(crate) fn gps_utc_offset(&self) -> f64 {
         for (t_leap, offset) in UTC_LEAPS.iter().rev() {
             if self.diff(t_leap) >= 1.0 {
                 return *offset;
@@ -262,30 +214,7 @@ impl GpsTime {
 
     /// Gets the number of seconds difference between UTC and GPS using the hardcoded
     /// list of leap seconds
-    pub(crate) fn utc_gps_offset(&self, utc_params: &UtcParams) -> f64 {
-        let dt = self.diff(&utc_params.tot()) + f64::from(utc_params.dt_ls());
-
-        /* The polynomial UTC to GPS correction */
-        let mut dt_utc = utc_params.a0() + utc_params.a1() * dt + utc_params.a2() * dt * dt;
-
-        /* the new UTC offset takes effect after the leap second event */
-        if self.diff(&utc_params.t_lse()) >= (f64::from(-utc_params.dt_ls()) - dt_utc) {
-            dt_utc += f64::from(utc_params.dt_lsf());
-        } else {
-            dt_utc += f64::from(utc_params.dt_ls());
-        }
-
-        -dt_utc
-    }
-
-    /// Gets the number of seconds difference between UTC and GPS using the hardcoded
-    /// list of leap seconds
-    ///
-    /// # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
-    /// The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use [`GpsTime::utc_gps_offset()`] with the newest set
-    /// of UTC parameters
-    pub(crate) fn utc_gps_offset_hardcoded(&self) -> f64 {
+    pub(crate) fn utc_gps_offset(&self) -> f64 {
         for (t_leap, offset) in UTC_LEAPS.iter().rev() {
             if self.diff(t_leap) >= (-offset + 1.0) {
                 return -offset;
@@ -298,25 +227,7 @@ impl GpsTime {
 
     /// Checks to see if this point in time is a UTC leap second event
     #[must_use]
-    pub fn is_leap_second_event(&self, params: &UtcParams) -> bool {
-        /* the UTC offset takes effect exactly 1 second after the start of
-         * the (positive) leap second event */
-        let dt = self.diff(&params.t_lse());
-
-        /* True only when self is during the leap second event */
-        (0.0..1.0).contains(&dt)
-    }
-
-    /// Checks to see if this point in time is a UTC leap second event using the
-    /// hardcoded list of leap seconds
-    ///
-    /// # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
-    ///
-    /// The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use [`GpsTime::is_leap_second_event()`] with the newest
-    /// set of UTC parameters
-    #[must_use]
-    pub fn is_leap_second_event_hardcoded(&self) -> bool {
+    pub fn is_leap_second_event(&self) -> bool {
         for (t_leap, _offset) in UTC_LEAPS.iter().rev() {
             let dt = self.diff(t_leap);
 
@@ -334,23 +245,27 @@ impl GpsTime {
         false
     }
 
-    /// Converts the GPS time into a [`MJD`] (modified julian date)
+    /// Checks to see if this point in time is a UTC leap second event
+    #[deprecated(
+        since = "0.14.0",
+        note = "Use [`GpsTime::is_leap_second_event`] instead"
+    )]
     #[must_use]
-    pub fn to_mjd(self, utc_params: &UtcParams) -> MJD {
-        self.to_utc(utc_params).to_mjd()
+    pub fn is_leap_second_event_hardcoded(&self) -> bool {
+        self.is_leap_second_event()
     }
 
-    /// Converts the GPS time into a [`MJD`] (modified julian date) using a hard
-    /// coded list of leap seconds
-    ///
-    /// # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
-    ///
-    /// The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use [`GpsTime::to_mjd()`] with the newest
-    /// set of UTC parameters
+    /// Converts the GPS time into a [`MJD`] (modified julian date)
+    #[must_use]
+    pub fn to_mjd(self) -> MJD {
+        self.to_utc().to_mjd()
+    }
+
+    /// Converts the GPS time into a [`MJD`] (modified julian date)
+    #[deprecated(since = "0.14.0", note = "Use [`GpsTime::to_mjd`] instead")]
     #[must_use]
     pub fn to_mjd_hardcoded(self) -> MJD {
-        self.to_utc_hardcoded().to_mjd()
+        self.to_utc().to_mjd()
     }
 
     /// Gets the GPS time of the nearest solution epoch
@@ -434,8 +349,8 @@ impl GpsTime {
     /// 30, 2025 is 30 days into the year so has a fractional year value of
     /// approximately $2025.082$ ($30 \div 365 \approx 0.082$).
     #[must_use]
-    pub fn to_fractional_year(&self, utc_params: &UtcParams) -> f64 {
-        let utc = self.to_utc(utc_params);
+    pub fn to_fractional_year(&self) -> f64 {
+        let utc = self.to_utc();
         utc.to_fractional_year()
     }
 
@@ -447,34 +362,23 @@ impl GpsTime {
     /// January 1, 2025 has a fractional year value of $2025.0$, while January
     /// 30, 2025 is 30 days into the year so has a fractional year value of
     /// approximately $2025.082$ ($30 \div 365 \approx 0.082$).
-    ///
-    /// # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
-    ///
-    /// The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use [`GpsTime::to_fractional_year()`] with the newest
-    /// set of UTC parameters
+    #[deprecated(since = "0.14.0", note = "Use [`GpsTime::to_fractional_year`] instead")]
     #[must_use]
     pub fn to_fractional_year_hardcoded(&self) -> f64 {
-        let utc = self.to_utc_hardcoded();
-        utc.to_fractional_year()
+        self.to_fractional_year()
     }
 
     /// Converts the GPS time into a date and time
     #[must_use]
-    pub fn to_date(self, utc_params: &UtcParams) -> (u16, u8, u8, u8, u8, f64) {
-        self.to_utc(utc_params).to_date()
+    pub fn to_date(self) -> (u16, u8, u8, u8, u8, f64) {
+        self.to_utc().to_date()
     }
 
     /// Converts the GPS time into a date and time
-    ///
-    /// # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
-    ///
-    /// The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use [`GpsTime::to_date()`] with the newest
-    /// set of UTC parameters
+    #[deprecated(since = "0.14.0", note = "Use [`GpsTime::to_date`] instead")]
     #[must_use]
     pub fn to_date_hardcoded(self) -> (u16, u8, u8, u8, u8, f64) {
-        self.to_utc_hardcoded().to_date()
+        self.to_date()
     }
 }
 
