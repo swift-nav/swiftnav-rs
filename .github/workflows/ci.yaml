@@ -7,18 +7,16 @@ on:
       - "master"
   schedule:
     - cron: "0 16 * * 1" # 8am PST every Monday
-env:
-  CMAKE_POLICY_VERSION_MINIMUM: 3.5
 jobs:
   lint:
     name: Lints
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
 
-      - uses: extractions/setup-just@v4
+      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
 
       - name: Install rust
         run: |
@@ -45,9 +43,18 @@ jobs:
     env:
       RUSTDOCFLAGS: -Dwarnings
     steps:
-      - uses: actions/checkout@v7
-      - uses: dtolnay/rust-toolchain@nightly
-      - uses: dtolnay/install@cargo-docs-rs
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install rust
+        run: |
+          rustup -V
+          rustup set profile minimal
+          rustup toolchain install nightly
+          rustup show
+
+      - name: Install cargo-docs-rs
+        run: cargo install --locked cargo-docs-rs@1.0.4
+
       - run: cargo docs-rs -p swiftnav
 
   build:
@@ -78,32 +85,17 @@ jobs:
             binary_target: x86_64-unknown-linux-gnu
             toolchain: 1.89.0
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           submodules: recursive
 
-      - uses: extractions/setup-just@v4
+      - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
 
       - name: Install musl tools
         if: matrix.needs_musl
         run: |
           sudo apt-get install musl-tools
           sudo ln -s /usr/bin/musl-gcc /usr/bin/musl-g++
-
-      # Required for bindgen on Windows
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
-        if: matrix.os == 'windows-latest'
-        with:
-          version: "10.0"
-          directory: ${{ runner.temp }}/llvm-10.0/
-
-      - name: Set CMake generator
-        if: matrix.os == 'windows-latest'
-        run: |
-          echo "CMAKE_GENERATOR=NMake Makefiles" >> $env:GITHUB_ENV
-          echo "${{ env.CMAKE_GENERATOR }}"
-          echo $env:CMAKE_GENERATOR
 
       - name: Install rust ${{ matrix.binary_target }}
         run: |
