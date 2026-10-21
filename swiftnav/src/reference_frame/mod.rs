@@ -37,7 +37,7 @@
 //! };
 //!
 //! let repo = TransformationRepository::from_builtin();
-//! let epoch = UtcTime::from_parts(2020, 3, 15, 0, 0, 0.).to_gps_hardcoded();
+//! let epoch = UtcTime::from_parts(2020, 3, 15, 0, 0, 0.).to_gps();
 //!
 //! // Create coordinate with position and velocity
 //! let itrf_coord = Coordinate::with_velocity(
@@ -371,7 +371,7 @@ impl Transformation {
         let (new_position, new_velocity) = self.params.transform(
             &coord.position(),
             coord.velocity().as_ref(),
-            coord.epoch().to_fractional_year_hardcoded(),
+            coord.epoch().to_fractional_year(),
         );
 
         Ok(Coordinate::new(
@@ -485,7 +485,7 @@ impl TransformationRepository {
         coord: &Coordinate,
         to: &ReferenceFrame,
     ) -> Result<Coordinate, TransformationNotFound> {
-        let epoch = coord.epoch().to_fractional_year_hardcoded();
+        let epoch = coord.epoch().to_fractional_year();
 
         let (position, velocity) = self
             .get_shortest_path(coord.reference_frame(), to)?

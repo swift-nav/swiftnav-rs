@@ -6,7 +6,7 @@ use swiftnav::{
 };
 
 fn make_epoch(year: u16) -> GpsTime {
-    UtcTime::from_parts(year, 1, 1, 0, 0, 0.).to_gps_hardcoded()
+    UtcTime::from_parts(year, 1, 1, 0, 0, 0.).to_gps()
 }
 
 /// Truth data obtained from https://www.epncb.oma.be/_productsservices/coord_trans/
@@ -889,7 +889,7 @@ fn dref91_r2016() {
         ReferenceFrame::ITRF2020,
         ECEF::new(3842152.805, 563402.164, 5042888.600),
         None,
-        UtcTime::from_parts(2023, 2, 22, 0, 0, 0.).to_gps_hardcoded(),
+        UtcTime::from_parts(2023, 2, 22, 0, 0, 0.).to_gps(),
     );
     let transformations = TransformationRepository::from_builtin();
 
@@ -901,7 +901,7 @@ fn dref91_r2016() {
     assert_float_eq!(result_coords.position().z(), 5042888.2271, abs <= 0.0001);
     assert!(result_coords.velocity().is_none());
     assert_float_eq!(
-        result_coords.epoch().to_fractional_year_hardcoded(),
+        result_coords.epoch().to_fractional_year(),
         2023.15,
         abs <= 0.01
     );

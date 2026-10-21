@@ -54,6 +54,7 @@
 //! compare positions.
 
 #![warn(clippy::pedantic)]
+#![doc(test(attr(deny(deprecated))))]
 
 pub mod coords;
 pub mod edc;

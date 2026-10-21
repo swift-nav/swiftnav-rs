@@ -17,7 +17,7 @@
 
 use std::time::Duration;
 
-use crate::time::{GpsTime, UtcParams, UtcTime, consts};
+use crate::time::{GpsTime, UtcTime, consts};
 
 /// Representation of modified julian dates (MJD)
 #[derive(Copy, Clone, Debug, PartialEq, PartialOrd)]
@@ -79,7 +79,13 @@ impl MJD {
         self.0
     }
 
-    pub(super) fn to_gps_internal(self, params: Option<&UtcParams>) -> GpsTime {
+    /// Converts the [`MJD`] into a [`GpsTime`]
+    ///
+    /// # Panics
+    ///
+    /// This function will panic if the [`MJD`] does not represent a valid GPS Time
+    #[must_use]
+    pub fn to_gps(self) -> GpsTime {
         let utc_days: f64 = self.0 - f64::from(consts::MJD_JAN_6_1980);
 
         let wn = (utc_days / f64::from(consts::WEEK_DAYS)) as i16;
@@ -87,10 +93,7 @@ impl MJD {
             (utc_days - f64::from(wn) * f64::from(consts::WEEK_DAYS)) * f64::from(consts::DAY_SECS);
         let utc_time = GpsTime::new_unchecked(wn, tow);
 
-        let leap_secs = params.map_or_else(
-            || utc_time.utc_gps_offset_hardcoded(),
-            |p| utc_time.utc_gps_offset(p),
-        );
+        let leap_secs = utc_time.utc_gps_offset();
 
         let gps_time = if leap_secs >= 0.0 {
             utc_time - Duration::from_secs_f64(leap_secs)
@@ -107,26 +110,10 @@ impl MJD {
     /// # Panics
     ///
     /// This function will panic if the [`MJD`] does not represent a valid GPS Time
-    #[must_use]
-    pub fn to_gps(self, utc_params: &UtcParams) -> GpsTime {
-        self.to_gps_internal(Some(utc_params))
-    }
-
-    /// Converts the [`MJD`] into a [`GpsTime`] using a hard coded list of leap
-    /// seconds
-    ///
-    /// # Panics
-    ///
-    /// This function will panic if the [`MJD`] does not represent a valid GPS Time
-    ///
-    /// # ⚠️  🦘  ⏱  ⚠️  - Leap Seconds
-    ///
-    /// The hard coded list of leap seconds will get out of date, it is
-    /// preferable to use [`MJD::to_gps()`] with the newest
-    /// set of UTC parameters
+    #[deprecated(since = "0.14.0", note = "Use [`MJD::to_gps`] instead")]
     #[must_use]
     pub fn to_gps_hardcoded(self) -> GpsTime {
-        self.to_gps_internal(None)
+        self.to_gps()
     }
 
     /// Converts the modified julian date into a UTC time
