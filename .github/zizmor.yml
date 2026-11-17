@@ -1,0 +1,8 @@
+rules:
+  ref-confusion:
+    disable: true
+  unpinned-uses:
+    config:
+      policies:
+        "swift-nav/*": ref-pin
+        "*": hash-pin
