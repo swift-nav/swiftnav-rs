@@ -105,9 +105,9 @@ impl UtcParams {
 /// This implementation mostly aims to represent dates and times over the period
 /// that GNSS systems have been around, and is only tested for that time period.
 /// If you require correctness for dates before January 6th 1980, the start of
-/// GPS time, please consider using the [`chrono`] crate. Conversions between
-/// [`UtcTime`] and [`chrono::DateTime<chrono::offset::Utc>`] are provided with
-/// the `chrono` feature.
+/// GPS time, please consider using another time crate, e.g. [`chrono`], or
+/// [`jiff`], or [`hifitime`]. Conversions between [`UtcTime`] and other crates
+/// are provided as features.
 #[derive(Debug, Clone, Copy)]
 pub struct UtcTime {
     /// Number of years AD. In four digit format.
@@ -400,6 +400,7 @@ impl From<MJD> for UtcTime {
     }
 }
 
+#[cfg(feature = "chrono")]
 impl From<UtcTime> for chrono::DateTime<chrono::offset::Utc> {
     fn from(utc: UtcTime) -> chrono::DateTime<chrono::offset::Utc> {
         use chrono::prelude::*;
@@ -425,6 +426,7 @@ impl From<UtcTime> for chrono::DateTime<chrono::offset::Utc> {
     }
 }
 
+#[cfg(feature = "chrono")]
 impl<Tz: chrono::offset::TimeZone> From<chrono::DateTime<Tz>> for UtcTime {
     fn from(chrono: chrono::DateTime<Tz>) -> UtcTime {
         use chrono::prelude::*;
@@ -440,6 +442,77 @@ impl<Tz: chrono::offset::TimeZone> From<chrono::DateTime<Tz>> for UtcTime {
             datetime.hour() as u8,
             datetime.minute() as u8,
             seconds,
+        )
+    }
+}
+
+#[cfg(feature = "jiff")]
+impl TryFrom<UtcTime> for jiff::Zoned {
+    type Error = jiff::Error;
+
+    fn try_from(utc: UtcTime) -> Result<jiff::Zoned, jiff::Error> {
+        #[expect(
+            clippy::cast_possible_wrap,
+            reason = "Valid dates never have negative values"
+        )]
+        jiff::civil::DateTime::new(
+            utc.year as i16,
+            utc.month as i8,
+            utc.month_day as i8,
+            utc.hour as i8,
+            utc.minute as i8,
+            utc.second_int as i8,
+            (utc.second_frac * 1_000_000_000.0).round() as i32,
+        )?
+        .to_zoned(jiff::tz::TimeZone::UTC)
+    }
+}
+
+#[cfg(feature = "jiff")]
+impl From<jiff::Zoned> for UtcTime {
+    fn from(jiff: jiff::Zoned) -> UtcTime {
+        let jiff_utc = jiff.with_time_zone(jiff::tz::TimeZone::UTC);
+
+        let seconds =
+            f64::from(jiff_utc.second()) + (f64::from(jiff_utc.nanosecond()) / 1_000_000_000.0);
+        UtcTime::from_parts(
+            jiff_utc.year() as u16,
+            jiff_utc.month() as u8,
+            jiff_utc.day() as u8,
+            jiff_utc.hour() as u8,
+            jiff_utc.minute() as u8,
+            seconds,
+        )
+    }
+}
+
+#[cfg(feature = "hifitime")]
+impl From<UtcTime> for hifitime::Epoch {
+    fn from(utc: UtcTime) -> hifitime::Epoch {
+        hifitime::Epoch::from_gregorian_utc(
+            i32::from(utc.year),
+            utc.month,
+            utc.month_day,
+            utc.hour,
+            utc.minute,
+            utc.second_int,
+            (utc.second_frac * 1_000_000_000.0).round() as u32,
+        )
+    }
+}
+
+#[cfg(feature = "hifitime")]
+impl From<hifitime::Epoch> for UtcTime {
+    fn from(hifitime: hifitime::Epoch) -> UtcTime {
+        let (year, month, day, hour, minute, second_int, nanosecond) = hifitime.to_gregorian_utc();
+        let second_frac = f64::from(nanosecond) / 1_000_000_000.0;
+        UtcTime::from_parts(
+            year as u16,
+            month,
+            day,
+            hour,
+            minute,
+            f64::from(second_int) + second_frac,
         )
     }
 }
@@ -1098,6 +1171,7 @@ mod tests {
         }
     }
 
+    #[cfg(feature = "chrono")]
     #[test]
     fn chrono_conversions() {
         use chrono::prelude::*;
@@ -1119,5 +1193,70 @@ mod tests {
         assert_eq!(converted.hour(), u32::from(swift_date.hour()));
         assert_eq!(converted.minute(), u32::from(swift_date.minute()));
         assert_eq!(converted.second(), swift_date.seconds() as u32);
+    }
+
+    #[cfg(feature = "jiff")]
+    #[test]
+    fn jiff_conversions() {
+        let epsilon_nanos = 1000; // 1 microsecond
+        let swift_date = UtcTime::from_parts(2021, 8, 1, 00, 11, 0.0);
+        let expected_utc = jiff::civil::DateTime::new(2021, 8, 1, 00, 11, 0, 0)
+            .unwrap()
+            .to_zoned(jiff::tz::TimeZone::UTC)
+            .unwrap();
+
+        // Test Swift->Jiff conversion
+        let converted: jiff::Zoned = swift_date.try_into().unwrap();
+        assert!(
+            converted.duration_until(&expected_utc).abs().as_nanos() < epsilon_nanos,
+            "Difference too large: {:?}",
+            converted.duration_until(&expected_utc)
+        );
+        assert_eq!(converted.year() as i32, i32::from(swift_date.year()));
+        assert_eq!(converted.month() as i16, i16::from(swift_date.month()));
+        assert_eq!(converted.day() as i16, i16::from(swift_date.day_of_month()));
+        assert_eq!(converted.hour() as i16, i16::from(swift_date.hour()));
+        assert_eq!(converted.minute() as i16, i16::from(swift_date.minute()));
+        assert_eq!(converted.second() as i16, swift_date.seconds() as i16);
+
+        // Test Jiff->Swift conversion
+        let converted: UtcTime = converted.into();
+        assert_eq!(converted.year(), swift_date.year());
+        assert_eq!(converted.month(), swift_date.month());
+        assert_eq!(converted.day_of_month(), swift_date.day_of_month());
+        assert_eq!(converted.hour(), swift_date.hour());
+        assert_eq!(converted.minute(), swift_date.minute());
+        assert!((converted.seconds() - swift_date.seconds()).abs() < 1e-6);
+    }
+
+    #[cfg(feature = "hifitime")]
+    #[test]
+    fn hifitime_conversions() {
+        let epsilon = 1e-6; // 1 microsecond
+        let swift_date = UtcTime::from_parts(2021, 8, 1, 00, 11, 0.0);
+        let expected_utc = hifitime::Epoch::from_gregorian_utc(2021, 8, 1, 00, 11, 0, 0);
+
+        // Test Swift->Hifitime conversion
+        let converted: hifitime::Epoch = swift_date.try_into().unwrap();
+        assert!(
+            (converted - expected_utc).abs().to_seconds() < epsilon,
+            "Difference too large: {:?}",
+            (converted - expected_utc)
+        );
+        assert_eq!(converted.year(), i32::from(swift_date.year()));
+        assert_eq!(converted.month_name() as u8 + 1, swift_date.month()); // hifitime months are 0-indexed
+        assert_eq!(converted.day_of_month(), swift_date.day_of_month());
+        assert_eq!(converted.hours(), swift_date.hour() as u64);
+        assert_eq!(converted.minutes(), swift_date.minute() as u64);
+        assert_eq!(converted.seconds(), swift_date.seconds() as u64);
+
+        // Test Hifitime->Swift conversion
+        let converted: UtcTime = converted.into();
+        assert_eq!(converted.year(), swift_date.year());
+        assert_eq!(converted.month(), swift_date.month());
+        assert_eq!(converted.day_of_month(), swift_date.day_of_month());
+        assert_eq!(converted.hour(), swift_date.hour());
+        assert_eq!(converted.minute(), swift_date.minute());
+        assert!((converted.seconds() - swift_date.seconds()).abs() < epsilon);
     }
 }
