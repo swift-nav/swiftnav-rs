@@ -8,14 +8,15 @@ on:
   schedule:
     - cron: "0 16 * * 1" # 8am PST every Monday
 permissions: {}
+env:
+  ZIZMOR_VERSION: 1.30.1
+  JUST_VERSION: 1.59.0
 jobs:
   zizmor:
     name: Run zizmor 🌈
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    env:
-      ZIZMOR_VERSION: 1.30.1
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -40,7 +41,7 @@ jobs:
 
       - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
         with:
-          just-version: 1.59.0
+          just-version: ${{ env.JUST_VERSION }}
 
       - name: Install rust
         run: |
@@ -119,7 +120,7 @@ jobs:
 
       - uses: extractions/setup-just@53165ef7e734c5c07cb06b3c8e7b647c5aa16db3 # v4.0.0
         with:
-          just-version: 1.59.0
+          just-version: ${{ env.JUST_VERSION }}
 
       - name: Install musl tools
         if: matrix.needs_musl
